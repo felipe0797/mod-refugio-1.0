@@ -2,28 +2,37 @@ package com.felpz.refugio.ability;
 
 import com.felpz.refugio.Refugio;
 import com.felpz.refugio.data.RefugioPlayerData;
+import com.felpz.refugio.ui.RefugioUiPayload;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerPlayer;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Persistent, server-authoritative skill ranks and activation state. */
 public final class RefugioAbilityData {
@@ -77,42 +86,42 @@ public final class RefugioAbilityData {
 
     private static final List<Skill> SKILLS = List.of(
             skill("sword_critical_chance", "Chance Crítica", "+10 pontos percentuais por rank, até +50%; chance de crítico em golpes com espadas contra inimigos.", Track.SWORD, "minecraft:iron_sword"),
-            skill("sword_critical_damage", "Dano Crítico", "+10% de dano crítico por rank, até +50%; afeta críticos de salto e os gerados por Chance Crítica com espadas.", Track.SWORD, "minecraft:diamond_sword"),
-            skill("sword_first_cut", "Primeiro Corte", "Após 10 s sem causar nem receber dano, o próximo golpe com espada contra um inimigo ganha +5% por rank (máx. +25%).", Track.SWORD, "minecraft:golden_sword"),
-            skill("sword_mastery", "Maestria com Espadas", "+2% de dano com espadas por rank, até +10%.", Track.SWORD, "minecraft:netherite_sword"),
+            skill("sword_critical_damage", "Dano Crítico", "+20% ao multiplicador crítico por rank, até +100% no rank 5; afeta críticos de salto e os gerados por Chance Crítica com espadas.", Track.SWORD, "minecraft:diamond_sword"),
+            skill("sword_first_cut", "Primeiro Corte", "Após 5 s sem causar dano de combate, o próximo golpe com espada contra um inimigo ganha +15% por rank (máx. +75%).", Track.SWORD, "minecraft:golden_sword"),
+            skill("sword_mastery", "Maestria com Espadas", "+10% de dano com espadas por rank, até +50% no rank 5.", Track.SWORD, "minecraft:netherite_sword"),
 
             skill("axe_critical_chance", "Chance Crítica", "+10 pontos percentuais por rank, até +50%; chance de crítico em golpes com machados contra inimigos.", Track.AXE, "minecraft:iron_axe"),
-            skill("axe_critical_damage", "Dano Crítico", "+10% de dano crítico por rank, até +50%; afeta críticos de salto e os gerados por Chance Crítica com machados.", Track.AXE, "minecraft:diamond_axe"),
-            skill("axe_first_cut", "Primeiro Corte", "Após 10 s sem causar nem receber dano, o próximo golpe com machado contra um inimigo ganha +5% por rank (máx. +25%).", Track.AXE, "minecraft:golden_axe"),
-            skill("axe_mastery", "Maestria com Machados", "+2% de dano com machados por rank, até +10%.", Track.AXE, "minecraft:iron_axe"),
+            skill("axe_critical_damage", "Dano Crítico", "+20% ao multiplicador crítico por rank, até +100% no rank 5; afeta críticos de salto e os gerados por Chance Crítica com machados.", Track.AXE, "minecraft:diamond_axe"),
+            skill("axe_first_cut", "Primeiro Corte", "Após 5 s sem causar dano de combate, o próximo golpe com machado contra um inimigo ganha +15% por rank (máx. +75%).", Track.AXE, "minecraft:golden_axe"),
+            skill("axe_mastery", "Maestria com Machados", "+10% de dano com machados por rank, até +50% no rank 5.", Track.AXE, "minecraft:iron_axe"),
 
             skill("bow_critical_chance", "Chance Crítica", "+10 pontos percentuais por rank, até +50%; chance de crítico em flechas de arco contra inimigos.", Track.BOW, "minecraft:bow"),
-            skill("bow_critical_damage", "Dano Crítico", "+10% de dano crítico por rank, até +50%; afeta críticos naturais e os gerados por Chance Crítica com arco.", Track.BOW, "minecraft:tipped_arrow"),
-            skill("bow_first_shot", "Primeiro Tiro", "Após 10 s sem causar nem receber dano, a próxima flecha que acertar um inimigo ganha +5% por rank (máx. +25%).", Track.BOW, "minecraft:arrow"),
-            skill("bow_mastery", "Maestria com Arcos", "+5% de dano de flechas de arco por rank, até +25%; só contra inimigos.", Track.BOW, "minecraft:bow"),
+            skill("bow_critical_damage", "Dano Crítico", "+20% ao multiplicador crítico por rank, até +100% no rank 5; afeta críticos naturais e os gerados por Chance Crítica com arco.", Track.BOW, "minecraft:tipped_arrow"),
+            skill("bow_first_shot", "Primeiro Tiro", "Após 5 s sem causar dano de combate, a próxima flecha que acertar um inimigo ganha +15% por rank (máx. +75%).", Track.BOW, "minecraft:arrow"),
+            skill("bow_mastery", "Maestria com Arcos", "+10% de dano de flechas de arco por rank, até +50% no rank 5; só contra inimigos.", Track.BOW, "minecraft:bow"),
             skill("steady_aim", "Mira Estável", "Reduz em 10% por rank a dispersão das flechas, até 50%.", Track.BOW, "minecraft:target"),
 
-            skill("retaliation", "Retaliação", "Após bloquear com escudo, o próximo ataque em 3 s ganha +5% por rank (máx. +25%); recarga de 10 s.", Track.EXTRAS, "minecraft:shield"),
-            skill("horde_vigor", "Vigor da Horda", "Abates de inimigos renovam por 5 s +6% de dano por rank, até +30%.", Track.EXTRAS, "minecraft:rotten_flesh"),
+            skill("retaliation", "Retaliação", "Após bloquear com escudo, o 1º ataque em até 4 s ganha +15% de dano por rank (máx. +75%); recarga de 10 s.", Track.EXTRAS, "minecraft:shield"),
+            skill("horde_vigor", "Vigor da Horda", "Ao matar um inimigo, ativa +6% de dano por rank (máx. +30%) por 5 s. Não renova durante o efeito; volta ao abater outro inimigo após acabar.", Track.EXTRAS, "minecraft:rotten_flesh"),
+            skill("area_defense", "Defesa em Área", "Ao matar um inimigo (inclusive com flechas), ele explode e causa 5–25 de dano base a até 1–5 inimigos visíveis num raio de 3–5 blocos; recarga de 60–30 s.", Track.EXTRAS, "minecraft:iron_chestplate"),
 
-            skill("firm_stance", "Postura Firme", "Reduz em 4% por rank (máx. 20%) o dano recebido de inimigos.", Track.ACTIVE_DEFENSE, "minecraft:shield"),
-            skill("last_reserve", "Última Reserva", "Ao cair abaixo de 30% de vida, reduz o golpe em 30–70% conforme o rank; recarga de 60–20 s.", Track.ACTIVE_DEFENSE, "minecraft:totem_of_undying"),
+            skill("firm_stance", "Postura Firme", "Reduz em 5% por rank (máx. 25%) o dano recebido de inimigos.", Track.ACTIVE_DEFENSE, "minecraft:shield"),
+            skill("last_reserve", "Última Reserva", "Quando um golpe inimigo deixaria sua vida em 20% ou menos, reduz o golpe em 20–50% conforme o rank (evitando golpe fatal) com efeito na tela; recarga de 60–20 s.", Track.ACTIVE_DEFENSE, "minecraft:totem_of_undying"),
             skill("anchor", "Âncora", "+8 pontos percentuais de resistência a empurrão por rank, até +40%.", Track.ACTIVE_DEFENSE, "minecraft:iron_boots"),
-            skill("area_defense", "Defesa em Área", "Após acertar um inimigo, atinge até 2–4 inimigos visíveis em 3,4–5 blocos com 15–35% do dano (máx. 8); recarga de 7–3 s.", Track.ACTIVE_DEFENSE, "minecraft:iron_chestplate"),
 
-            skill("light_step", "Passo Leve", "Reduz o dano de queda em 4% por rank, até 20%.", Track.REFLEXES, "minecraft:feather"),
-            skill("burst", "Arranque", "Pressione G para avançar na direção da mira; impulso cresce por rank (máx. 0,95) e recarga de 6 s.", Track.REFLEXES, "minecraft:sugar"),
-            skill("momentum", "Ímpeto", "+6% de velocidade de movimento por rank, até +30%.", Track.REFLEXES, "minecraft:rabbit_foot"),
-            skill("super_jump", "Super Pulo", "Pressione G no chão para saltar mais alto; força aumenta por rank. O dano de queda considera a altura de partida; recarga de 1 s.", Track.REFLEXES, "minecraft:slime_block"),
-            skill("double_jump", "Pulo Duplo", "Pressione G uma vez no ar para saltar de novo. Renova ao pousar; dano de queda conta apenas abaixo da altura de ativação.", Track.REFLEXES, "minecraft:phantom_membrane"),
+            skill("light_step", "Passo Leve", "Reduz o dano de queda em 10% por rank, até 50%.", Track.REFLEXES, "minecraft:feather"),
+            skill("burst", "Arranque", "Pressione CTRL Esquerdo (configurável) para avançar na direção da mira; força de 1 a 5 por rank, recarga de 60–30 s e 2 usos seguidos no rank 5.", Track.REFLEXES, "minecraft:sugar"),
+            skill("momentum", "Ímpeto", "+7% de velocidade de movimento por rank, até +30% no rank 5.", Track.REFLEXES, "minecraft:rabbit_foot"),
+            skill("super_jump", "Super Pulo", "Pressione Espaço (configurável) no chão para saltar mais alto; força de 0,68 a 0,92 por rank e recarga de 1 s. O dano de queda considera a altura de partida.", Track.REFLEXES, "minecraft:slime_block"),
+            skill("double_jump", "Pulo Duplo", "Pressione Espaço (configurável) uma vez no ar para saltar novamente; força de 0,54 a 0,70 por rank. Renova ao pousar.", Track.REFLEXES, "minecraft:phantom_membrane"),
 
-            skill("mining", "Escavação Ágil", "+5% de velocidade de mineração por rank, até +25%; sem revelar minérios.", Track.MINING, "minecraft:iron_pickaxe"),
+            skill("mining", "Escavação Ágil", "+6% de velocidade de mineração por rank, até +30%; sem revelar minérios.", Track.MINING, "minecraft:iron_pickaxe"),
             skill("preparation", "Preparação", "Cada alimento concede +0,5 de saturação por rank, até +2,5; não amplia poções.", Track.ALCHEMY, "minecraft:potion"),
-            skill("tracker", "Rastreador", "Mostra no máximo a ameaça visível mais próxima a cada 2 s; alcance de 18–26 blocos, sem revelar através de paredes.", Track.EXPLORATION, "minecraft:compass"),
-            skill("collector", "Coletor", "Atrai itens gradualmente num raio de 2–4 blocos; não cria nem duplica drops.", Track.EXPLORATION, "minecraft:bundle"),
-            skill("exploration", "Exploração", "Reduz em 3% por rank a exaustão fora do Refúgio, até 15%.", Track.EXPLORATION, "minecraft:map"),
-            skill("logistics", "Logística", "Cada rank dá 5% de chance de ignorar 1 ponto de dano de durabilidade, até 25%.", Track.EXPLORATION, "minecraft:chest")
+            skill("collector", "Coletor", "Atrai itens visíveis gradualmente num raio de 2 a 6 blocos conforme o rank; não cria nem duplica drops.", Track.EXPLORATION, "minecraft:bundle"),
+            skill("exploration", "Exploração", "Reduz a exaustão em 6% por rank, até 30% no rank 5.", Track.EXPLORATION, "minecraft:map"),
+            skill("logistics", "Logística", "Cada rank dá 8% de chance de ignorar 1 ponto de dano de durabilidade, até 40% no rank 5.", Track.EXPLORATION, "minecraft:chest")
     );
+
     private static final AttachmentType<Map<String, Integer>> RANKS = AttachmentRegistry.create(
             Refugio.id("ability_ranks"), builder -> builder.persistent(Codec.unboundedMap(Codec.STRING, Codec.INT))
                     .initializer(HashMap::new).copyOnDeath());
@@ -137,6 +146,8 @@ public final class RefugioAbilityData {
             Refugio.id("ability_jump_cooldown"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Long> BURST_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_burst_cooldown"), builder -> builder.initializer(() -> 0L));
+    private static final AttachmentType<Integer> BURST_CHARGES_USED = AttachmentRegistry.create(
+            Refugio.id("ability_burst_charges_used"), builder -> builder.initializer(() -> 0));
     private static final AttachmentType<Boolean> DOUBLE_JUMP_USED = AttachmentRegistry.create(
             Refugio.id("ability_double_jump_used"), builder -> builder.initializer(() -> false));
     private static final AttachmentType<Boolean> JUMP_TRACKING = AttachmentRegistry.create(
@@ -147,10 +158,10 @@ public final class RefugioAbilityData {
             Refugio.id("ability_jump_started_at"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<String> JUMP_DIMENSION = AttachmentRegistry.create(
             Refugio.id("ability_jump_dimension"), builder -> builder.initializer(() -> ""));
-    private static final AttachmentType<Long> TRACKER_NEXT_TICK = AttachmentRegistry.create(
-            Refugio.id("ability_tracker_next_tick"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Long> AREA_DEFENSE_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_area_defense_cooldown"), builder -> builder.initializer(() -> 0L));
+
+    private static final Set<UUID> APPLYING_AREA_DEFENSE = ConcurrentHashMap.newKeySet();
 
     private RefugioAbilityData() { }
 
@@ -187,7 +198,10 @@ public final class RefugioAbilityData {
         return Math.max(0, Math.min(RefugioAbilityRules.maxRank(), player.getAttachedOrCreate(RANKS).getOrDefault(id, 0)));
     }
     public static boolean isActive(ServerPlayer player, String id) { return player.getAttachedOrCreate(ACTIVE).getOrDefault(id, false); }
-    public static String freeChoice(ServerPlayer player) { return player.getAttachedOrCreate(FREE_CHOICE); }
+    public static String freeChoice(ServerPlayer player) {
+        String choice = player.getAttachedOrCreate(FREE_CHOICE);
+        return (choice == null || skill(choice) == null) ? "" : choice;
+    }
     public static boolean hasFreeChoice(ServerPlayer player) { return !freeChoice(player).isEmpty(); }
 
     public static void registerEvents() {
@@ -197,41 +211,47 @@ public final class RefugioAbilityData {
                     refreshJumpState(player);
                     refreshUtilitySkills(player);
                 }));
-        net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry.serverboundPlay()
+        PayloadTypeRegistry.serverboundPlay()
                 .register(ActivateMovementPayload.TYPE, ActivateMovementPayload.CODEC);
-        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.registerGlobalReceiver(
-                ActivateMovementPayload.TYPE, (payload, context) -> activateMovement(context.player()));
+        ServerPlayNetworking.registerGlobalReceiver(
+                ActivateMovementPayload.TYPE, (payload, context) ->
+                        context.server().execute(() -> activateMovement(context.player())));
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (entity instanceof ServerPlayer victim) {
-                recordCombatActivity(victim);
                 if (blocked && source.getEntity() instanceof Enemy && isActive(victim, "retaliation")) {
                     long now = gameTime(victim);
                     if (now >= victim.getAttachedOrCreate(RETALIATION_COOLDOWN_UNTIL)) {
-                        victim.setAttached(RETALIATION_READY_UNTIL, now + 60L);
-                        victim.setAttached(RETALIATION_COOLDOWN_UNTIL, now + 200L);
+                        victim.setAttached(RETALIATION_READY_UNTIL, now + RefugioAbilityRules.retaliationReadyTicks());
+                        victim.setAttached(RETALIATION_COOLDOWN_UNTIL, now + RefugioAbilityRules.retaliationCooldownTicks());
                     }
                 }
             }
             if (entity instanceof Enemy && source.getEntity() instanceof ServerPlayer attacker) {
-                recordCombatActivity(attacker);
-                if (damageTaken > 0.0f) consumeRetaliation(attacker);
+                if (damageTaken > 0.0f) {
+                    recordCombatActivity(attacker);
+                    consumeRetaliation(attacker);
+                }
             }
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (!(source.getEntity() instanceof ServerPlayer killer)) return;
             recordCombatActivity(killer);
-            if (entity instanceof Enemy && isActive(killer, "horde_vigor")) {
-                killer.setAttached(HORDE_VIGOR_UNTIL, gameTime(killer) + 100L);
+            if (entity instanceof Enemy) {
+                long now = gameTime(killer);
+                if (isActive(killer, "horde_vigor") && now >= killer.getAttachedOrCreate(HORDE_VIGOR_UNTIL)) {
+                    killer.setAttached(HORDE_VIGOR_UNTIL, now + RefugioAbilityRules.hordeVigorDurationTicks());
+                }
+                triggerAreaDefenseOnKill(killer, entity);
             }
         });
     }
 
-    /** Returns the equipped weapon's opening-strike rank after a 10-second quiet window. */
+    /** Returns the equipped weapon's opening-strike rank after a 5-second window without dealing combat damage. */
     public static int beginAttack(ServerPlayer player) {
         return beginTimedFirstStrike(player, firstStrikeSkillId(player.getMainHandItem()));
     }
 
-    /** Returns First Shot's rank when an enemy is hit after the same quiet window as First Cut. */
+    /** Returns First Shot's rank when an enemy is hit after the same 5-second quiet window as First Cut. */
     public static int beginBowFirstShot(ServerPlayer player) {
         return beginTimedFirstStrike(player, "bow_first_shot");
     }
@@ -240,7 +260,8 @@ public final class RefugioAbilityData {
         if (skillId == null || !isActive(player, skillId)) return 0;
         long now = gameTime(player);
         long last = player.getAttachedOrCreate(LAST_COMBAT_TICK);
-        return last == Long.MIN_VALUE || now - last >= 200L ? rank(player, skillId) : 0;
+        return last == Long.MIN_VALUE || now - last >= RefugioAbilityRules.firstCutQuietTicks()
+                ? rank(player, skillId) : 0;
     }
 
     public static int retaliationRankForAttack(ServerPlayer player) {
@@ -262,47 +283,126 @@ public final class RefugioAbilityData {
         return RefugioAbilityRules.hordeVigorBonus(rank(player, "horde_vigor"));
     }
 
-    /** Returns Last Reserve's one-hit damage reduction, or zero when its trigger is unavailable. */
+    /** Returns Last Reserve's one-hit damage reduction and triggers the minimalist screen effect when activated. */
     public static float tryLastReserve(ServerPlayer player, float incomingDamage) {
         if (!isActive(player, "last_reserve") || incomingDamage <= 0.0f) return 0.0f;
         long now = gameTime(player);
         if (player.getAttachedOrCreate(LAST_RESERVE_COOLDOWN_UNTIL) > now
-                || player.getHealth() - incomingDamage > player.getMaxHealth() * 0.30f) return 0.0f;
+                || player.getHealth() - incomingDamage > player.getMaxHealth() * RefugioAbilityRules.lastReserveHealthThresholdRatio()) {
+            return 0.0f;
+        }
         int rank = rank(player, "last_reserve");
         if (rank <= 0) return 0.0f;
         player.setAttached(LAST_RESERVE_COOLDOWN_UNTIL, now + RefugioAbilityRules.lastReserveCooldownTicks(rank));
-        return RefugioAbilityRules.lastReserveReduction(rank);
+        float reduction = RefugioAbilityRules.lastReserveReduction(rank);
+        int reductionPct = Math.round(reduction * 100.0f);
+
+        ServerLevel level = player.level();
+        level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, true, true,
+                player.getX(), player.getY() + 1.0, player.getZ(), 16, 0.35, 0.45, 0.35, 0.10);
+        player.sendSystemMessage(Component.translatable("message.refugio.ability.last_reserve_triggered", reductionPct)
+                .withStyle(Style.EMPTY.withColor(0xFFFFD369).withBold(true)), true);
+        ServerPlayNetworking.send(player, new RefugioUiPayload("LAST_RESERVE_FX\t" + reductionPct));
+        return reduction;
+    }
+
+    /** Triggers Area Defense explosion when the player kills an enemy (melee or bow). */
+    public static void triggerAreaDefenseOnKill(ServerPlayer player, LivingEntity killedTarget) {
+        if (!isActive(player, "area_defense") || killedTarget == null) return;
+        if (!APPLYING_AREA_DEFENSE.add(player.getUUID())) return;
+        try {
+            long now = gameTime(player);
+            if (player.getAttachedOrCreate(AREA_DEFENSE_COOLDOWN_UNTIL) > now) return;
+            int rank = rank(player, "area_defense");
+            if (rank <= 0) return;
+
+            double radius = RefugioAbilityRules.areaRadius(rank);
+            double radiusSq = radius * radius;
+            int maxTargets = RefugioAbilityRules.areaTargetCount(rank);
+            float baseDamage = RefugioAbilityRules.areaBaseDamage(rank);
+
+            ServerLevel level = player.level();
+            double ex = killedTarget.getX();
+            double ey = killedTarget.getY() + killedTarget.getBbHeight() * 0.5;
+            double ez = killedTarget.getZ();
+            level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, true, true, ex, ey, ez, 1, 0.0, 0.0, 0.0, 0.0);
+            level.sendParticles(ParticleTypes.EXPLOSION, true, true, ex, ey, ez, 10, 0.6, 0.4, 0.6, 0.05);
+            level.sendParticles(ParticleTypes.FLAME, true, true, ex, ey, ez, 16, 0.5, 0.35, 0.5, 0.08);
+
+            player.setAttached(AREA_DEFENSE_COOLDOWN_UNTIL, now + RefugioAbilityRules.areaCooldownTicks(rank));
+
+            var nearby = level.getEntitiesOfClass(LivingEntity.class,
+                            killedTarget.getBoundingBox().inflate(radius), entity -> entity != killedTarget
+                                    && entity instanceof Enemy && entity.isAlive()
+                                    && killedTarget.distanceToSqr(entity) <= radiusSq
+                                    && player.hasLineOfSight(entity))
+                    .stream()
+                    .sorted((left, right) -> Double.compare(killedTarget.distanceToSqr(left),
+                            killedTarget.distanceToSqr(right)))
+                    .limit(maxTargets)
+                    .toList();
+
+            for (LivingEntity secondary : nearby) {
+                secondary.hurtServer(level, player.damageSources().playerAttack(player), baseDamage);
+            }
+        } finally {
+            APPLYING_AREA_DEFENSE.remove(player.getUUID());
+        }
     }
 
     public static void applyAreaDefense(ServerPlayer player, LivingEntity primaryTarget, float primaryDamage) {
-        if (!isActive(player, "area_defense") || primaryDamage <= 0.0f || !primaryTarget.isAlive()) return;
-        long now = gameTime(player);
-        if (player.getAttachedOrCreate(AREA_DEFENSE_COOLDOWN_UNTIL) > now) return;
-        int rank = rank(player, "area_defense");
-        if (rank <= 0) return;
-        double radius = RefugioAbilityRules.areaRadius(rank);
-        int maxTargets = RefugioAbilityRules.areaTargetCount(rank);
-        var nearby = player.level().getEntitiesOfClass(LivingEntity.class,
-                        primaryTarget.getBoundingBox().inflate(radius), entity -> entity != primaryTarget
-                                && entity instanceof Enemy && entity.isAlive() && player.hasLineOfSight(entity))
-                .stream().sorted((left, right) -> Double.compare(primaryTarget.distanceToSqr(left),
-                        primaryTarget.distanceToSqr(right))).limit(maxTargets).toList();
-        if (nearby.isEmpty()) return;
-
-        player.setAttached(AREA_DEFENSE_COOLDOWN_UNTIL, now + RefugioAbilityRules.areaCooldownTicks(rank));
-        float secondaryDamage = Math.min(8.0f, primaryDamage * RefugioAbilityRules.areaDamageRatio(rank));
-        for (LivingEntity secondary : nearby) {
-            secondary.hurtServer(player.level(), player.damageSources().playerAttack(player), secondaryDamage);
+        if (primaryTarget != null && !primaryTarget.isAlive() && primaryDamage > 0.0f) {
+            triggerAreaDefenseOnKill(player, primaryTarget);
         }
     }
 
     public static void activateMovement(ServerPlayer player) {
-        boolean activated = false;
-        if (isActive(player, "super_jump")) activated |= activateSuperJump(player);
-        else if (isActive(player, "double_jump")) activated |= activateDoubleJump(player);
-        if (isActive(player, "burst")) activated |= activateBurst(player);
-        if (!activated) player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
-                "message.refugio.ability.no_movement_skill"));
+        activateMovement(player, "ALL");
+    }
+
+    public static void activateMovement(ServerPlayer player, String mode) {
+        if (player == null || !player.isAlive()) return;
+        switch (mode) {
+            case "JUMP_PASSIVE" -> {
+                if (isActive(player, "super_jump") && player.onGround()) {
+                    activateSuperJump(player);
+                } else if (isActive(player, "double_jump") && !player.onGround()) {
+                    activateDoubleJump(player);
+                }
+            }
+            case "JUMP_EXPLICIT" -> {
+                boolean activated = false;
+                if (isActive(player, "super_jump")) activated = activateSuperJump(player);
+                else if (isActive(player, "double_jump")) activated = activateDoubleJump(player);
+                if (!activated) {
+                    sendNoMovementSkillMessage(player);
+                }
+            }
+            case "BURST_PASSIVE" -> {
+                if (isActive(player, "burst")) {
+                    activateBurst(player, true);
+                }
+            }
+            case "BURST_EXPLICIT" -> {
+                if (isActive(player, "burst")) {
+                    activateBurst(player, true);
+                } else {
+                    sendNoMovementSkillMessage(player);
+                }
+            }
+            default -> {
+                boolean activated = false;
+                if (isActive(player, "super_jump")) activated |= activateSuperJump(player);
+                else if (isActive(player, "double_jump")) activated |= activateDoubleJump(player);
+                boolean burstTried = isActive(player, "burst");
+                if (burstTried) {
+                    activated |= activateBurst(player, !activated);
+                }
+                if (!activated && !burstTried) {
+                    sendNoMovementSkillMessage(player);
+                }
+            }
+        }
     }
 
     private static boolean activateSuperJump(ServerPlayer player) {
@@ -332,21 +432,52 @@ public final class RefugioAbilityData {
         return true;
     }
 
-    private static boolean activateBurst(ServerPlayer player) {
+    private static boolean activateBurst(ServerPlayer player, boolean notifyCooldown) {
         if (player.isPassenger() || player.isInWater()) return false;
-        long now = gameTime(player);
-        if (player.getAttachedOrCreate(BURST_COOLDOWN_UNTIL) > now) return false;
         int rank = rank(player, "burst");
         if (rank <= 0) return false;
+        long now = gameTime(player);
+        long cooldownUntil = player.getAttachedOrCreate(BURST_COOLDOWN_UNTIL);
+        if (cooldownUntil > now) {
+            if (notifyCooldown) {
+                long remainingSeconds = Math.max(1L, (long) Math.ceil((cooldownUntil - now) / 20.0));
+                sendBurstCooldownMessage(player, remainingSeconds);
+            }
+            return false;
+        }
         double yaw = Math.toRadians(player.getYRot());
         double dx = -Math.sin(yaw);
         double dz = Math.cos(yaw);
         double strength = RefugioAbilityRules.burstVelocity(rank);
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x + dx * strength, Math.max(velocity.y, 0.12), velocity.z + dz * strength);
-        player.setAttached(BURST_COOLDOWN_UNTIL, now + 120L);
+
+        int maxCharges = RefugioAbilityRules.burstMaxCharges(rank);
+        int chargesUsed = player.getAttachedOrCreate(BURST_CHARGES_USED) + 1;
+        if (chargesUsed < maxCharges) {
+            player.setAttached(BURST_CHARGES_USED, chargesUsed);
+        } else {
+            player.setAttached(BURST_CHARGES_USED, 0);
+            player.setAttached(BURST_COOLDOWN_UNTIL, now + RefugioAbilityRules.burstCooldownTicks(rank));
+        }
         player.hurtMarked = true;
         return true;
+    }
+
+    private static void sendBurstCooldownMessage(ServerPlayer player, long remainingSeconds) {
+        MutableComponent prefix = Component.literal("✦ [Refúgio] ")
+                .withStyle(Style.EMPTY.withColor(0xFFD4A34F).withBold(true));
+        MutableComponent body = Component.translatable("message.refugio.ability.burst_cooldown", remainingSeconds)
+                .withStyle(Style.EMPTY.withColor(0xFFFF7A66).withBold(true));
+        player.sendSystemMessage(prefix.append(body));
+    }
+
+    private static void sendNoMovementSkillMessage(ServerPlayer player) {
+        MutableComponent prefix = Component.literal("✦ [Refúgio] ")
+                .withStyle(Style.EMPTY.withColor(0xFFD4A34F).withBold(true));
+        MutableComponent body = Component.translatable("message.refugio.ability.no_movement_skill")
+                .withStyle(Style.EMPTY.withColor(0xFFFFE6B8));
+        player.sendSystemMessage(prefix.append(body));
     }
 
     private static void beginJumpTracking(ServerPlayer player) {
@@ -388,22 +519,6 @@ public final class RefugioAbilityData {
     }
 
     private static void refreshUtilitySkills(ServerPlayer player) {
-        long now = gameTime(player);
-        if (isActive(player, "tracker") && now >= player.getAttachedOrCreate(TRACKER_NEXT_TICK)) {
-            player.setAttached(TRACKER_NEXT_TICK, now + 40L);
-            int rank = rank(player, "tracker");
-            double range = RefugioAbilityRules.trackerRadius(rank);
-            LivingEntity nearest = player.level().getEntitiesOfClass(LivingEntity.class,
-                            player.getBoundingBox().inflate(range), entity -> entity instanceof Enemy
-                                    && entity.isAlive() && player.hasLineOfSight(entity))
-                    .stream().min((left, right) -> Double.compare(player.distanceToSqr(left), player.distanceToSqr(right)))
-                    .orElse(null);
-            if (nearest != null) {
-                player.sendSystemMessage(Component.translatable("message.refugio.ability.tracker",
-                        nearest.getDisplayName(), Math.round(Math.sqrt(player.distanceToSqr(nearest)))), true);
-            }
-        }
-
         if (isActive(player, "collector")) {
             int rank = rank(player, "collector");
             double range = RefugioAbilityRules.collectorRadius(rank);
@@ -440,7 +555,7 @@ public final class RefugioAbilityData {
     }
 
     private static void updateModifier(AttributeInstance instance, Identifier id, double amount,
-                                      AttributeModifier.Operation operation) {
+                                       AttributeModifier.Operation operation) {
         if (instance == null) return;
         AttributeModifier current = instance.getModifier(id);
         if (amount <= 0.0) {

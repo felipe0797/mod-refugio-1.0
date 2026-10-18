@@ -2,11 +2,9 @@ package com.felpz.refugio.mixin;
 
 import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.ability.RefugioAbilityRules;
-import com.felpz.refugio.Refugio;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,15 +24,12 @@ public abstract class PlayerAbilityMixin {
     private int refugio$firstCutRank;
     @Unique
     private int refugio$retaliationRank;
-    @Unique
-    private float refugio$primaryHealthBeforeAttack;
 
     @Inject(method = "attack", at = @At("HEAD"))
     private void refugio$resetCriticalState(Entity target, CallbackInfo callback) {
         refugio$attackTargetIsEnemy = target instanceof Enemy;
         refugio$firstCutRank = 0;
         refugio$retaliationRank = 0;
-        refugio$primaryHealthBeforeAttack = target instanceof LivingEntity living ? living.getHealth() : 0.0f;
         if (refugio$attackTargetIsEnemy && (Object) this instanceof ServerPlayer player) {
             refugio$firstCutRank = RefugioAbilityData.beginAttack(player);
             refugio$retaliationRank = RefugioAbilityData.retaliationRankForAttack(player);
@@ -43,15 +38,9 @@ public abstract class PlayerAbilityMixin {
 
     @Inject(method = "attack", at = @At("TAIL"))
     private void refugio$clearCriticalState(Entity target, CallbackInfo callback) {
-        if (refugio$attackTargetIsEnemy && target instanceof LivingEntity living
-                && (Object) this instanceof ServerPlayer player) {
-            float actualDamage = Math.max(0.0f, refugio$primaryHealthBeforeAttack - living.getHealth());
-            RefugioAbilityData.applyAreaDefense(player, living, actualDamage);
-        }
         refugio$attackTargetIsEnemy = false;
         refugio$firstCutRank = 0;
         refugio$retaliationRank = 0;
-        refugio$primaryHealthBeforeAttack = 0.0f;
     }
 
     @ModifyVariable(method = "attack", at = @At(value = "STORE", ordinal = 0), index = 2)
@@ -68,7 +57,7 @@ public abstract class PlayerAbilityMixin {
                 && RefugioAbilityData.isActive(player, "axe_mastery")) {
             bonus += RefugioAbilityRules.axeMasteryBonus(RefugioAbilityData.rank(player, "axe_mastery"));
         }
-        return baseDamage * (1.0f + Math.min(0.75f, bonus));
+        return baseDamage * (1.0f + bonus);
     }
 
     @ModifyVariable(method = "attack", at = @At("STORE"), index = 9)
@@ -92,7 +81,6 @@ public abstract class PlayerAbilityMixin {
     @ModifyVariable(method = "causeFoodExhaustion", at = @At("HEAD"), argsOnly = true, index = 1)
     private float refugio$reduceExplorationExhaustion(float exhaustion) {
         if (exhaustion <= 0.0f || !((Object) this instanceof ServerPlayer player)
-                || player.level().dimension().equals(Refugio.DIMENSION)
                 || !RefugioAbilityData.isActive(player, "exploration")) return exhaustion;
         int rank = RefugioAbilityData.rank(player, "exploration");
         return exhaustion * (1.0f - RefugioAbilityRules.explorationExhaustionReduction(rank));

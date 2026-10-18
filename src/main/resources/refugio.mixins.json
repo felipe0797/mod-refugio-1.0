@@ -11,6 +11,9 @@
 		"ConsumableAbilityMixin",
 		"ItemStackAbilityMixin"
 	],
+	"client": [
+		"RefugioGuiAccessor"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	},

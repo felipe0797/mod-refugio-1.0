@@ -78,8 +78,9 @@ public final class RefugioDialogueScreen extends Screen {
             drawPortraitSection(graphics, portrait, layout.portraitX, layout.portraitY,
                     layout.portraitWidth, layout.portraitHeight);
         }
-        drawOrnamentalDivider(graphics, layout.textX, layout.viewportTop - 8, layout.textWidth);
-        drawOrnamentalDivider(graphics, layout.textX, layout.viewportBottom + 6, layout.textWidth);
+        int dividerOffset = layout.panelHeight < 210 ? 4 : 7;
+        drawOrnamentalDivider(graphics, layout.textX, layout.viewportTop - dividerOffset, layout.textWidth);
+        drawOrnamentalDivider(graphics, layout.textX, layout.viewportBottom + dividerOffset - 1, layout.textWidth);
         if (shouldDrawCrest(layout)) drawRefugeCrest(graphics, layout);
 
         int maxScroll = maxDialogueScroll(layout.viewportTop, layout.viewportBottom, layout.textWidth);
@@ -94,7 +95,7 @@ public final class RefugioDialogueScreen extends Screen {
                 graphics.textRenderer().accept(layout.textX + 4, lineY, line);
                 lineY += font.lineHeight + 2;
             }
-            lineY += 6;
+            lineY += 5;
         }
         graphics.disableScissor();
         drawDialogueScrollbar(graphics, layout.scrollbarX, layout.viewportTop, layout.viewportBottom,
@@ -139,10 +140,10 @@ public final class RefugioDialogueScreen extends Screen {
         Layout layout = computeLayout();
         int maxScroll = maxDialogueScroll(layout.viewportTop, layout.viewportBottom, layout.textWidth);
         if (inside(mouseX, mouseY, layout.textX - 4, layout.viewportTop,
-                layout.textWidth + 16, layout.viewportBottom - layout.viewportTop)
+                layout.scrollbarX - layout.textX + 12, layout.viewportBottom - layout.viewportTop)
                 && maxScroll > 0) {
             dialogueScrollOffset = clampDialogueScroll(
-                    dialogueScrollOffset - (int) Math.signum(verticalAmount) * 28, maxScroll);
+                    dialogueScrollOffset - (int) Math.signum(verticalAmount) * 24, maxScroll);
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
@@ -173,45 +174,64 @@ public final class RefugioDialogueScreen extends Screen {
     }
 
     private Layout computeLayout() {
-        int availableWidth = Math.max(1, width - 24);
-        int availableHeight = Math.max(1, height - 24);
-        int widthLimit = (int) Math.floor(availableWidth * 0.82);
+        int marginX = width < 400 ? 8 : (width < 600 ? 12 : 18);
+        int marginY = height < 240 ? 6 : (height < 340 ? 10 : 16);
+        int availableWidth = Math.max(1, width - marginX * 2);
+        int availableHeight = Math.max(1, height - marginY * 2);
+        double scaleRatio = (width < 460 || height < 270) ? 0.94 : (height < 350 ? 0.88 : 0.82);
+        int widthLimit = (int) Math.floor(availableWidth * scaleRatio);
         double panelAspect = 1.68;
-        int heightLimit = (int) Math.floor(availableHeight * 0.82 * panelAspect);
+        int heightLimit = (int) Math.floor(availableHeight * scaleRatio * panelAspect);
         int panelWidth = Math.max(1, Math.min(620, Math.min(widthLimit, heightLimit)));
-        int panelHeight = Math.max(1, Math.min((int) Math.floor(availableHeight * 0.82),
+        int panelHeight = Math.max(1, Math.min((int) Math.floor(availableHeight * scaleRatio),
                 (int) Math.round(panelWidth / panelAspect)));
         int x = (width - panelWidth) / 2;
         int y = (height - panelHeight) / 2;
 
-        int titleHeight = Math.max(34, Math.min(56, panelHeight / 6));
-        int buttonHeight = Math.min(Math.max(18, panelHeight / 9), Math.max(12, panelHeight - 12));
-        int buttonY = y + panelHeight - buttonHeight - Math.max(24, panelHeight / 15);
-        int viewportTop = y + titleHeight + 18;
-        int viewportBottom = Math.max(viewportTop + 1,
-                Math.min(y + panelHeight - 20, buttonY - 18));
+        int insetX = Math.max(16, (int) Math.ceil(panelWidth * 0.068));
+        int insetY = Math.max(14, (int) Math.ceil(panelHeight * 0.104));
+        int innerLeft = x + insetX;
+        int innerRight = x + panelWidth - insetX;
+        int innerTop = y + insetY;
+        int innerBottom = y + panelHeight - insetY;
+        int innerW = Math.max(80, innerRight - innerLeft);
+        int innerH = Math.max(64, innerBottom - innerTop);
+
+        int titleHeight = innerH < 150 ? 20 : Math.max(24, Math.min(36, panelHeight / 8));
+        int bannerY = innerTop;
+        Component title = Component.translatable(speakerKey).withStyle(TITLE_STYLE);
+        int bannerWidth = Math.max(100, Math.min(innerW - 12,
+                Math.max(140, Math.min(360, font.width(title) + 48))));
+        int bannerX = x + (panelWidth - bannerWidth) / 2;
+
+        int buttonHeight = innerH < 150 ? 18 : Math.min(28, Math.max(20, panelHeight / 10));
+        int buttonY = innerBottom - buttonHeight;
+        int dividerPad = innerH < 155 ? 6 : 11;
+        int viewportTop = bannerY + titleHeight + dividerPad;
+        int viewportBottom = Math.max(viewportTop + 20, buttonY - dividerPad);
         int viewportHeight = viewportBottom - viewportTop;
 
         Identifier portrait = portraitTexture();
-        boolean showPortrait = portrait != null && panelWidth >= 300 && viewportHeight >= 70;
-        int portraitHeight = showPortrait ? Math.min(140, Math.max(48, viewportHeight - 8)) : 0;
+        boolean showPortrait = portrait != null && panelWidth >= 290 && viewportHeight >= 54;
+        int portraitHeight = showPortrait ? Math.min(140, Math.max(44, viewportHeight - 6)) : 0;
         int portraitWidth = portraitHeight > 0 ? portraitHeight * 3 / 4 : 0;
-        int portraitX = x + 22;
+        int portraitX = innerLeft + 2;
         int portraitY = viewportTop + Math.max(0, (viewportHeight - portraitHeight) / 2);
-        int textX = showPortrait ? portraitX + portraitWidth + 18 : x + 24;
-        int scrollbarX = x + panelWidth - 23;
-        int crestReserve = showPortrait && panelWidth >= 480 && viewportHeight >= 76 ? 68 : 0;
-        int textWidth = Math.max(8, scrollbarX - textX - 8 - crestReserve);
+        int textX = showPortrait ? portraitX + portraitWidth + (panelWidth < 380 ? 10 : 16) : innerLeft + 4;
+        int scrollbarX = innerRight - 5;
+        int crestReserve = showPortrait && panelWidth >= 480 && viewportHeight >= 76 ? 64 : 0;
+        int textWidth = Math.max(24, scrollbarX - textX - 6 - crestReserve);
 
-        int buttonMargin = panelWidth >= 420 ? 36 : Math.min(16, Math.max(6, panelWidth / 12));
-        int gap = panelWidth >= 420 ? 18 : 10;
-        int buttonAreaWidth = Math.max(2, panelWidth - buttonMargin * 2 - gap);
-        int actionButtonWidth = Math.max(1, buttonAreaWidth * 6 / 10);
-        int closeButtonWidth = Math.max(1, buttonAreaWidth - actionButtonWidth);
+        int buttonMargin = panelWidth >= 440 ? Math.max(insetX + 6, 36) : insetX;
+        int gap = panelWidth >= 420 ? 16 : 8;
+        int buttonAreaWidth = Math.max(40, panelWidth - buttonMargin * 2 - gap);
+        int actionButtonWidth = Math.max(20, buttonAreaWidth * 6 / 10);
+        int closeButtonWidth = Math.max(20, buttonAreaWidth - actionButtonWidth);
         int actionButtonX = x + buttonMargin;
         int closeButtonX = actionButtonX + actionButtonWidth + gap;
 
-        return new Layout(x, y, panelWidth, panelHeight, titleHeight,
+        return new Layout(x, y, panelWidth, panelHeight,
+                bannerX, bannerY, bannerWidth, titleHeight,
                 portraitX, portraitY, portraitWidth, portraitHeight,
                 textX, textWidth, viewportTop, viewportBottom, scrollbarX,
                 buttonY, buttonHeight, actionButtonX, actionButtonWidth, closeButtonX, closeButtonWidth);
@@ -227,21 +247,23 @@ public final class RefugioDialogueScreen extends Screen {
 
     private void drawTitleBanner(GuiGraphicsExtractor graphics, Layout layout) {
         Component title = Component.translatable(speakerKey).withStyle(TITLE_STYLE);
-        int bannerWidth = Math.min(layout.panelWidth - 28,
-                Math.max(140, Math.min(360, font.width(title) + 48)));
-        bannerWidth = Math.max(1, bannerWidth);
+        int bannerWidth = layout.bannerWidth;
         int bannerHeight = layout.titleHeight;
-        int x = layout.x + (layout.panelWidth - bannerWidth) / 2;
-        int y = layout.y + 10;
-        blitFull(graphics, TITLE_PLAQUE_TEXTURE, x, y, bannerWidth, bannerHeight);
-        if (bannerWidth < layout.panelWidth - 56) {
-            drawDiamond(graphics, x - 10, y + bannerHeight / 2, 3, 0xFFB89455);
-            drawDiamond(graphics, x + bannerWidth + 10, y + bannerHeight / 2, 3, 0xFFB89455);
+        int x = layout.bannerX;
+        int y = layout.bannerY;
+        if (bannerWidth > 0 && bannerHeight > 0) {
+            graphics.blit(TITLE_PLAQUE_TEXTURE, x, y, x + bannerWidth, y + bannerHeight,
+                    0.02F, 0.98F, 0.32F, 0.66F);
+        }
+        if (bannerWidth < layout.panelWidth - 64) {
+            drawDiamond(graphics, x - 9, y + bannerHeight / 2, 3, 0xFFB89455);
+            drawDiamond(graphics, x + bannerWidth + 9, y + bannerHeight / 2, 3, 0xFFB89455);
         }
 
-        int textWidth = Math.max(8, bannerWidth - 36);
+        int textWidth = Math.max(16, bannerWidth - 28);
         List<FormattedCharSequence> lines = font.split(title, textWidth);
-        int count = Math.min(2, lines.size());
+        int maxLines = bannerHeight >= font.lineHeight * 2 + 2 ? 2 : 1;
+        int count = Math.min(maxLines, lines.size());
         int textY = y + Math.max(0, (bannerHeight - count * font.lineHeight) / 2);
         for (int i = 0; i < count; i++) {
             FormattedCharSequence line = lines.get(i);
@@ -285,7 +307,7 @@ public final class RefugioDialogueScreen extends Screen {
     private void drawRefugeCrest(GuiGraphicsExtractor graphics, Layout layout) {
         int crestWidth = 56;
         int crestHeight = 68;
-        int x = layout.x + layout.panelWidth - 88;
+        int x = layout.scrollbarX - crestWidth - 6;
         int y = layout.viewportTop + Math.max(0,
                 (layout.viewportBottom - layout.viewportTop - crestHeight) / 2);
         int center = x + crestWidth / 2;
@@ -320,7 +342,7 @@ public final class RefugioDialogueScreen extends Screen {
     private int maxDialogueScroll(int top, int bottom, int textWidth) {
         int contentHeight = lineKeys.stream()
                 .mapToInt(key -> font.split(Component.translatable(key).withStyle(INK_STYLE), textWidth).size()
-                        * (font.lineHeight + 2) + 6).sum();
+                        * (font.lineHeight + 2) + 5).sum();
         return Math.max(0, contentHeight - (bottom - top));
     }
 
@@ -331,7 +353,7 @@ public final class RefugioDialogueScreen extends Screen {
     private int dialogueScrollbarThumbHeight(int top, int bottom, int textWidth) {
         int track = bottom - top;
         int content = track + maxDialogueScroll(top, bottom, textWidth);
-        return content <= track ? track : Math.max(24, track * track / content);
+        return content <= track ? track : Math.max(18, track * track / content);
     }
 
     private int dialogueScrollbarThumbTop(int top, int bottom, int textWidth) {
@@ -371,21 +393,27 @@ public final class RefugioDialogueScreen extends Screen {
         }
         boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         if (hovered && w > 12 && h > 10) {
-            graphics.fill(x + 6, y + 5, x + w - 6, y + h - 5, 0x24E8B954);
-            border(graphics, x + 3, y + 3, w - 6, h - 6, 0xB8D8B677);
-            graphics.fill(x + 6, y + 4, x + w - 6, y + 5, 0xA0FFF0BA);
-            drawDiamond(graphics, x + 7, y + h / 2, 2, 0xFFE9C77F);
-            drawDiamond(graphics, x + w - 8, y + h / 2, 2, 0xFFE9C77F);
+            int insetX = w < 50 ? 3 : 6;
+            int insetY = h < 20 ? 3 : 5;
+            graphics.fill(x + insetX, y + insetY, x + w - insetX, y + h - insetY, 0x24E8B954);
+            border(graphics, x + 2, y + 2, w - 4, h - 4, 0xB8D8B677);
+            graphics.fill(x + insetX, y + insetY - 1, x + w - insetX, y + insetY, 0xA0FFF0BA);
+            if (w >= 48) {
+                drawDiamond(graphics, x + 7, y + h / 2, 2, 0xFFE9C77F);
+                drawDiamond(graphics, x + w - 8, y + h / 2, 2, 0xFFE9C77F);
+            }
         }
 
         MutableComponent displayLabel = label.setStyle(hovered
                 ? BUTTON_TEXT_STYLE.withColor(0xFFFFE7B0) : BUTTON_TEXT_STYLE);
-        boolean showIcon = w >= 90;
+        boolean showIcon = w >= 92 && h >= 18;
         int iconSize = showIcon ? 14 : 0;
         int iconGap = showIcon ? 6 : 0;
+        int textPad = w < 100 ? 12 : 20;
         List<FormattedCharSequence> lines = font.split(displayLabel,
-                Math.max(8, w - 20 - iconSize - iconGap));
-        int count = Math.min(2, lines.size());
+                Math.max(8, w - textPad - iconSize - iconGap));
+        int maxLines = h >= font.lineHeight * 2 + 2 ? 2 : 1;
+        int count = Math.min(maxLines, lines.size());
         int textBlockWidth = lines.stream().limit(count).mapToInt(font::width).max().orElse(0);
         int groupWidth = iconSize + iconGap + textBlockWidth;
         int groupX = x + Math.max(0, (w - groupWidth) / 2);
@@ -451,7 +479,8 @@ public final class RefugioDialogueScreen extends Screen {
         graphics.fill(x + w - 1, y, x + w, y + h, color);
     }
 
-    private record Layout(int x, int y, int panelWidth, int panelHeight, int titleHeight,
+    private record Layout(int x, int y, int panelWidth, int panelHeight,
+                          int bannerX, int bannerY, int bannerWidth, int titleHeight,
                           int portraitX, int portraitY, int portraitWidth, int portraitHeight,
                           int textX, int textWidth, int viewportTop, int viewportBottom, int scrollbarX,
                           int buttonY, int buttonHeight, int actionButtonX, int actionButtonWidth,

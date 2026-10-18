@@ -48,6 +48,7 @@ public final class RefugioAbilityScreen extends Screen {
     private RefugioAbilityData.Track selectedTrack = RefugioAbilityData.Track.SWORD;
     private int skillPageIndex;
     private String selectedSkillId;
+    private int detailScrollOffset;
 
     public RefugioAbilityScreen(String encodedState) {
         super(Component.translatable("gui.refugio.abilities.title"));
@@ -84,23 +85,20 @@ public final class RefugioAbilityScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        int px = panelX();
-        int py = panelY();
-        int pw = panelWidth();
-        int ph = panelHeight();
-        drawParchmentAndWoodFrame(graphics, px, py, pw, ph);
-        drawHeader(graphics, mouseX, mouseY, px, py, pw);
+        AbilityLayout layout = computeLayout();
+        drawParchmentAndWoodFrame(graphics, layout.panel);
+        drawHeader(graphics, mouseX, mouseY, layout);
         if (showingCategories) {
-            drawCategoryOverview(graphics, mouseX, mouseY, px, py, pw, ph);
+            drawCategoryOverview(graphics, mouseX, mouseY, layout);
         } else if (showingSubcategories) {
-            drawNavigationHeader(graphics, mouseX, mouseY, px, py, pw);
-            drawSubcategoryOverview(graphics, mouseX, mouseY, px, py, pw, ph);
+            drawNavigationHeader(graphics, mouseX, mouseY, layout);
+            drawSubcategoryOverview(graphics, mouseX, mouseY, layout);
         } else if (showingSkillDetails) {
-            drawNavigationHeader(graphics, mouseX, mouseY, px, py, pw);
-            drawSkillDetailsPage(graphics, mouseX, mouseY, px, py, pw, ph);
+            drawNavigationHeader(graphics, mouseX, mouseY, layout);
+            drawSkillDetailsPage(graphics, mouseX, mouseY, layout);
         } else {
-            drawNavigationHeader(graphics, mouseX, mouseY, px, py, pw);
-            drawSkillPath(graphics, mouseX, mouseY, px, py, pw, ph);
+            drawNavigationHeader(graphics, mouseX, mouseY, layout);
+            drawSkillPath(graphics, mouseX, mouseY, layout);
         }
     }
 
@@ -109,21 +107,19 @@ public final class RefugioAbilityScreen extends Screen {
         if (event.button() != 0) return super.mouseClicked(event, doubleClick);
         double mx = event.x();
         double my = event.y();
-        int px = panelX();
-        int py = panelY();
-        int pw = panelWidth();
-        int ph = panelHeight();
-        if (inside(mx, my, closeButtonX(px, pw), py + 24, 22, 22)) {
+        AbilityLayout layout = computeLayout();
+        if (layout.closeButton.contains(mx, my)) {
             closeScreen();
             return true;
         }
         if (showingCategories) {
-            for (int i = 0; i < RefugioAbilityData.Branch.values().length; i++) {
-                CategoryCardBounds card = categoryCardBounds(i);
-                if (!inside(mx, my, card.x(), card.y(), card.width(), card.height())) continue;
+            RefugioAbilityData.Branch[] branches = RefugioAbilityData.Branch.values();
+            for (int i = 0; i < Math.min(branches.length, layout.categoryCards.size()); i++) {
+                if (!layout.categoryCards.get(i).contains(mx, my)) continue;
                 branchIndex = i;
                 RefugioAbilityData.Branch branch = currentBranch();
                 skillPageIndex = 0;
+                detailScrollOffset = 0;
                 feedbackKey = "";
                 showingSkillDetails = false;
                 showingCategories = false;
@@ -138,7 +134,7 @@ public final class RefugioAbilityScreen extends Screen {
             }
             return super.mouseClicked(event, doubleClick);
         }
-        if (inside(mx, my, px + 18, py + 62, 150, 26)) {
+        if (layout.backButton.contains(mx, my)) {
             if (showingSkillDetails) {
                 showingSkillDetails = false;
             } else if (showingSubcategories) {
@@ -150,20 +146,21 @@ public final class RefugioAbilityScreen extends Screen {
                 showingCategories = true;
             }
             skillPageIndex = 0;
+            detailScrollOffset = 0;
             feedbackKey = "";
             return true;
         }
         if (showingSubcategories) {
             List<RefugioAbilityData.Track> tracks = RefugioAbilityData.tracks(currentBranch());
-            for (int i = 0; i < tracks.size(); i++) {
+            for (int i = 0; i < Math.min(tracks.size(), layout.trackCards.size()); i++) {
                 RefugioAbilityData.Track track = tracks.get(i);
-                CategoryCardBounds card = trackCardBounds(i, tracks.size(), px, py, pw, ph);
-                if (!inside(mx, my, card.x(), card.y(), card.width(), card.height())
+                if (!layout.trackCards.get(i).contains(mx, my)
                         || RefugioAbilityData.skills(track).isEmpty()) continue;
                 selectedTrack = track;
                 List<RefugioAbilityData.Skill> trackSkills = currentTrackSkills();
                 if (!trackSkills.isEmpty()) selectedSkillId = trackSkills.getFirst().id();
                 skillPageIndex = 0;
+                detailScrollOffset = 0;
                 feedbackKey = "";
                 showingSubcategories = false;
                 return true;
@@ -171,19 +168,12 @@ public final class RefugioAbilityScreen extends Screen {
             return super.mouseClicked(event, doubleClick);
         }
         if (showingSkillDetails) {
-            int detailX = px + 26;
-            int detailWidth = pw - 52;
-            int gap = 12;
-            int buttonWidth = Math.max(1, (detailWidth - 36 - gap) / 2);
-            int buttonY = skillDetailButtonsY(py, ph);
-            int leftButtonX = detailX + 18;
-            int rightButtonX = leftButtonX + buttonWidth + gap;
-            if (inside(mx, my, leftButtonX, buttonY, buttonWidth, 30) && canPurchase(selectedSkill())) {
+            if (layout.buyButton.contains(mx, my) && canPurchase(selectedSkill())) {
                 ClientPlayNetworking.send(new RefugioUiPayload("BUY\t" + selectedSkillId));
                 feedbackKey = "gui.refugio.abilities.feedback.processing";
                 return true;
             }
-            if (inside(mx, my, rightButtonX, buttonY, buttonWidth, 30) && selectedRank() > 0) {
+            if (layout.toggleButton.contains(mx, my) && selectedRank() > 0) {
                 ClientPlayNetworking.send(new RefugioUiPayload("TOGGLE\t" + selectedSkillId));
                 feedbackKey = "gui.refugio.abilities.feedback.processing";
                 return true;
@@ -191,23 +181,21 @@ public final class RefugioAbilityScreen extends Screen {
             return super.mouseClicked(event, doubleClick);
         }
 
-        int controlsY = skillPageControlsY(py, ph);
-        int previousX = skillPreviousButtonX(px, pw);
-        int nextX = skillNextButtonX(px, pw);
-        if (inside(mx, my, previousX, controlsY, skillPageButtonWidth(ph), skillPageButtonHeight(ph))) {
+        if (layout.prevPageButton.contains(mx, my) && skillPageIndex > 0) {
             skillPageIndex = Math.max(0, skillPageIndex - 1);
             return true;
         }
-        if (inside(mx, my, nextX, controlsY, skillPageButtonWidth(ph), skillPageButtonHeight(ph))) {
-            skillPageIndex = Math.min(skillPageCount(pw) - 1, skillPageIndex + 1);
+        if (layout.nextPageButton.contains(mx, my) && skillPageIndex + 1 < layout.pageCount) {
+            skillPageIndex = Math.min(layout.pageCount - 1, skillPageIndex + 1);
             return true;
         }
-        int pageStart = skillPageStart(pw);
-        int pageEnd = Math.min(currentTrackSkills().size(), pageStart + skillsPerPage(pw));
-        for (int index = pageStart; index < pageEnd; index++) {
-            SkillCardBounds card = skillPageCardBounds(index, px, py, pw, ph);
-            if (inside(mx, my, card.x(), card.y(), card.width(), card.height())) {
-                selectedSkillId = currentTrackSkills().get(index).id();
+        List<RefugioAbilityData.Skill> trackSkills = currentTrackSkills();
+        for (int i = 0; i < layout.skillCards.size(); i++) {
+            int skillIndex = layout.pageStart + i;
+            if (skillIndex >= trackSkills.size()) break;
+            if (layout.skillCards.get(i).contains(mx, my)) {
+                selectedSkillId = trackSkills.get(skillIndex).id();
+                detailScrollOffset = 0;
                 feedbackKey = "";
                 showingSkillDetails = true;
                 return true;
@@ -218,15 +206,23 @@ public final class RefugioAbilityScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (!showingCategories && !showingSubcategories && !showingSkillDetails && verticalAmount != 0.0) {
-            int py = panelY();
-            int ph = panelHeight();
-            int gridTop = skillPageGridTop(py, ph);
-            if (inside(mouseX, mouseY, panelX() + 18, gridTop, panelWidth() - 36,
-                    Math.max(1, skillPageGridBottom(py, ph) - gridTop))) {
-                skillPageIndex = Math.max(0, Math.min(skillPageCount(panelWidth()) - 1,
+        if (verticalAmount == 0.0) return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        AbilityLayout layout = computeLayout();
+        if (!showingCategories && !showingSubcategories && !showingSkillDetails) {
+            if (layout.skillGridArea.contains(mouseX, mouseY) && layout.pageCount > 1) {
+                skillPageIndex = Math.max(0, Math.min(layout.pageCount - 1,
                         skillPageIndex - (int) Math.signum(verticalAmount)));
                 return true;
+            }
+        } else if (showingSkillDetails) {
+            RefugioAbilityData.Skill skill = selectedSkill();
+            if (skill != null && layout.detailDescriptionBox.contains(mouseX, mouseY)) {
+                int maxScroll = maxDetailScroll(skill, layout);
+                if (maxScroll > 0) {
+                    detailScrollOffset = Math.max(0, Math.min(maxScroll,
+                            detailScrollOffset - (int) Math.signum(verticalAmount) * (font.lineHeight + 2)));
+                    return true;
+                }
             }
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
@@ -237,55 +233,291 @@ public final class RefugioAbilityScreen extends Screen {
         closeScreen();
     }
 
-    private void drawParchmentAndWoodFrame(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
-        int insetX = Math.max(1, (int) Math.round(w * 0.055));
-        int insetY = Math.max(1, (int) Math.round(h * 0.085));
-        blitFull(graphics, PARCHMENT_TEXTURE, x + insetX, y + insetY,
-                Math.max(1, w - insetX * 2), Math.max(1, h - insetY * 2));
-        blitFull(graphics, WOOD_FRAME_TEXTURE, x, y, w, h);
+    private AbilityLayout computeLayout() {
+        int marginX = width < 400 ? 6 : (width < 640 ? 12 : 18);
+        int marginY = height < 240 ? 4 : (height < 360 ? 10 : 16);
+        int availW = Math.max(180, width - marginX * 2);
+        int availH = Math.max(136, height - marginY * 2);
+
+        double targetAspect = 1.72;
+        int maxW = Math.min(860, availW);
+        int maxH = Math.min(520, availH);
+        int pw = maxW;
+        int ph = maxH;
+        if (pw > (int) Math.round(ph * 1.84)) {
+            pw = Math.max(Math.min(maxW, 320), (int) Math.round(ph * targetAspect));
+        } else if (ph > (int) Math.round(pw / 1.36)) {
+            ph = Math.max(Math.min(maxH, 210), (int) Math.round(pw / 1.48));
+        }
+        pw = Math.min(maxW, pw);
+        ph = Math.min(maxH, ph);
+        int px = (width - pw) / 2;
+        int py = (height - ph) / 2;
+        Rect panel = new Rect(px, py, pw, ph);
+
+        int insetX = Math.max(14, (int) Math.ceil(pw * 0.068));
+        int insetY = Math.max(12, (int) Math.ceil(ph * 0.104));
+        int innerX = px + insetX;
+        int innerY = py + insetY;
+        int innerW = Math.max(120, pw - insetX * 2);
+        int innerH = Math.max(90, ph - insetY * 2);
+        Rect inner = new Rect(innerX, innerY, innerW, innerH);
+
+        int headerH = innerH < 140 ? 16 : (innerH < 175 ? 18 : (innerH < 220 ? 22 : (innerH < 280 ? 26 : 30)));
+        int headerY = innerY;
+        int closeSize = Math.max(14, Math.min(22, headerH - (headerH <= 18 ? 0 : 2)));
+        int closeX = inner.right() - closeSize;
+        int closeY = headerY + (headerH - closeSize) / 2;
+        Rect closeButton = new Rect(closeX, closeY, closeSize, closeSize);
+
+        int headerGap = innerW < 340 ? 4 : 8;
+        Component fullBalanceText = Component.translatable("gui.refugio.abilities.balance", coins).withStyle(LIGHT_STYLE);
+        Component shortBalanceText = Component.literal(Integer.toString(coins)).withStyle(LIGHT_STYLE);
+        boolean compactBalance = innerW < 450;
+        int desiredBadgeW = compactBalance
+                ? Math.max(48, Math.min(86, font.width(shortBalanceText) + 28))
+                : Math.min(156, Math.max(106, font.width(fullBalanceText) + 34));
+        int badgeH = closeSize;
+        int badgeX = closeX - headerGap - desiredBadgeW;
+        int badgeY = headerY + (headerH - badgeH) / 2;
+        Rect balanceBadge = new Rect(badgeX, badgeY, desiredBadgeW, badgeH);
+
+        Component titleComponent = Component.translatable("gui.refugio.abilities.title").withStyle(LIGHT_STYLE);
+        Component kickerComponent = Component.translatable("gui.refugio.abilities.kicker").withStyle(MUTED_STYLE);
+        int maxBannerRight = badgeX - headerGap;
+        int availBannerArea = Math.max(64, maxBannerRight - innerX);
+        int idealBannerW = Math.min(340, Math.max(140, font.width(titleComponent) + 42));
+        int centeredBannerX = px + (pw - idealBannerW) / 2;
+        boolean canCenterBanner = innerW >= 460
+                && centeredBannerX >= innerX
+                && centeredBannerX + idealBannerW <= maxBannerRight;
+        int bannerW = canCenterBanner ? idealBannerW : Math.min(idealBannerW, availBannerArea);
+        int bannerX = canCenterBanner ? centeredBannerX : innerX;
+        Rect titleBanner = new Rect(bannerX, headerY, bannerW, headerH);
+        boolean showKicker = canCenterBanner && (bannerX - innerX >= font.width(kickerComponent) + 22);
+
+        int sectionGap = innerH < 145 ? 2 : (innerH < 185 ? 3 : (innerH < 230 ? 5 : 7));
+        int subHeaderTop = headerY + headerH + sectionGap;
+
+        int promptY = subHeaderTop + (innerH < 180 ? 0 : 2);
+        int categoryGridTop = promptY + font.lineHeight + sectionGap;
+        int categoryGridH = Math.max(36, inner.bottom() - categoryGridTop);
+        int catGapX = innerW < 340 ? 6 : 12;
+        int catGapY = categoryGridH < 90 ? 4 : (categoryGridH < 120 ? 6 : 10);
+        int catCardW = Math.max(50, (innerW - catGapX) / 2);
+        int catCardH = Math.max(16, (categoryGridH - catGapY) / 2);
+        List<Rect> categoryCards = new ArrayList<>(4);
+        for (int i = 0; i < RefugioAbilityData.Branch.values().length; i++) {
+            int col = i % 2;
+            int row = i / 2;
+            categoryCards.add(new Rect(
+                    innerX + col * (catCardW + catGapX),
+                    categoryGridTop + row * (catCardH + catGapY),
+                    catCardW, catCardH));
+        }
+
+        int navH = innerH < 140 ? 14 : (innerH < 175 ? 16 : (innerH < 220 ? 20 : (innerH < 270 ? 22 : 25)));
+        int navY = subHeaderTop;
+        int backW = Math.max(76, Math.min(146, innerW * 34 / 100));
+        Rect backButton = new Rect(innerX, navY, backW, navH);
+
+        int subPromptY = navY + navH + sectionGap;
+        int trackGridTop = subPromptY + font.lineHeight + sectionGap;
+        int trackAvailH = Math.max(36, inner.bottom() - trackGridTop);
+        List<RefugioAbilityData.Track> tracks = RefugioAbilityData.tracks(currentBranch());
+        int trackCount = Math.max(1, tracks.size());
+        int trackRows = Math.max(1, (trackCount + 1) / 2);
+        int trackGapX = catGapX;
+        int trackGapY = trackAvailH < 90 ? 4 : (trackAvailH < 120 ? 6 : 10);
+        int trackCardW = Math.max(50, (innerW - trackGapX) / 2);
+        int maxTrackCardH = Math.max(16, (trackAvailH - trackGapY * Math.max(0, trackRows - 1)) / trackRows);
+        int trackCardH = Math.min(82, maxTrackCardH);
+        int totalTrackGridH = trackRows * trackCardH + Math.max(0, trackRows - 1) * trackGapY;
+        int actualTrackTop = trackGridTop + Math.max(0, (trackAvailH - totalTrackGridH) / 2);
+        List<Rect> trackCards = new ArrayList<>(trackCount);
+        for (int i = 0; i < tracks.size(); i++) {
+            int row = i / 2;
+            int col = i % 2;
+            int rowCount = Math.min(2, tracks.size() - row * 2);
+            int rowWidth = rowCount * trackCardW + Math.max(0, rowCount - 1) * trackGapX;
+            int rowLeft = innerX + (innerW - rowWidth) / 2;
+            trackCards.add(new Rect(
+                    rowLeft + col * (trackCardW + trackGapX),
+                    actualTrackTop + row * (trackCardH + trackGapY),
+                    trackCardW, trackCardH));
+        }
+
+        int dividerY = navY + navH + Math.max(2, sectionGap - 1);
+        int pathAreaTop = dividerY + 2;
+        int pathAvailH = Math.max(40, inner.bottom() - pathAreaTop);
+        boolean compactPath = pathAvailH < 132;
+
+        List<RefugioAbilityData.Skill> trackSkills = currentTrackSkills();
+        int pageCount = Math.max(1, (trackSkills.size() + SKILLS_PER_PAGE - 1) / SKILLS_PER_PAGE);
+        skillPageIndex = Math.max(0, Math.min(skillPageIndex, pageCount - 1));
+        int pageStart = skillPageIndex * SKILLS_PER_PAGE;
+        int visibleSkillCount = Math.max(0, Math.min(SKILLS_PER_PAGE, trackSkills.size() - pageStart));
+
+        int pageBtnW = compactPath ? (pathAvailH < 88 ? 20 : 24) : 32;
+        int pageBtnH = compactPath ? (pathAvailH < 88 ? 13 : (pathAvailH < 105 ? 15 : 18)) : 20;
+        Rect prevPageButton;
+        Rect nextPageButton;
+        int pathLabelY;
+        int skillGridTop;
+        int skillGridBottom;
+
+        if (compactPath) {
+            int controlsY = pathAreaTop + 1;
+            nextPageButton = new Rect(inner.right() - pageBtnW, controlsY, pageBtnW, pageBtnH);
+            prevPageButton = new Rect(nextPageButton.x - 4 - pageBtnW, controlsY, pageBtnW, pageBtnH);
+            pathLabelY = controlsY + Math.max(0, (pageBtnH - font.lineHeight) / 2);
+            skillGridTop = controlsY + pageBtnH + (pathAvailH < 96 ? 2 : 4);
+            skillGridBottom = inner.bottom();
+        } else {
+            pathLabelY = pathAreaTop + 2;
+            int controlsY = inner.bottom() - pageBtnH;
+            int center = innerX + innerW / 2;
+            int halfSpan = Math.min(82, Math.max(54, innerW / 6));
+            prevPageButton = new Rect(center - halfSpan - pageBtnW, controlsY, pageBtnW, pageBtnH);
+            nextPageButton = new Rect(center + halfSpan, controlsY, pageBtnW, pageBtnH);
+            skillGridTop = pathLabelY + font.lineHeight + 5;
+            skillGridBottom = controlsY - 6;
+        }
+
+        int gridAvailH = Math.max(28, skillGridBottom - skillGridTop);
+        int skillColumns = (innerW >= 320 && gridAvailH >= 48) ? SKILLS_PER_PAGE : 2;
+        int skillRows = Math.max(1, (Math.max(1, visibleSkillCount) + skillColumns - 1) / skillColumns);
+        int skillGapX = skillColumns == 1 ? 0 : (innerW < 380 ? 6 : 10);
+        int skillGapY = skillRows == 1 ? 0 : (gridAvailH < 84 ? 3 : 7);
+        int skillCardW = Math.max(44, (innerW - skillGapX * (skillColumns - 1)) / skillColumns);
+        int maxAllowedCardH = Math.max(16, (gridAvailH - skillGapY * (skillRows - 1)) / skillRows);
+        int preferredCardH = skillRows == 1
+                ? Math.min(132, Math.max(48, (int) Math.round(skillCardW * 1.12)))
+                : Math.min(80, maxAllowedCardH);
+        int skillCardH = Math.min(maxAllowedCardH, preferredCardH);
+        int totalSkillGridH = skillRows * skillCardH + Math.max(0, skillRows - 1) * skillGapY;
+        int centeredSkillTop = skillGridTop + Math.max(0, (gridAvailH - totalSkillGridH) / 2);
+        Rect skillGridArea = new Rect(innerX, skillGridTop, innerW, gridAvailH);
+
+        List<Rect> skillCards = new ArrayList<>(visibleSkillCount);
+        for (int i = 0; i < visibleSkillCount; i++) {
+            int row = i / skillColumns;
+            int col = i % skillColumns;
+            skillCards.add(new Rect(
+                    innerX + col * (skillCardW + skillGapX),
+                    centeredSkillTop + row * (skillCardH + skillGapY),
+                    skillCardW, skillCardH));
+        }
+
+        int detailTop = navY + navH + Math.max(2, sectionGap - 1);
+        int detailH = Math.max(52, inner.bottom() - detailTop);
+        Rect detailPanel = new Rect(innerX, detailTop, innerW, detailH);
+        int detailPadX = innerW < 340 ? 6 : 14;
+        int detailPadY = detailH < 95 ? 3 : (detailH < 140 ? 6 : 10);
+        int detailInnerX = detailPanel.x + detailPadX;
+        int detailInnerW = Math.max(60, detailPanel.w - detailPadX * 2);
+        int actionBtnH = detailH < 90 ? 14 : (detailH < 125 ? 18 : (detailH < 170 ? 22 : 28));
+        int actionBtnY = detailPanel.bottom() - detailPadY - actionBtnH;
+        int actionGap = innerW < 340 ? 6 : 12;
+        int actionBtnW = Math.max(40, (detailInnerW - actionGap) / 2);
+        Rect buyButton = new Rect(detailInnerX, actionBtnY, actionBtnW, actionBtnH);
+        Rect toggleButton = new Rect(buyButton.right() + actionGap, actionBtnY, actionBtnW, actionBtnH);
+
+        boolean showFeedback = !feedbackKey.isEmpty()
+                && !feedbackKey.equals("gui.refugio.abilities.feedback.enabled")
+                && !feedbackKey.equals("gui.refugio.abilities.feedback.disabled");
+        int availAboveButtons = actionBtnY - (detailPanel.y + detailPadY) - (detailH < 100 ? 2 : 5);
+        boolean compactDetails = availAboveButtons < 96;
+        Rect detailStatusBox;
+        Rect detailRankBar;
+        Rect detailDescriptionBox;
+        int detailFeedbackY;
+
+        if (compactDetails) {
+            int statusH = font.lineHeight + (availAboveButtons < 56 ? 2 : 4);
+            detailStatusBox = new Rect(detailInnerX, detailPanel.y + detailPadY, detailInnerW, statusH);
+            int rankBarY = detailStatusBox.bottom() + (availAboveButtons < 56 ? 1 : 2);
+            int rankBarH = availAboveButtons < 56 ? 3 : 4;
+            detailRankBar = new Rect(detailInnerX, rankBarY, detailInnerW, rankBarH);
+            int descTop = detailRankBar.bottom() + (availAboveButtons < 56 ? 2 : 3);
+            int feedbackReserve = (showFeedback && availAboveButtons >= 58) ? (font.lineHeight + 1) : 0;
+            detailFeedbackY = actionBtnY - feedbackReserve - 1;
+            int descBottom = Math.max(descTop + font.lineHeight + 2,
+                    (feedbackReserve > 0 ? detailFeedbackY - 2 : actionBtnY - 2));
+            detailDescriptionBox = new Rect(detailInnerX, descTop, detailInnerW, Math.max(10, descBottom - descTop));
+        } else {
+            int rankBarY = detailPanel.y + detailPadY + font.lineHeight + 3;
+            detailRankBar = new Rect(detailInnerX, rankBarY, detailInnerW, 6);
+            int feedbackReserve = showFeedback ? (font.lineHeight + 2) : 0;
+            int statusH = font.lineHeight + feedbackReserve + 6;
+            int statusY = actionBtnY - 6 - statusH;
+            detailStatusBox = new Rect(detailInnerX, statusY, detailInnerW, statusH);
+            detailFeedbackY = statusY + 3 + font.lineHeight + 2;
+            int descTop = detailRankBar.bottom() + 5;
+            int descBottom = Math.max(descTop + font.lineHeight + 6, statusY - 5);
+            detailDescriptionBox = new Rect(detailInnerX, descTop, detailInnerW, Math.max(16, descBottom - descTop));
+        }
+
+        return new AbilityLayout(
+                panel, inner, titleBanner, balanceBadge, closeButton,
+                compactBalance, showKicker, promptY, categoryCards,
+                backButton, subPromptY, trackCards,
+                dividerY, pathLabelY, compactPath, pageStart, pageCount,
+                prevPageButton, nextPageButton, skillGridArea, skillCards,
+                detailPanel, compactDetails, showFeedback,
+                detailStatusBox, detailRankBar, detailDescriptionBox, detailFeedbackY,
+                buyButton, toggleButton
+        );
     }
 
-    private void drawHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int px, int py, int pw) {
+    private void drawParchmentAndWoodFrame(GuiGraphicsExtractor graphics, Rect panel) {
+        int insetX = Math.max(1, (int) Math.round(panel.w * 0.052));
+        int insetY = Math.max(1, (int) Math.round(panel.h * 0.082));
+        blitFull(graphics, PARCHMENT_TEXTURE, panel.x + insetX, panel.y + insetY,
+                Math.max(1, panel.w - insetX * 2), Math.max(1, panel.h - insetY * 2));
+        blitFull(graphics, WOOD_FRAME_TEXTURE, panel.x, panel.y, panel.w, panel.h);
+    }
+
+    private void drawHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
         Component title = Component.translatable("gui.refugio.abilities.title").withStyle(LIGHT_STYLE);
-        boolean compact = pw < 600;
-        int badgeWidth = compact ? 96 : 138;
-        int closeX = closeButtonX(px, pw);
-        int badgeRightInset = compact ? 88 : 94;
-        int badgeX = px + pw - badgeWidth - badgeRightInset;
-        int bannerWidth = compact ? Math.max(120, Math.min(148, pw - badgeWidth - 78))
-                : Math.min(420, Math.max(190, Math.min(pw - 280, font.width(title) + 56)));
-        int bannerX = compact ? px + 18 : px + (pw - bannerWidth) / 2;
-        int bannerY = py + 20;
-        int bannerHeight = 36;
-        blitFull(graphics, TITLE_PLAQUE_TEXTURE, bannerX, bannerY, bannerWidth, bannerHeight);
-        List<FormattedCharSequence> titleLines = font.split(title, Math.max(8, bannerWidth - 32));
-        int titleCount = Math.min(2, titleLines.size());
-        int titleY = bannerY + (bannerHeight - titleCount * font.lineHeight) / 2;
+        Rect banner = layout.titleBanner;
+        if (banner.w > 0 && banner.h > 0) {
+            graphics.blit(TITLE_PLAQUE_TEXTURE, banner.x, banner.y, banner.right(), banner.bottom(),
+                    0.02F, 0.98F, 0.32F, 0.66F);
+        }
+        List<FormattedCharSequence> titleLines = font.split(title, Math.max(16, banner.w - 24));
+        int maxLines = banner.h >= font.lineHeight * 2 + 4 ? 2 : 1;
+        int titleCount = Math.min(maxLines, titleLines.size());
+        int titleY = banner.y + Math.max(0, (banner.h - titleCount * font.lineHeight) / 2);
         for (int i = 0; i < titleCount; i++) {
             FormattedCharSequence line = titleLines.get(i);
-            graphics.textRenderer().accept(bannerX + (bannerWidth - font.width(line)) / 2,
+            graphics.textRenderer().accept(banner.x + (banner.w - font.width(line)) / 2,
                     titleY + i * font.lineHeight, line);
         }
-        if (!compact) {
-            text(graphics, Component.translatable("gui.refugio.abilities.kicker").withStyle(MUTED_STYLE), px + 20, py + 35);
-            drawDiamond(graphics, bannerX - 11, bannerY + bannerHeight / 2, 3, 0xFFB89455);
-            drawDiamond(graphics, bannerX + bannerWidth + 11, bannerY + bannerHeight / 2, 3, 0xFFB89455);
+        if (layout.showKicker) {
+            Component kicker = Component.translatable("gui.refugio.abilities.kicker").withStyle(MUTED_STYLE);
+            text(graphics, kicker, layout.inner.x, banner.y + (banner.h - font.lineHeight) / 2);
+            drawDiamond(graphics, banner.x - 9, banner.y + banner.h / 2, 3, 0xFFB89455);
+            drawDiamond(graphics, banner.right() + 9, banner.y + banner.h / 2, 3, 0xFFB89455);
         }
-        drawBalanceBadge(graphics, badgeX, py + 24, badgeWidth, 30, compact);
-        drawClose(graphics, mouseX, mouseY, closeX, py + 24);
+        drawBalanceBadge(graphics, layout.balanceBadge, layout.compactBalance);
+        drawClose(graphics, mouseX, mouseY, layout.closeButton);
     }
 
-    private void drawBalanceBadge(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean compact) {
-        graphics.fill(x, y, x + w, y + h, 0xFF56361F);
-        border(graphics, x, y, w, h, 0xFFC39A59);
-        graphics.fill(x + 2, y + 2, x + w - 2, y + 4, 0xFF79502A);
-        drawCoinIcon(graphics, x + 8, y + 9);
+    private void drawBalanceBadge(GuiGraphicsExtractor graphics, Rect badge, boolean compact) {
+        graphics.fill(badge.x, badge.y, badge.right(), badge.bottom(), 0xFF56361F);
+        border(graphics, badge.x, badge.y, badge.w, badge.h, 0xFFC39A59);
+        if (badge.h >= 18) {
+            graphics.fill(badge.x + 2, badge.y + 2, badge.right() - 2, badge.y + 4, 0xFF79502A);
+        }
+        int coinY = badge.y + Math.max(1, (badge.h - 12) / 2);
+        drawCoinIcon(graphics, badge.x + 5, coinY);
         MutableComponent balance = compact ? Component.literal(Integer.toString(coins))
                 : Component.translatable("gui.refugio.abilities.balance", coins);
-        List<FormattedCharSequence> lines = font.split(balance.withStyle(LIGHT_STYLE), Math.max(8, w - 34));
+        List<FormattedCharSequence> lines = font.split(balance.withStyle(LIGHT_STYLE), Math.max(8, badge.w - 24));
         if (!lines.isEmpty()) {
             FormattedCharSequence line = lines.getFirst();
-            graphics.textRenderer().accept(x + 29, y + (h - font.lineHeight) / 2, line);
+            graphics.textRenderer().accept(badge.x + 20, badge.y + (badge.h - font.lineHeight) / 2, line);
         }
     }
 
@@ -297,124 +529,127 @@ public final class RefugioAbilityScreen extends Screen {
         graphics.fill(x + 8, y + 5, x + 10, y + 8, 0xFFF2B847);
     }
 
-    private void drawCategoryOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                      int px, int py, int pw, int ph) {
-        Component prompt = Component.translatable("gui.refugio.abilities.choose_branch").withStyle(MUTED_STYLE);
-        text(graphics, prompt, px + (pw - font.width(prompt)) / 2, py + 78);
-        drawDiamond(graphics, px + pw / 2 - font.width(prompt) / 2 - 12, py + 82, 3, 0xFFB89455);
-        drawDiamond(graphics, px + pw / 2 + font.width(prompt) / 2 + 12, py + 82, 3, 0xFFB89455);
-        for (int i = 0; i < RefugioAbilityData.Branch.values().length; i++) {
-            drawCategoryCard(graphics, mouseX, mouseY, i);
+    private void drawCategoryOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
+        drawCenteredPrompt(graphics, Component.translatable("gui.refugio.abilities.choose_branch").withStyle(MUTED_STYLE),
+                layout.inner, layout.promptY);
+        RefugioAbilityData.Branch[] branches = RefugioAbilityData.Branch.values();
+        for (int i = 0; i < Math.min(branches.length, layout.categoryCards.size()); i++) {
+            drawCategoryCard(graphics, mouseX, mouseY, i, layout.categoryCards.get(i));
         }
     }
 
-    private void drawCategoryCard(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int index) {
-        CategoryCardBounds card = categoryCardBounds(index);
-        int x = card.x();
-        int y = card.y();
-        int w = card.width();
-        int h = card.height();
-        boolean compact = panelHeight() < 260;
-        boolean hovered = inside(mouseX, mouseY, x, y, w, h);
-        int accent = ACCENTS[index];
-        graphics.fill(x, y, x + w, y + h, hovered ? 0xFFF5E4C0 : 0xFFEAD8B2);
-        border(graphics, x, y, w, h, hovered ? 0xFFD3A34F : 0xFF987348);
-        graphics.fill(x + 3, y + 5, x + 7, y + h - 5, accent);
+    private void drawCenteredPrompt(GuiGraphicsExtractor graphics, Component prompt, Rect inner, int y) {
+        List<FormattedCharSequence> lines = font.split(prompt, Math.max(40, inner.w - 32));
+        if (lines.isEmpty()) return;
+        FormattedCharSequence line = lines.getFirst();
+        int lineW = font.width(line);
+        int textX = inner.x + (inner.w - lineW) / 2;
+        graphics.textRenderer().accept(textX, y, line);
+        if (lineW + 28 < inner.w) {
+            int diamondY = y + font.lineHeight / 2;
+            drawDiamond(graphics, textX - 10, diamondY, 3, 0xFFB89455);
+            drawDiamond(graphics, textX + lineW + 10, diamondY, 3, 0xFFB89455);
+        }
+    }
 
+    private void drawCategoryCard(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int index, Rect card) {
+        boolean hovered = card.contains(mouseX, mouseY);
+        int accent = ACCENTS[index % ACCENTS.length];
         RefugioAbilityData.Branch branch = RefugioAbilityData.Branch.values()[index];
         List<RefugioAbilityData.Skill> skills = RefugioAbilityData.skills(branch);
-        if (!skills.isEmpty()) {
-            ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(skills.getFirst().icon())));
-            graphics.item(icon, x + 17, y + (h - 16) / 2);
-        }
-        int textX = x + 48;
-        int textWidth = Math.max(8, w - 76);
-        List<FormattedCharSequence> nameLines = font.split(branchName(branch).withStyle(INK_STYLE), textWidth);
-        int titleLines = Math.min(compact ? 1 : 2, nameLines.size());
-        int titleY = y + (compact ? 4 : 10);
-        for (int line = 0; line < titleLines; line++) {
-            graphics.textRenderer().accept(textX, titleY + line * font.lineHeight, nameLines.get(line));
-        }
-        Component count = Component.translatable("gui.refugio.abilities.branch_skill_count", skills.size())
+        String iconId = skills.isEmpty() ? "minecraft:book" : skills.getFirst().icon();
+        int learned = 0;
+        for (RefugioAbilityData.Skill skill : skills) if (rank(skill) > 0) learned++;
+        Component countLabel = Component.translatable("gui.refugio.abilities.branch_skill_count", skills.size())
                 .withStyle(MUTED_STYLE);
-        text(graphics, count, textX, titleY + titleLines * font.lineHeight + (compact ? 2 : 3));
-
-        if (!compact && h >= 44) {
-            int learned = 0;
-            for (RefugioAbilityData.Skill skill : skills) if (rank(skill) > 0) learned++;
-            int progressX = textX;
-            int progressY = y + h - 6;
-            int progressWidth = Math.max(1, w - 66);
-            graphics.fill(progressX, progressY, progressX + progressWidth, progressY + 2, 0xFFB89A6A);
-            if (!skills.isEmpty() && learned > 0) {
-                int filled = Math.max(1, progressWidth * learned / skills.size());
-                graphics.fill(progressX, progressY, progressX + filled, progressY + 2, accent);
-            }
-        }
-        drawDiamond(graphics, x + w - 15, y + h / 2, hovered ? 4 : 3, hovered ? 0xFFE8BD67 : accent);
+        drawOverviewCard(graphics, card, iconId, branchName(branch).withStyle(INK_STYLE),
+                countLabel, learned, skills.size(), false, hovered, accent);
     }
 
-    private void drawSubcategoryOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                         int px, int py, int pw, int ph) {
-        Component prompt = Component.translatable("gui.refugio.abilities.choose_track").withStyle(MUTED_STYLE);
-        text(graphics, prompt, px + (pw - font.width(prompt)) / 2, py + 78);
-        drawDiamond(graphics, px + pw / 2 - font.width(prompt) / 2 - 12, py + 82, 3, 0xFFB89455);
-        drawDiamond(graphics, px + pw / 2 + font.width(prompt) / 2 + 12, py + 82, 3, 0xFFB89455);
+    private void drawSubcategoryOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
+        drawCenteredPrompt(graphics, Component.translatable("gui.refugio.abilities.choose_track").withStyle(MUTED_STYLE),
+                layout.inner, layout.subPromptY);
         List<RefugioAbilityData.Track> tracks = RefugioAbilityData.tracks(currentBranch());
-        for (int i = 0; i < tracks.size(); i++) drawTrackCard(graphics, mouseX, mouseY, tracks.get(i), i, tracks.size(), px, py, pw, ph);
+        for (int i = 0; i < Math.min(tracks.size(), layout.trackCards.size()); i++) {
+            drawTrackCard(graphics, mouseX, mouseY, tracks.get(i), layout.trackCards.get(i));
+        }
     }
 
     private void drawTrackCard(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                               RefugioAbilityData.Track track, int index, int count,
-                               int px, int py, int pw, int ph) {
-        CategoryCardBounds card = trackCardBounds(index, count, px, py, pw, ph);
-        int x = card.x();
-        int y = card.y();
-        int w = card.width();
-        int h = card.height();
+                               RefugioAbilityData.Track track, Rect card) {
         List<RefugioAbilityData.Skill> skills = RefugioAbilityData.skills(track);
         boolean empty = skills.isEmpty();
-        boolean hovered = !empty && inside(mouseX, mouseY, x, y, w, h);
-        int accent = empty ? 0xFF8A8274 : ACCENTS[branchIndex];
-        graphics.fill(x, y, x + w, y + h, empty ? 0xFFD4C7AD : hovered ? 0xFFF5E4C0 : 0xFFEAD8B2);
-        border(graphics, x, y, w, h, empty ? 0xFF8E806A : hovered ? 0xFFD3A34F : 0xFF987348);
-        graphics.fill(x + 3, y + 5, x + 7, y + h - 5, accent);
-        ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(track.icon())));
-        graphics.item(icon, x + 17, y + (h - 16) / 2);
-
-        int textX = x + 48;
-        int textWidth = Math.max(8, w - 76);
-        boolean compact = ph < 260;
-        List<FormattedCharSequence> nameLines = font.split(trackName(track).withStyle(empty ? MUTED_STYLE : INK_STYLE), textWidth);
-        int titleLines = Math.min(compact ? 1 : 2, nameLines.size());
-        int titleY = y + (compact ? 4 : 10);
-        for (int line = 0; line < titleLines; line++) {
-            graphics.textRenderer().accept(textX, titleY + line * font.lineHeight, nameLines.get(line));
-        }
+        boolean hovered = !empty && card.contains(mouseX, mouseY);
+        int accent = empty ? 0xFF8A8274 : ACCENTS[branchIndex % ACCENTS.length];
+        int learned = 0;
+        for (RefugioAbilityData.Skill skill : skills) if (rank(skill) > 0) learned++;
         MutableComponent countLabel = empty ? Component.translatable("gui.refugio.abilities.track.coming_soon")
                 : Component.translatable("gui.refugio.abilities.branch_skill_count", skills.size());
-        text(graphics, countLabel.withStyle(MUTED_STYLE), textX, titleY + titleLines * font.lineHeight + (compact ? 2 : 3));
-
-        if (!empty && !compact && h >= 44) {
-            int learned = 0;
-            for (RefugioAbilityData.Skill skill : skills) if (rank(skill) > 0) learned++;
-            int progressX = textX;
-            int progressY = y + h - 6;
-            int progressWidth = Math.max(1, w - 66);
-            graphics.fill(progressX, progressY, progressX + progressWidth, progressY + 2, 0xFFB89A6A);
-            if (learned > 0) graphics.fill(progressX, progressY,
-                    progressX + Math.max(1, progressWidth * learned / skills.size()), progressY + 2, accent);
-        }
-        drawDiamond(graphics, x + w - 15, y + h / 2, hovered ? 4 : 3,
-                empty ? 0xFF9A8C75 : hovered ? 0xFFE8BD67 : accent);
+        drawOverviewCard(graphics, card, track.icon(),
+                trackName(track).withStyle(empty ? MUTED_STYLE : INK_STYLE),
+                countLabel.withStyle(MUTED_STYLE), learned, skills.size(), empty, hovered, accent);
     }
 
-    private void drawNavigationHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                      int px, int py, int pw) {
+    private void drawOverviewCard(GuiGraphicsExtractor graphics, Rect card, String iconId,
+                                  Component title, Component subtitle, int learned, int total,
+                                  boolean disabled, boolean hovered, int accent) {
+        int x = card.x;
+        int y = card.y;
+        int w = card.w;
+        int h = card.h;
+        graphics.fill(x, y, x + w, y + h, disabled ? 0xFFD4C7AD : hovered ? 0xFFF5E4C0 : 0xFFEAD8B2);
+        border(graphics, x, y, w, h, disabled ? 0xFF8E806A : hovered ? 0xFFD3A34F : 0xFF987348);
+        graphics.fill(x + 3, y + 3, x + 6, y + h - 3, accent);
+
+        boolean narrow = w < 145;
+        int iconX = x + (narrow ? 9 : 15);
+        int iconY = y + Math.max(1, (h - 16) / 2);
+        ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(iconId)));
+        graphics.item(icon, iconX, iconY);
+
+        int textX = iconX + (narrow ? 19 : 25);
+        int rightPad = narrow ? 14 : 20;
+        int textWidth = Math.max(16, w - (textX - x) - rightPad);
+        boolean showProgress = !disabled && h >= 42;
+        int availTextH = showProgress ? (h - 10) : (h - 4);
+        List<FormattedCharSequence> nameLines = font.split(title, textWidth);
+        int maxTitleLines = availTextH >= font.lineHeight * 3 + 4 ? 2 : 1;
+        int titleCount = Math.min(maxTitleLines, nameLines.size());
+        boolean showSub = availTextH >= font.lineHeight * 2 + 1;
+        List<FormattedCharSequence> subLines = showSub ? font.split(subtitle, textWidth) : List.of();
+        int subCount = subLines.isEmpty() ? 0 : 1;
+        int gap = h < 34 ? 1 : 2;
+        int totalBlockH = titleCount * font.lineHeight + (subCount > 0 ? gap + font.lineHeight : 0);
+        int startY = y + Math.max(1, ((showProgress ? h - 6 : h) - totalBlockH) / 2);
+
+        for (int i = 0; i < titleCount; i++) {
+            graphics.textRenderer().accept(textX, startY + i * font.lineHeight, nameLines.get(i));
+        }
+        if (subCount > 0) {
+            graphics.textRenderer().accept(textX, startY + titleCount * font.lineHeight + gap, subLines.getFirst());
+        }
+
+        if (showProgress) {
+            int progressY = y + h - 5;
+            int progressWidth = Math.max(8, w - (textX - x) - rightPad);
+            graphics.fill(textX, progressY, textX + progressWidth, progressY + 2, 0xFFB89A6A);
+            if (total > 0 && learned > 0) {
+                int filled = Math.max(1, progressWidth * learned / total);
+                graphics.fill(textX, progressY, textX + filled, progressY + 2, accent);
+            }
+        }
+        if (w >= 90) {
+            drawDiamond(graphics, x + w - (narrow ? 9 : 14), y + h / 2, hovered ? 4 : 3,
+                    disabled ? 0xFF9A8C75 : hovered ? 0xFFE8BD67 : accent);
+        }
+    }
+
+    private void drawNavigationHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
         String backKey = showingSkillDetails ? "gui.refugio.abilities.back_skills"
                 : showingSubcategories || !selectedTrack.branch().hasSubcategories()
                 ? "gui.refugio.abilities.back_categories" : "gui.refugio.abilities.back_subcategories";
-        drawButton(graphics, px + 18, py + 62, 150, 26,
+        Rect back = layout.backButton;
+        drawButton(graphics, back.x, back.y, back.w, back.h,
                 Component.translatable(backKey), mouseX, mouseY, true, 0xFF293A48);
         ItemStack iconStack;
         Component name;
@@ -431,8 +666,16 @@ public final class RefugioAbilityScreen extends Screen {
             iconStack = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(selectedTrack.icon())));
             name = trackName(selectedTrack).withStyle(GOLD_STYLE);
         }
-        graphics.item(iconStack, px + 184, py + 67);
-        text(graphics, name, px + 208, py + 70);
+        int gap = layout.inner.w < 340 ? 5 : 10;
+        int iconX = back.right() + gap;
+        int iconY = back.y + (back.h - 16) / 2;
+        graphics.item(iconStack, iconX, iconY);
+        int textX = iconX + 19;
+        int maxTextW = Math.max(24, layout.inner.right() - textX);
+        List<FormattedCharSequence> lines = font.split(name, maxTextW);
+        if (!lines.isEmpty()) {
+            graphics.textRenderer().accept(textX, back.y + (back.h - font.lineHeight) / 2, lines.getFirst());
+        }
     }
 
     private MutableComponent branchName(RefugioAbilityData.Branch branch) {
@@ -443,156 +686,158 @@ public final class RefugioAbilityScreen extends Screen {
         return Component.translatable("gui.refugio.abilities.track." + track.id());
     }
 
-    private CategoryCardBounds categoryCardBounds(int index) {
-        int px = panelX();
-        int py = panelY();
-        int pw = panelWidth();
-        int top = py + 96;
-        int bottom = panelContentBottom(py, panelHeight()) - 8;
-        int gapX = 14;
-        int gapY = 10;
-        int cardWidth = Math.max(1, (pw - 56 - gapX) / 2);
-        int cardHeight = Math.max(1, (bottom - top - gapY) / 2);
-        return new CategoryCardBounds(px + 28 + (index % 2) * (cardWidth + gapX),
-                top + (index / 2) * (cardHeight + gapY), cardWidth, cardHeight);
-    }
-
-    private CategoryCardBounds trackCardBounds(int index, int count, int px, int py, int pw, int ph) {
-        int rows = Math.max(1, (count + 1) / 2);
-        int top = py + 96;
-        int bottom = panelContentBottom(py, ph) - 8;
-        int gapX = 14;
-        int gapY = 10;
-        int cardWidth = Math.max(1, (pw - 56 - gapX) / 2);
-        int availableHeight = Math.max(1, bottom - top);
-        int cardHeight = Math.max(1, (availableHeight - gapY) / 2);
-        int gridHeight = rows * cardHeight + gapY * (rows - 1);
-        int gridTop = top + Math.max(0, (availableHeight - gridHeight) / 2);
-        int row = index / 2;
-        int column = index % 2;
-        int rowCount = Math.min(2, count - row * 2);
-        int rowWidth = rowCount * cardWidth + Math.max(0, rowCount - 1) * gapX;
-        int rowLeft = px + (pw - rowWidth) / 2;
-        return new CategoryCardBounds(rowLeft + column * (cardWidth + gapX),
-                gridTop + row * (cardHeight + gapY), cardWidth, cardHeight);
-    }
-
-    private void drawSkillPath(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int px, int py, int pw, int ph) {
-        boolean compact = isCompactLayout(ph);
-        int x = px + 18;
-        int w = pw - 36;
-        int top = py + 94;
-        graphics.fill(x, top, x + w, top + 1, 0xFFAC936C);
-        Component pathLabel = Component.translatable("gui.refugio.abilities.path_label").withStyle(MUTED_STYLE);
-        text(graphics, pathLabel, x + 12, compact ? top + 2 : top + 8);
+    private void drawSkillPath(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
+        Rect inner = layout.inner;
+        graphics.fill(inner.x, layout.dividerY, inner.right(), layout.dividerY + 1, 0xFFAC936C);
 
         List<RefugioAbilityData.Skill> skills = currentTrackSkills();
-        int pageStart = skillPageStart(pw);
-        int pageEnd = Math.min(skills.size(), pageStart + skillsPerPage(pw));
-        for (int i = pageStart; i < pageEnd; i++) {
-            RefugioAbilityData.Skill skill = skills.get(i);
-            SkillCardBounds card = skillPageCardBounds(i, px, py, pw, ph);
-            int cardX = card.x();
-            int cardY = card.y();
-            int cardWidth = card.width();
-            int cardHeight = card.height();
-            boolean selected = skill.id().equals(selectedSkillId);
-            boolean unlocked = isUnlocked(i);
-            int currentRank = rank(skill);
-            boolean hovered = inside(mouseX, mouseY, cardX, cardY, cardWidth, cardHeight);
-            int bg = selected ? 0xFFF7E8C9 : hovered ? 0xFFF1DFBC : unlocked ? 0xFFEAD8B2 : 0xFFDCC9A4;
-            int stroke = currentRank > 0 ? ACCENTS[branchIndex] : unlocked ? 0xFF9A7849 : 0xFFB19A70;
-            graphics.fill(cardX, cardY, cardX + cardWidth, cardY + cardHeight, bg);
-            border(graphics, cardX, cardY, cardWidth, cardHeight, selected ? 0xFFD4A34F : hovered ? 0xFFD3A34F : stroke);
-            graphics.fill(cardX + 3, cardY + 5, cardX + 6, cardY + cardHeight - 5, ACCENTS[branchIndex]);
-            ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(skill.icon())));
-            graphics.item(icon, cardX + (cardWidth - 16) / 2, cardY + (compact ? 2 : 6));
+        int firstNumber = skills.isEmpty() ? 0 : layout.pageStart + 1;
+        int lastNumber = Math.min(skills.size(), layout.pageStart + layout.skillCards.size());
 
-            Component skillName = Component.literal(skill.name()).withStyle(unlocked ? INK_STYLE : MUTED_STYLE);
-            List<FormattedCharSequence> nameLines = font.split(skillName, Math.max(8, cardWidth - 18));
-            int titleLineCount = Math.min(cardHeight < 59 ? 1 : 2, nameLines.size());
-            int titleY = cardY + (compact ? 20 : 24);
-            for (int line = 0; line < titleLineCount; line++) {
-                FormattedCharSequence sequence = nameLines.get(line);
-                graphics.textRenderer().accept(cardX + (cardWidth - font.width(sequence)) / 2,
-                        titleY + line * font.lineHeight, sequence);
-            }
-
-            MutableComponent footer = currentRank > 0
-                    ? Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, MAX_RANK)
-                    : isFreeCandidate(skill) ? Component.translatable("gui.refugio.abilities.skill_card.free")
-                    : !unlocked ? Component.translatable("gui.refugio.abilities.skill_card.locked")
-                    : Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(1));
-            Style footerStyle = currentRank > 0 ? SUCCESS_STYLE : !unlocked ? MUTED_STYLE : GOLD_STYLE;
-            List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), Math.max(8, cardWidth - 14));
-            if (!footerLines.isEmpty()) {
-                FormattedCharSequence footerLine = footerLines.getFirst();
-                graphics.textRenderer().accept(cardX + (cardWidth - font.width(footerLine)) / 2,
-                        cardY + cardHeight - font.lineHeight - (compact ? 3 : 5), footerLine);
-            }
-        }
-
-        int controlsY = skillPageControlsY(py, ph);
-        int previousX = skillPreviousButtonX(px, pw);
-        int nextX = skillNextButtonX(px, pw);
-        int pageCount = skillPageCount(pw);
-        int buttonWidth = skillPageButtonWidth(ph);
-        int buttonHeight = skillPageButtonHeight(ph);
-        int firstNumber = pageStart + 1;
-        int lastNumber = pageEnd;
-        if (compact) {
+        Component pathLabel = Component.translatable("gui.refugio.abilities.path_label").withStyle(MUTED_STYLE);
+        if (layout.compactPath) {
             Component compactPage = Component.translatable("gui.refugio.abilities.page_compact",
-                    firstNumber, lastNumber, skills.size(), skillPageIndex + 1, pageCount).withStyle(GOLD_STYLE);
-            int pageX = previousX - font.width(compactPage) - 7;
-            text(graphics, compactPage, pageX, controlsY + 5);
+                    firstNumber, lastNumber, skills.size(), skillPageIndex + 1, layout.pageCount).withStyle(GOLD_STYLE);
+            int pageW = font.width(compactPage);
+            int pageX = layout.prevPageButton.x - pageW - 6;
+            int maxPathLabelW = Math.max(24, pageX - inner.x - 8);
+            List<FormattedCharSequence> labelLines = font.split(pathLabel, maxPathLabelW);
+            if (!labelLines.isEmpty() && maxPathLabelW >= 40) {
+                graphics.textRenderer().accept(inner.x + 2, layout.pathLabelY, labelLines.getFirst());
+            }
+            if (pageX >= inner.x) {
+                text(graphics, compactPage, pageX, layout.pathLabelY);
+            }
         } else {
+            text(graphics, pathLabel, inner.x + 4, layout.pathLabelY);
             Component range = Component.translatable("gui.refugio.abilities.page_range",
                     firstNumber, lastNumber, skills.size()).withStyle(MUTED_STYLE);
-            text(graphics, range, px + (pw - font.width(range)) / 2, controlsY - font.lineHeight - 5);
+            int rangeW = font.width(range);
+            if (inner.right() - rangeW > inner.x + font.width(pathLabel) + 12) {
+                text(graphics, range, inner.right() - rangeW - 2, layout.pathLabelY);
+            }
         }
-        drawButton(graphics, previousX, controlsY, buttonWidth, buttonHeight, Component.literal("‹"),
+
+        for (int i = 0; i < layout.skillCards.size(); i++) {
+            int skillIndex = layout.pageStart + i;
+            if (skillIndex >= skills.size()) break;
+            drawSkillCard(graphics, mouseX, mouseY, skills.get(skillIndex), skillIndex, layout.skillCards.get(i));
+        }
+
+        Rect prev = layout.prevPageButton;
+        Rect next = layout.nextPageButton;
+        drawButton(graphics, prev.x, prev.y, prev.w, prev.h, Component.literal("‹"),
                 mouseX, mouseY, skillPageIndex > 0, 0xFF293A48);
-        drawButton(graphics, nextX, controlsY, buttonWidth, buttonHeight, Component.literal("›"),
-                mouseX, mouseY, skillPageIndex + 1 < pageCount, 0xFF293A48);
-        if (!compact) {
-            Component page = Component.translatable("gui.refugio.abilities.page_number", skillPageIndex + 1, pageCount)
-                    .withStyle(GOLD_STYLE);
-            text(graphics, page, px + (pw - font.width(page)) / 2, controlsY + 7);
+        drawButton(graphics, next.x, next.y, next.w, next.h, Component.literal("›"),
+                mouseX, mouseY, skillPageIndex + 1 < layout.pageCount, 0xFF293A48);
+        if (!layout.compactPath) {
+            Component page = Component.translatable("gui.refugio.abilities.page_number",
+                    skillPageIndex + 1, layout.pageCount).withStyle(GOLD_STYLE);
+            int midX = (prev.right() + next.x) / 2;
+            text(graphics, page, midX - font.width(page) / 2, prev.y + (prev.h - font.lineHeight) / 2);
         }
     }
 
-    private void drawSkillDetailsPage(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                      int px, int py, int pw, int ph) {
-        int x = px + 26;
-        int w = pw - 52;
-        boolean compact = isCompactLayout(ph);
-        int top = py + (compact ? 92 : 96);
-        int bottom = panelContentBottom(py, ph);
-        graphics.fill(x, top, x + w, bottom, 0xBCEEDCB8);
-        border(graphics, x, top, w, bottom - top, 0xFF967043);
+    private void drawSkillCard(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                               RefugioAbilityData.Skill skill, int skillIndex, Rect card) {
+        int cardX = card.x;
+        int cardY = card.y;
+        int cardW = card.w;
+        int cardH = card.h;
+        boolean selected = skill.id().equals(selectedSkillId);
+        boolean unlocked = isUnlocked(skillIndex);
+        int currentRank = rank(skill);
+        boolean hovered = card.contains(mouseX, mouseY);
+        int accent = ACCENTS[branchIndex % ACCENTS.length];
+        int bg = selected ? 0xFFF7E8C9 : hovered ? 0xFFF1DFBC : unlocked ? 0xFFEAD8B2 : 0xFFDCC9A4;
+        int stroke = currentRank > 0 ? accent : unlocked ? 0xFF9A7849 : 0xFFB19A70;
+        graphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, bg);
+        border(graphics, cardX, cardY, cardW, cardH, selected ? 0xFFD4A34F : hovered ? 0xFFD3A34F : stroke);
+        graphics.fill(cardX + 3, cardY + 3, cardX + 6, cardY + cardH - 3, accent);
+
+        ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(skill.icon())));
+        Component skillName = Component.literal(skill.name()).withStyle(unlocked ? INK_STYLE : MUTED_STYLE);
+        MutableComponent footer = currentRank > 0
+                ? Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, MAX_RANK)
+                : isFreeCandidate(skill) ? Component.translatable("gui.refugio.abilities.skill_card.free")
+                : !unlocked ? Component.translatable("gui.refugio.abilities.skill_card.locked")
+                : Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(1));
+        Style footerStyle = currentRank > 0 ? SUCCESS_STYLE : !unlocked ? MUTED_STYLE : GOLD_STYLE;
+
+        if (cardH < 52) {
+            int iconX = cardX + 8;
+            int iconY = cardY + Math.max(0, (cardH - 16) / 2);
+            graphics.item(icon, iconX, iconY);
+            int textX = iconX + 19;
+            int textW = Math.max(16, cardW - (textX - cardX) - 5);
+            List<FormattedCharSequence> nameLines = font.split(skillName, textW);
+            List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), textW);
+            if (cardH >= font.lineHeight * 2 + 3) {
+                int blockH = font.lineHeight * 2 + 1;
+                int startY = cardY + Math.max(1, (cardH - blockH) / 2);
+                if (!nameLines.isEmpty()) {
+                    graphics.textRenderer().accept(textX, startY, nameLines.getFirst());
+                }
+                if (!footerLines.isEmpty()) {
+                    graphics.textRenderer().accept(textX, startY + font.lineHeight + 1, footerLines.getFirst());
+                }
+            } else if (!nameLines.isEmpty()) {
+                graphics.textRenderer().accept(textX, cardY + Math.max(1, (cardH - font.lineHeight) / 2),
+                        nameLines.getFirst());
+            }
+            return;
+        }
+
+        int footerPadBottom = cardH < 68 ? 3 : 5;
+        int footerY = cardY + cardH - font.lineHeight - footerPadBottom;
+        boolean showMedallion = cardH >= 78 && cardW >= 68;
+        int iconY = cardY + (cardH >= 90 ? 10 : (cardH >= 68 ? 6 : 3));
+        int iconCenterX = cardX + cardW / 2;
+        if (showMedallion) {
+            int boxSize = 22;
+            int boxX = iconCenterX - boxSize / 2;
+            int boxY = iconY - 3;
+            graphics.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, 0x38987348);
+            border(graphics, boxX, boxY, boxSize, boxSize, 0x88987348);
+        }
+        graphics.item(icon, iconCenterX - 8, iconY);
+
+        int nameAreaTop = iconY + (showMedallion ? 22 : 18);
+        int dividerLineY = footerY - (cardH >= 74 ? 4 : 2);
+        if (cardH >= 74 && cardW > 24) {
+            graphics.fill(cardX + 10, dividerLineY, cardX + cardW - 8, dividerLineY + 1, 0x55987348);
+        }
+        int availNameH = Math.max(font.lineHeight, dividerLineY - nameAreaTop - 1);
+        List<FormattedCharSequence> nameLines = font.split(skillName, Math.max(12, cardW - 14));
+        int maxTitleLines = availNameH >= font.lineHeight * 2 ? 2 : 1;
+        int titleLineCount = Math.min(maxTitleLines, nameLines.size());
+        int titleBlockH = titleLineCount * font.lineHeight;
+        int titleY = nameAreaTop + Math.max(0, (availNameH - titleBlockH) / 2);
+        for (int line = 0; line < titleLineCount; line++) {
+            FormattedCharSequence sequence = nameLines.get(line);
+            graphics.textRenderer().accept(cardX + (cardW - font.width(sequence)) / 2,
+                    titleY + line * font.lineHeight, sequence);
+        }
+
+        List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), Math.max(12, cardW - 12));
+        if (!footerLines.isEmpty()) {
+            FormattedCharSequence footerLine = footerLines.getFirst();
+            graphics.textRenderer().accept(cardX + (cardW - font.width(footerLine)) / 2, footerY, footerLine);
+        }
+    }
+
+    private void drawSkillDetailsPage(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
+        Rect panel = layout.detailPanel;
+        graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), 0xBCEEDCB8);
+        border(graphics, panel.x, panel.y, panel.w, panel.h, 0xFF967043);
         RefugioAbilityData.Skill skill = selectedSkill();
         if (skill == null) return;
 
         int rank = rank(skill);
         boolean unlocked = isUnlocked(currentTrackSkills().indexOf(skill));
         boolean free = isFreeCandidate(skill);
-        int lineHeight = font.lineHeight;
-        int innerX = x + 18;
-        int innerWidth = w - 36;
         Component rankLabel = Component.translatable("gui.refugio.abilities.rank", rank, MAX_RANK)
                 .withStyle(GOLD_STYLE);
-        if (!compact) {
-            text(graphics, rankLabel, innerX, top + 9);
-            int barY = top + 25;
-            int barWidth = innerWidth;
-            graphics.fill(innerX, barY, innerX + barWidth, barY + 6, 0xFFB89A6A);
-            for (int segment = 0; segment < MAX_RANK; segment++) {
-                int segmentLeft = innerX + segment * barWidth / MAX_RANK;
-                int segmentRight = innerX + (segment + 1) * barWidth / MAX_RANK;
-                if (segment < rank) graphics.fill(segmentLeft + 1, barY + 1,
-                        Math.max(segmentLeft + 2, segmentRight - 1), barY + 5, ACCENTS[branchIndex]);
-            }
-        }
 
         String stateKey = rank > 0 ? (isActive(skill) ? "gui.refugio.abilities.state_active_short"
                 : "gui.refugio.abilities.state_inactive_short")
@@ -606,141 +851,139 @@ public final class RefugioAbilityScreen extends Screen {
                 ? Component.translatable(costKey, RefugioAbilityData.costForRank(rank + 1))
                 : Component.translatable(costKey);
 
-        int buttonY = skillDetailButtonsY(py, ph);
-        boolean showFeedback = !feedbackKey.isEmpty()
-                && !feedbackKey.equals("gui.refugio.abilities.feedback.enabled")
-                && !feedbackKey.equals("gui.refugio.abilities.feedback.disabled");
-        int feedbackHeight = showFeedback ? lineHeight + 2 : 0;
-        if (compact) {
-            drawCompactSkillDetailsPage(graphics, mouseX, mouseY, x, w, top, buttonY,
-                    rank, rankLabel, stateKey, stateStyle, costKey, cost, free, skill, showFeedback);
-            return;
+        Rect statusBox = layout.detailStatusBox;
+        Rect rankBar = layout.detailRankBar;
+
+        if (layout.compactDetails) {
+            graphics.fill(statusBox.x, statusBox.y, statusBox.right(), statusBox.bottom(), 0x44A9844D);
+            border(graphics, statusBox.x, statusBox.y, statusBox.w, statusBox.h, 0xFFB18A54);
+            int columnGap = 6;
+            int columnWidth = Math.max(12, (statusBox.w - columnGap * 2 - 8) / 3);
+            int textY = statusBox.y + Math.max(1, (statusBox.h - font.lineHeight) / 2);
+            List<FormattedCharSequence> rankLines = font.split(rankLabel, columnWidth);
+            List<FormattedCharSequence> stateLines = font.split(
+                    Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
+            Component compactCost = costKey.equals("gui.refugio.abilities.cost_next_short")
+                    ? Component.translatable("gui.refugio.abilities.cost_next_compact",
+                    RefugioAbilityData.costForRank(rank + 1)).withStyle(GOLD_STYLE)
+                    : cost.withStyle(GOLD_STYLE);
+            List<FormattedCharSequence> costLines = font.split(compactCost, columnWidth);
+            if (!rankLines.isEmpty()) {
+                graphics.textRenderer().accept(statusBox.x + 4, textY, rankLines.getFirst());
+            }
+            if (!stateLines.isEmpty()) {
+                graphics.textRenderer().accept(statusBox.x + 4 + columnWidth + columnGap, textY, stateLines.getFirst());
+            }
+            if (!costLines.isEmpty()) {
+                graphics.textRenderer().accept(statusBox.x + 4 + (columnWidth + columnGap) * 2, textY, costLines.getFirst());
+            }
+            if (layout.showFeedback && layout.detailFeedbackY > layout.detailDescriptionBox.bottom()) {
+                List<FormattedCharSequence> feedback = font.split(
+                        Component.translatable(feedbackKey).withStyle(SUCCESS_STYLE), Math.max(16, statusBox.w - 8));
+                if (!feedback.isEmpty()) {
+                    graphics.textRenderer().accept(statusBox.x + 4, layout.detailFeedbackY, feedback.getFirst());
+                }
+            }
+        } else {
+            text(graphics, rankLabel, rankBar.x, rankBar.y - font.lineHeight - 2);
+            graphics.fill(statusBox.x, statusBox.y, statusBox.right(), statusBox.bottom(), 0x44A9844D);
+            border(graphics, statusBox.x, statusBox.y, statusBox.w, statusBox.h, 0xFFB18A54);
+            int columnGap = 12;
+            int columnWidth = Math.max(16, (statusBox.w - columnGap - 16) / 2);
+            int textY = statusBox.y + 3;
+            List<FormattedCharSequence> stateLines = font.split(
+                    Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
+            List<FormattedCharSequence> costLines = font.split(cost.withStyle(GOLD_STYLE), columnWidth);
+            if (!stateLines.isEmpty()) {
+                graphics.textRenderer().accept(statusBox.x + 8, textY, stateLines.getFirst());
+            }
+            if (!costLines.isEmpty()) {
+                graphics.textRenderer().accept(statusBox.x + 8 + columnWidth + columnGap, textY, costLines.getFirst());
+            }
+            if (layout.showFeedback) {
+                List<FormattedCharSequence> feedback = font.split(
+                        Component.translatable(feedbackKey).withStyle(SUCCESS_STYLE), Math.max(16, statusBox.w - 16));
+                if (!feedback.isEmpty()) {
+                    graphics.textRenderer().accept(statusBox.x + 8, layout.detailFeedbackY, feedback.getFirst());
+                }
+            }
         }
-        int infoY = buttonY - lineHeight - 8 - feedbackHeight;
-        int infoX = x + 14;
-        int infoWidth = w - 28;
-        int columnGap = 12;
-        int columnWidth = Math.max(8, (infoWidth - columnGap) / 2);
-        graphics.fill(infoX, infoY - 4, infoX + infoWidth, infoY + lineHeight + feedbackHeight + 2, 0x44A9844D);
-        border(graphics, infoX, infoY - 4, infoWidth, lineHeight + feedbackHeight + 6, 0xFFB18A54);
-        List<FormattedCharSequence> stateLines = font.split(Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
-        List<FormattedCharSequence> costLines = font.split(cost.withStyle(GOLD_STYLE), columnWidth);
-        if (!stateLines.isEmpty()) graphics.textRenderer().accept(infoX + 8, infoY, stateLines.getFirst());
-        if (!costLines.isEmpty()) graphics.textRenderer().accept(infoX + columnWidth + columnGap,
-                infoY, costLines.getFirst());
-        if (showFeedback) {
-            List<FormattedCharSequence> feedback = font.split(
-                    Component.translatable(feedbackKey).withStyle(SUCCESS_STYLE), infoWidth - 16);
-            if (!feedback.isEmpty()) graphics.textRenderer().accept(infoX + 8,
-                    infoY + lineHeight + 2, feedback.getFirst());
-        }
 
-        int descriptionTop = top + 38;
-        int descriptionBottom = infoY - 8;
-        graphics.fill(innerX, descriptionTop, innerX + innerWidth, Math.max(descriptionTop + 1, descriptionBottom), 0x25FFF4D8);
-        border(graphics, innerX, descriptionTop, innerWidth, Math.max(1, descriptionBottom - descriptionTop), 0x75B18A54);
-        List<FormattedCharSequence> description = font.split(
-                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(8, innerWidth - 16));
-        int descriptionY = descriptionTop + 8;
-        for (FormattedCharSequence line : description) {
-            if (descriptionY + lineHeight > descriptionBottom - 5) break;
-            graphics.textRenderer().accept(innerX + 8, descriptionY, line);
-            descriptionY += lineHeight + 2;
-        }
-
-        int buttonGap = 12;
-        int buttonWidth = Math.max(1, (w - 36 - buttonGap) / 2);
-        int leftButtonX = innerX;
-        int rightButtonX = leftButtonX + buttonWidth + buttonGap;
-        String buyKey = free ? "gui.refugio.abilities.claim_free"
-                : rank == 0 ? "gui.refugio.abilities.buy" : "gui.refugio.abilities.upgrade";
-        drawButton(graphics, leftButtonX, buttonY, buttonWidth, 30, Component.translatable(buyKey),
-                mouseX, mouseY, canPurchase(skill), 0xFF24504F);
-        drawButton(graphics, rightButtonX, buttonY, buttonWidth, 30,
-                Component.translatable(isActive(skill) ? "gui.refugio.abilities.disable" : "gui.refugio.abilities.enable"),
-                mouseX, mouseY, rank > 0, 0xFF293A48);
-    }
-
-    private void drawCompactSkillDetailsPage(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                             int x, int w, int top, int buttonY, int rank,
-                                             Component rankLabel, String stateKey, Style stateStyle,
-                                             String costKey, MutableComponent cost, boolean free,
-                                             RefugioAbilityData.Skill skill, boolean showFeedback) {
-        int innerX = x + 18;
-        int innerWidth = w - 36;
-        int lineHeight = font.lineHeight;
-        int columnGap = 6;
-        int columnWidth = Math.max(8, (innerWidth - columnGap * 2) / 3);
-        int rowY = top + 4;
-        graphics.fill(innerX, rowY - 3, innerX + innerWidth, rowY + lineHeight + 2, 0x44A9844D);
-        border(graphics, innerX, rowY - 3, innerWidth, lineHeight + 5, 0xFFB18A54);
-
-        List<FormattedCharSequence> rankLines = font.split(rankLabel, columnWidth);
-        List<FormattedCharSequence> stateLines = font.split(
-                Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
-        Component compactCost = costKey.equals("gui.refugio.abilities.cost_next_short")
-                ? Component.translatable("gui.refugio.abilities.cost_next_compact",
-                RefugioAbilityData.costForRank(rank + 1)).withStyle(GOLD_STYLE)
-                : cost.withStyle(GOLD_STYLE);
-        List<FormattedCharSequence> costLines = font.split(compactCost, columnWidth);
-        if (!rankLines.isEmpty()) graphics.textRenderer().accept(innerX + 5, rowY, rankLines.getFirst());
-        if (!stateLines.isEmpty()) graphics.textRenderer().accept(
-                innerX + columnWidth + columnGap + 3, rowY, stateLines.getFirst());
-        if (!costLines.isEmpty()) graphics.textRenderer().accept(
-                innerX + (columnWidth + columnGap) * 2 + 1, rowY, costLines.getFirst());
-
-        int barY = top + 18;
-        graphics.fill(innerX, barY, innerX + innerWidth, barY + 5, 0xFFB89A6A);
+        graphics.fill(rankBar.x, rankBar.y, rankBar.right(), rankBar.bottom(), 0xFFB89A6A);
         for (int segment = 0; segment < MAX_RANK; segment++) {
-            int segmentLeft = innerX + segment * innerWidth / MAX_RANK;
-            int segmentRight = innerX + (segment + 1) * innerWidth / MAX_RANK;
-            if (segment < rank) graphics.fill(segmentLeft + 1, barY + 1,
-                    Math.max(segmentLeft + 2, segmentRight - 1), barY + 4, ACCENTS[branchIndex]);
+            int segmentLeft = rankBar.x + segment * rankBar.w / MAX_RANK;
+            int segmentRight = rankBar.x + (segment + 1) * rankBar.w / MAX_RANK;
+            if (segment < rank) {
+                graphics.fill(segmentLeft + 1, rankBar.y + 1,
+                        Math.max(segmentLeft + 2, segmentRight - 1), rankBar.bottom() - 1,
+                        ACCENTS[branchIndex % ACCENTS.length]);
+            }
         }
 
-        int descriptionTop = top + 26;
-        int feedbackY = buttonY - lineHeight - 2;
-        int descriptionBottom = showFeedback ? feedbackY - 3 : buttonY - 2;
-        graphics.fill(innerX, descriptionTop, innerX + innerWidth,
-                Math.max(descriptionTop + 1, descriptionBottom), 0x25FFF4D8);
-        border(graphics, innerX, descriptionTop, innerWidth,
-                Math.max(1, descriptionBottom - descriptionTop), 0x75B18A54);
+        Rect descBox = layout.detailDescriptionBox;
+        graphics.fill(descBox.x, descBox.y, descBox.right(), descBox.bottom(), 0x25FFF4D8);
+        border(graphics, descBox.x, descBox.y, descBox.w, descBox.h, 0x75B18A54);
+        int descPadY = descBox.h < 36 ? 2 : 6;
+        int lineStep = layout.compactDetails ? font.lineHeight + 1 : font.lineHeight + 2;
+        int maxScroll = maxDetailScroll(skill, layout);
+        detailScrollOffset = Math.max(0, Math.min(maxScroll, detailScrollOffset));
         List<FormattedCharSequence> description = font.split(
-                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(8, innerWidth - 16));
-        int descriptionY = descriptionTop + 4;
+                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
+        graphics.enableScissor(descBox.x + 1, descBox.y + 1, descBox.right() - 1, descBox.bottom() - 1);
+        int descriptionY = descBox.y + descPadY - detailScrollOffset;
         for (FormattedCharSequence line : description) {
-            if (descriptionY + lineHeight > descriptionBottom - 2) break;
-            graphics.textRenderer().accept(innerX + 8, descriptionY, line);
-            descriptionY += lineHeight;
+            if (descriptionY + font.lineHeight >= descBox.y && descriptionY <= descBox.bottom()) {
+                graphics.textRenderer().accept(descBox.x + 8, descriptionY, line);
+            }
+            descriptionY += lineStep;
+        }
+        graphics.disableScissor();
+        if (maxScroll > 0 && descBox.h >= 16) {
+            int trackTop = descBox.y + 2;
+            int trackH = descBox.h - 4;
+            int thumbH = Math.max(6, trackH * trackH / (trackH + maxScroll));
+            int thumbTop = trackTop + (trackH - thumbH) * detailScrollOffset / maxScroll;
+            int barX = descBox.right() - 4;
+            graphics.fill(barX, trackTop, barX + 2, trackTop + trackH, 0x44765030);
+            graphics.fill(barX, thumbTop, barX + 2, thumbTop + thumbH, 0xFF9B744A);
         }
 
-        if (showFeedback) {
-            List<FormattedCharSequence> feedback = font.split(
-                    Component.translatable(feedbackKey).withStyle(SUCCESS_STYLE), innerWidth - 8);
-            if (!feedback.isEmpty()) graphics.textRenderer().accept(innerX + 4, feedbackY, feedback.getFirst());
-        }
-
-        int buttonGap = 12;
-        int buttonWidth = Math.max(1, (w - 36 - buttonGap) / 2);
-        int leftButtonX = innerX;
-        int rightButtonX = leftButtonX + buttonWidth + buttonGap;
+        Rect buyBtn = layout.buyButton;
+        Rect toggleBtn = layout.toggleButton;
         String buyKey = free ? "gui.refugio.abilities.claim_free"
                 : rank == 0 ? "gui.refugio.abilities.buy" : "gui.refugio.abilities.upgrade";
-        drawButton(graphics, leftButtonX, buttonY, buttonWidth, 30, Component.translatable(buyKey),
+        drawButton(graphics, buyBtn.x, buyBtn.y, buyBtn.w, buyBtn.h, Component.translatable(buyKey),
                 mouseX, mouseY, canPurchase(skill), 0xFF24504F);
-        drawButton(graphics, rightButtonX, buttonY, buttonWidth, 30,
+        drawButton(graphics, toggleBtn.x, toggleBtn.y, toggleBtn.w, toggleBtn.h,
                 Component.translatable(isActive(skill) ? "gui.refugio.abilities.disable" : "gui.refugio.abilities.enable"),
                 mouseX, mouseY, rank > 0, 0xFF293A48);
     }
 
-    private void drawClose(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int x, int y) {
-        boolean hovered = mouseX >= x && mouseX < x + 22 && mouseY >= y && mouseY < y + 22;
-        graphics.fill(x, y, x + 22, y + 22, hovered ? 0xFF80532B : 0xFF5E3E23);
-        border(graphics, x, y, 22, 22, hovered ? 0xFFFFD787 : 0xFFB08A50);
+    private int maxDetailScroll(RefugioAbilityData.Skill skill, AbilityLayout layout) {
+        Rect descBox = layout.detailDescriptionBox;
+        int descPadY = descBox.h < 36 ? 2 : 6;
+        int lineStep = layout.compactDetails ? font.lineHeight + 1 : font.lineHeight + 2;
+        List<FormattedCharSequence> lines = font.split(
+                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
+        int contentH = lines.size() * lineStep;
+        int viewportH = Math.max(1, descBox.h - descPadY * 2);
+        return Math.max(0, contentH - viewportH);
+    }
+
+    private void drawClose(GuiGraphicsExtractor graphics, int mouseX, int mouseY, Rect rect) {
+        int x = rect.x;
+        int y = rect.y;
+        int s = rect.w;
+        boolean hovered = rect.contains(mouseX, mouseY);
+        graphics.fill(x, y, x + s, y + s, hovered ? 0xFF80532B : 0xFF5E3E23);
+        border(graphics, x, y, s, s, hovered ? 0xFFFFD787 : 0xFFB08A50);
         int color = hovered ? 0xFFFFE9B0 : 0xFFE8D6B5;
-        for (int i = 0; i < 6; i++) {
-            graphics.fill(x + 8 + i, y + 8 + i, x + 10 + i, y + 10 + i, color);
-            graphics.fill(x + 8 + i, y + 14 - i, x + 10 + i, y + 16 - i, color);
+        int crossSize = Math.max(4, Math.min(6, s - 10));
+        int startX = x + (s - crossSize - 2) / 2;
+        int startY = y + (s - crossSize - 2) / 2;
+        for (int i = 0; i < crossSize; i++) {
+            graphics.fill(startX + i, startY + i, startX + i + 2, startY + i + 2, color);
+            graphics.fill(startX + i, startY + crossSize - i, startX + i + 2, startY + crossSize - i + 2, color);
         }
     }
 
@@ -750,20 +993,26 @@ public final class RefugioAbilityScreen extends Screen {
         Identifier texture = baseColor == 0xFF24504F ? PRIMARY_BUTTON_TEXTURE : SECONDARY_BUTTON_TEXTURE;
         if (w > 0 && h > 0) graphics.blit(texture, x, y, x + w, y + h, 0.0F, 1.0F, 0.28F, 0.72F);
         if (!enabled) {
-            graphics.fill(x + 4, y + 3, x + w - 4, y + h - 3, 0x78332213);
+            graphics.fill(x + 3, y + 2, x + w - 3, y + h - 2, 0x78332213);
         } else if (hovered && w > 12 && h > 10) {
-            graphics.fill(x + 6, y + 5, x + w - 6, y + h - 5, 0x24E8B954);
-            border(graphics, x + 3, y + 3, w - 6, h - 6, 0xB8D8B677);
-            graphics.fill(x + 6, y + 4, x + w - 6, y + 5, 0xA0FFF0BA);
-            drawDiamond(graphics, x + 7, y + h / 2, 2, 0xFFE9C77F);
-            drawDiamond(graphics, x + w - 8, y + h / 2, 2, 0xFFE9C77F);
+            int insetX = w < 40 ? 3 : 6;
+            int insetY = h < 18 ? 2 : 4;
+            graphics.fill(x + insetX, y + insetY, x + w - insetX, y + h - insetY, 0x24E8B954);
+            border(graphics, x + 2, y + 2, w - 4, h - 4, 0xB8D8B677);
+            graphics.fill(x + insetX, y + insetY - 1, x + w - insetX, y + insetY, 0xA0FFF0BA);
+            if (w >= 48) {
+                drawDiamond(graphics, x + 7, y + h / 2, 2, 0xFFE9C77F);
+                drawDiamond(graphics, x + w - 8, y + h / 2, 2, 0xFFE9C77F);
+            }
         }
         Style labelStyle = !enabled ? DISABLED_BUTTON_STYLE
                 : hovered ? Style.EMPTY.withFont(UI_FONT).withColor(0xFFFFE5A0) : LIGHT_STYLE;
+        int textPad = w < 48 ? 6 : (w < 110 ? 10 : 16);
         List<FormattedCharSequence> lines = font.split(
-                Component.literal(label.getString()).withStyle(labelStyle), Math.max(8, w - 18));
-        int count = Math.min(2, lines.size());
-        int textY = y + (h - count * font.lineHeight) / 2;
+                Component.literal(label.getString()).withStyle(labelStyle), Math.max(8, w - textPad));
+        int maxLines = h >= font.lineHeight * 2 + 2 ? 2 : 1;
+        int count = Math.min(maxLines, lines.size());
+        int textY = y + Math.max(0, (h - count * font.lineHeight) / 2);
         for (int i = 0; i < count; i++) {
             FormattedCharSequence line = lines.get(i);
             graphics.textRenderer().accept(x + (w - font.width(line)) / 2,
@@ -823,7 +1072,7 @@ public final class RefugioAbilityScreen extends Screen {
 
     private boolean isUnlocked(int branchNodeIndex) {
         List<RefugioAbilityData.Skill> skills = currentTrackSkills();
-        return branchNodeIndex <= 0 || branchNodeIndex > skills.size()
+        return branchNodeIndex <= 0 || branchNodeIndex >= skills.size()
                 || rank(skills.get(branchNodeIndex - 1)) > 0;
     }
 
@@ -842,71 +1091,6 @@ public final class RefugioAbilityScreen extends Screen {
         return coins >= RefugioAbilityData.costForRank(rank(skill) + 1);
     }
 
-    private int panelWidth() { return Math.max(1, Math.min(1040, width - 32)); }
-    private int panelHeight() { return Math.max(1, Math.min(720, height - 32)); }
-    private int panelX() { return (width - panelWidth()) / 2; }
-    private int panelY() { return (height - panelHeight()) / 2; }
-    private int closeButtonX(int px, int pw) { return px + pw - 58; }
-    private int panelContentBottom(int py, int ph) {
-        int inset = isCompactLayout(ph) ? 20 : Math.max(34, (int) Math.ceil(ph * 0.085));
-        return py + ph - inset;
-    }
-    private int actionBottomInset(int ph) {
-        return isCompactLayout(ph) ? 20 : Math.max(38, (int) Math.ceil(ph * 0.10));
-    }
-    private boolean isCompactLayout(int ph) { return ph < 430; }
-    private int skillDetailButtonsY(int py, int ph) {
-        return py + ph - actionBottomInset(ph) - 30;
-    }
-    private int skillPageColumns(int pw) { return pw >= 380 ? SKILLS_PER_PAGE : 2; }
-    private int skillsPerPage(int pw) { return SKILLS_PER_PAGE; }
-    private int skillPageCount(int pw) {
-        int count = currentTrackSkills().size();
-        return Math.max(1, (count + skillsPerPage(pw) - 1) / skillsPerPage(pw));
-    }
-    private int skillPageStart(int pw) {
-        skillPageIndex = Math.max(0, Math.min(skillPageIndex, skillPageCount(pw) - 1));
-        return skillPageIndex * skillsPerPage(pw);
-    }
-    private int skillPageControlsY(int py, int ph) {
-        return isCompactLayout(ph) ? py + 90 : panelContentBottom(py, ph) - 26;
-    }
-    private int skillPageGridBottom(int py, int ph) {
-        return isCompactLayout(ph) ? panelContentBottom(py, ph) - 8
-                : skillPageControlsY(py, ph) - font.lineHeight - 15;
-    }
-    private int skillPageGridTop(int py, int ph) { return py + (isCompactLayout(ph) ? 116 : 120); }
-    private int skillPageButtonWidth(int ph) { return isCompactLayout(ph) ? 28 : 34; }
-    private int skillPageButtonHeight(int ph) { return isCompactLayout(ph) ? 20 : 22; }
-    private int skillPreviousButtonX(int px, int pw) {
-        return isCompactLayout(panelHeight()) ? px + pw - 104 : px + pw / 2 - 85;
-    }
-    private int skillNextButtonX(int px, int pw) {
-        return isCompactLayout(panelHeight()) ? px + pw - 68 : px + pw / 2 + 51;
-    }
-    private SkillCardBounds skillPageCardBounds(int index, int px, int py, int pw, int ph) {
-        int columns = skillPageColumns(pw);
-        int pageStart = skillPageStart(pw);
-        int itemCount = Math.min(skillsPerPage(pw), currentTrackSkills().size() - pageStart);
-        int rows = Math.max(1, (itemCount + columns - 1) / columns);
-        int gridX = px + 28;
-        int gridWidth = Math.max(1, pw - 56);
-        int gapX = columns == 1 ? 0 : 12;
-        int cardWidth = Math.max(1, (gridWidth - gapX * (columns - 1)) / columns);
-        int compact = isCompactLayout(ph) ? 1 : 0;
-        int gridTop = skillPageGridTop(py, ph);
-        int gridBottom = skillPageGridBottom(py, ph);
-        int gapY = rows == 1 ? 0 : 10;
-        int cardHeight = Math.max(compact == 1 ? 44 : 54,
-                (gridBottom - gridTop - gapY * (rows - 1)) / rows);
-        cardHeight = Math.min(190, cardHeight);
-        int visibleIndex = index - pageStart;
-        int row = visibleIndex / columns;
-        int column = visibleIndex % columns;
-        return new SkillCardBounds(gridX + column * (cardWidth + gapX),
-                gridTop + row * (cardHeight + gapY), cardWidth, cardHeight);
-    }
-
     private void closeScreen() {
         ClientPlayNetworking.send(new RefugioUiPayload("ABILITY_CLOSE"));
         RefugioClient.clearAbilityScreen(this);
@@ -917,17 +1101,30 @@ public final class RefugioAbilityScreen extends Screen {
         graphics.textRenderer().accept(x, y, component);
     }
 
-    private static boolean inside(double x, double y, int rx, int ry, int rw, int rh) {
-        return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-    }
-
     private static void border(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
+        if (w <= 0 || h <= 0) return;
         graphics.fill(x, y, x + w, y + 1, color);
         graphics.fill(x, y + h - 1, x + w, y + h, color);
         graphics.fill(x, y, x + 1, y + h, color);
         graphics.fill(x + w - 1, y, x + w, y + h, color);
     }
 
-    private record CategoryCardBounds(int x, int y, int width, int height) { }
-    private record SkillCardBounds(int x, int y, int width, int height) { }
+    private record Rect(int x, int y, int w, int h) {
+        int right() { return x + w; }
+        int bottom() { return y + h; }
+        boolean contains(double mx, double my) {
+            return mx >= x && mx < x + w && my >= y && my < y + h;
+        }
+    }
+
+    private record AbilityLayout(
+            Rect panel, Rect inner, Rect titleBanner, Rect balanceBadge, Rect closeButton,
+            boolean compactBalance, boolean showKicker, int promptY, List<Rect> categoryCards,
+            Rect backButton, int subPromptY, List<Rect> trackCards,
+            int dividerY, int pathLabelY, boolean compactPath, int pageStart, int pageCount,
+            Rect prevPageButton, Rect nextPageButton, Rect skillGridArea, List<Rect> skillCards,
+            Rect detailPanel, boolean compactDetails, boolean showFeedback,
+            Rect detailStatusBox, Rect detailRankBar, Rect detailDescriptionBox, int detailFeedbackY,
+            Rect buyButton, Rect toggleButton
+    ) { }
 }

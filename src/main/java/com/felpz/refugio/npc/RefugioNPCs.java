@@ -34,8 +34,8 @@ public final class RefugioNPCs {
     private static final double QUEST_X = -288.306;
     private static final double QUEST_Y = 84.0;
     private static final double QUEST_Z = 107.596;
-    private static final double GARDEN_X = -282.678, GARDEN_Y = 88.0, GARDEN_Z = 122.700;
-    private static final double EXPEDITION_X = -279.675, EXPEDITION_Y = 90.0, EXPEDITION_Z = 132.639;
+    private static final double GARDEN_X = -282.700, GARDEN_Y = 88.0, GARDEN_Z = 121.956;
+    private static final double EXPEDITION_X = -279.615, EXPEDITION_Y = 90.0, EXPEDITION_Z = 131.991;
     private static final double KAEL_ENTRANCE_X = -249.503, KAEL_ENTRANCE_Y = 77.0, KAEL_ENTRANCE_Z = 64.194;
     private static final double KAEL_CASTLE_X = -323.750, KAEL_CASTLE_Y = 129.0, KAEL_CASTLE_Z = 211.976;
     private static final double LEGACY_KAEL_CASTLE_X = -252.561, LEGACY_KAEL_CASTLE_Y = 131.0, LEGACY_KAEL_CASTLE_Z = 232.750;
@@ -131,9 +131,9 @@ public final class RefugioNPCs {
             renameNpc(world, QUEST_TAG, QUEST_X, QUEST_Y, QUEST_Z, "entity.refugio.quest_giver");
         }
         spawnOrUpdate(world, GARDEN_TAG, GARDEN_X, GARDEN_Y, GARDEN_Z,
-                "entity.refugio.garden_quest_giver", VillagerProfession.FARMER, -94.6f, 0.9f);
+                "entity.refugio.garden_quest_giver", VillagerProfession.FARMER, -89.3f, 1.0f);
         spawnOrUpdate(world, EXPEDITION_TAG, EXPEDITION_X, EXPEDITION_Y, EXPEDITION_Z,
-                "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, -100.0f, 6.2f);
+                "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, -91.6f, 8.4f);
         spawnOrUpdateKael(world);
         Refugio.LOGGER.info("NPCs do Refúgio: Baldur, Eldrin, Marta, Dário e Kael (um único local por vez).");
     }

@@ -7,6 +7,7 @@ import com.felpz.refugio.shop.ShopCatalog;
 import com.felpz.refugio.shop.ShopCatalog.Category;
 import com.felpz.refugio.shop.ShopCatalog.EnchantmentSpec;
 import com.felpz.refugio.shop.ShopCatalog.Offer;
+import com.felpz.refugio.ui.RefugioUiService;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -66,6 +67,7 @@ public final class RefugioMenu extends ChestMenu {
     private ItemStack selectedSellSnapshot = ItemStack.EMPTY;
     private int selectedSellQuantity = 1;
     private int page;
+    private boolean menuOpened;
 
     private RefugioMenu(int containerId, Inventory inventory, ServerPlayer owner, SimpleContainer buttons,
                         View view, AfterMode afterMode, int categoryIndex, int page) {
@@ -99,6 +101,41 @@ public final class RefugioMenu extends ChestMenu {
         player.openMenu(new SimpleMenuProvider((id, inventory, openPlayer) ->
                 new RefugioMenu(id, inventory, (ServerPlayer) openPlayer, new SimpleContainer(CONTAINER_SIZE),
                         initialView, afterMode, 0, 0), title));
+        if (player.containerMenu instanceof RefugioMenu opened) {
+            opened.onMenuOpened();
+        }
+    }
+
+    public void onMenuOpened() {
+        this.menuOpened = true;
+        broadcastChanges();
+        syncMenuState();
+    }
+
+    public boolean isShopView() {
+        return view == View.SHOP_HOME || view == View.SUBCATEGORIES
+                || view == View.CATEGORY || view == View.SEARCH || view == View.PRODUCT_DETAIL
+                || view == View.SELL || view == View.SELL_CONFIRM;
+    }
+
+    public boolean isQuestView() {
+        return view == View.QUESTS || view == View.GARDEN_QUESTS || view == View.EXPEDITION_QUESTS;
+    }
+
+    public void syncMenuState() {
+        if (isShopView()) {
+            syncShopState();
+        } else if (isQuestView()) {
+            syncQuestState();
+        }
+    }
+
+    public void handleClientClick(int slotId, int mouseButton, boolean quickMove) {
+        if (!stillValid(owner)) return;
+        ContainerInput input = quickMove ? ContainerInput.QUICK_MOVE : ContainerInput.PICKUP;
+        clicked(slotId, mouseButton, input, owner);
+        broadcastChanges();
+        syncMenuState();
     }
 
     @Override
@@ -108,13 +145,30 @@ public final class RefugioMenu extends ChestMenu {
 
     @Override
     public void removed(Player player) {
-        super.removed(player);
         if (view == View.SELL) returnDepositedItems();
+        super.removed(player);
+        if (player == owner) {
+            RefugioUiService.sendShopClosed(owner, containerId);
+        }
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int slot) {
-        if (player != owner || view != View.SELL || slot < CONTAINER_SIZE || slot >= CONTAINER_SIZE + 36) {
+        if (player != owner || view != View.SELL) {
+            return ItemStack.EMPTY;
+        }
+        if (isSellDepositSlot(slot)) {
+            ItemStack source = buttons.getItem(slot);
+            if (source.isEmpty()) return ItemStack.EMPTY;
+            ItemStack original = source.copy();
+            if (!moveItemStackTo(source, CONTAINER_SIZE, CONTAINER_SIZE + 36, true)) {
+                return ItemStack.EMPTY;
+            }
+            if (source.isEmpty()) buttons.setItem(slot, ItemStack.EMPTY);
+            else getSlot(slot).setChanged();
+            return original;
+        }
+        if (slot < CONTAINER_SIZE || slot >= CONTAINER_SIZE + 36) {
             return ItemStack.EMPTY;
         }
         ItemStack source = getSlot(slot).getItem();
@@ -154,6 +208,8 @@ public final class RefugioMenu extends ChestMenu {
                 super.clicked(slotId, button, input, player);
                 decorateSellSlots();
                 renderSellSummary();
+                broadcastChanges();
+                syncShopState();
                 return;
             }
             if (input == ContainerInput.PICKUP) handleButton(slotId, button);
@@ -169,10 +225,15 @@ public final class RefugioMenu extends ChestMenu {
             decorateSellSlots();
             renderSellSummary();
             broadcastChanges();
+            syncShopState();
             return;
         }
         if (input == ContainerInput.QUICK_MOVE) return;
         super.clicked(slotId, button, input, player);
+        if (view == View.SELL) {
+            broadcastChanges();
+            syncShopState();
+        }
     }
 
     private void handleButton(int slot, int mouseButton) {
@@ -392,6 +453,9 @@ public final class RefugioMenu extends ChestMenu {
             reopened.render();
             return reopened;
         }, Component.translatable("gui.refugio.search_results")));
+        if (player.containerMenu instanceof RefugioMenu opened) {
+            opened.onMenuOpened();
+        }
         return true;
     }
 
@@ -454,6 +518,9 @@ public final class RefugioMenu extends ChestMenu {
             reopened.render();
             return reopened;
         }, Component.translatable("gui.refugio.shop_title")));
+        if (player.containerMenu instanceof RefugioMenu opened) {
+            opened.onMenuOpened();
+        }
         return true;
     }
 
@@ -476,6 +543,9 @@ public final class RefugioMenu extends ChestMenu {
             reopened.render();
             return reopened;
         }, Component.translatable("gui.refugio.sell_title")));
+        if (player.containerMenu instanceof RefugioMenu opened) {
+            opened.onMenuOpened();
+        }
         return true;
     }
 
@@ -486,7 +556,8 @@ public final class RefugioMenu extends ChestMenu {
                 owner.sendSystemMessage(Component.translatable("message.refugio.category_locked"));
                 return;
             }
-            if (RefugioPlayerData.getMode(owner) == RefugioPlayerData.MODE_PROGRESSION
+            if (!RefugioPlayerData.hasAllShopCategoriesUnlocked(owner)
+                    && RefugioPlayerData.getMode(owner) == RefugioPlayerData.MODE_PROGRESSION
                     && RefugioPlayerData.getClaimedQuestCount(owner) < ShopCatalog.requiredClaims(selectedOffer)) {
                 owner.sendSystemMessage(Component.translatable("message.refugio.offer_locked",
                         ShopCatalog.requiredClaims(selectedOffer)));
@@ -663,6 +734,235 @@ public final class RefugioMenu extends ChestMenu {
             case EXPEDITION_QUESTS -> renderSideQuests(RefugioSideQuests.Track.EXPEDITION);
         }
         broadcastChanges();
+        if (menuOpened) {
+            syncMenuState();
+        }
+    }
+
+    public void syncQuestState() {
+        if (!isQuestView()) return;
+        int coins = RefugioPlayerData.getCoins(owner);
+        int[] slots = {10, 12, 14, 16, 28, 30, 32, 34};
+        StringBuilder entries = new StringBuilder();
+        int claimedOrProgress;
+        int totalCount;
+
+        if (view == View.QUESTS) {
+            claimedOrProgress = RefugioPlayerData.getClaimedQuestCount(owner);
+            totalCount = RefugioQuests.count();
+            String[] campaignIcons = {
+                    "minecraft:stone_pickaxe", "minecraft:iron_chestplate", "minecraft:obsidian",
+                    "minecraft:flint_and_steel", "minecraft:blaze_rod", "minecraft:ender_eye",
+                    "minecraft:end_portal_frame", "minecraft:dragon_head"
+            };
+            for (int i = 0; i < totalCount && i < slots.length; i++) {
+                RefugioQuests.Mission m = RefugioQuests.mission(i);
+                boolean complete = RefugioQuests.isAdvancementComplete(owner, i);
+                int state = i < claimedOrProgress ? 0 : (i == claimedOrProgress && complete ? 1 : (i == claimedOrProgress ? 2 : 3));
+                boolean rewardVisible = complete || i < claimedOrProgress;
+                String iconId = i < campaignIcons.length ? campaignIcons[i] : m.rewardItem();
+                String rewardSpec = rewardVisible ? (m.rewardItem() + "^" + m.rewardCount() + "^^0^") : "";
+                if (!entries.isEmpty()) entries.append(';');
+                entries.append(slots[i]).append('|')
+                        .append(i).append('|')
+                        .append(state).append('|')
+                        .append(m.titleKey()).append('|')
+                        .append(m.descriptionKey()).append('|')
+                        .append(iconId).append('|')
+                        .append(rewardVisible ? 1 : 0).append('|')
+                        .append(rewardVisible ? m.coins() : 0).append('|')
+                        .append("").append('|')
+                        .append(rewardSpec);
+            }
+        } else {
+            RefugioSideQuests.Track track = view == View.GARDEN_QUESTS
+                    ? RefugioSideQuests.Track.GARDEN : RefugioSideQuests.Track.EXPEDITION;
+            claimedOrProgress = RefugioSideQuests.progress(owner, track);
+            totalCount = RefugioSideQuests.count(track);
+            for (int i = 0; i < totalCount && i < slots.length; i++) {
+                RefugioSideQuests.MissionView m = RefugioSideQuests.mission(track, i);
+                boolean complete = RefugioSideQuests.isComplete(owner, track, i);
+                int state = i < claimedOrProgress ? 0 : (i == claimedOrProgress && complete ? 1 : (i == claimedOrProgress ? 2 : 3));
+                boolean rewardVisible = complete || i < claimedOrProgress;
+                String iconId = RefugioSideQuests.objectiveIconId(track, i);
+                String progressSpec = RefugioSideQuests.serializeProgressSpecs(owner, track, i);
+                String rewardSpec = rewardVisible ? RefugioSideQuests.serializeRewardSpecs(track, i) : "";
+                int rewardCoins = rewardVisible ? RefugioSideQuests.coins(track, i) : 0;
+                if (!entries.isEmpty()) entries.append(';');
+                entries.append(slots[i]).append('|')
+                        .append(i).append('|')
+                        .append(state).append('|')
+                        .append(m.titleKey()).append('|')
+                        .append(m.descriptionKey()).append('|')
+                        .append(iconId).append('|')
+                        .append(rewardVisible ? 1 : 0).append('|')
+                        .append(rewardCoins).append('|')
+                        .append(progressSpec).append('|')
+                        .append(rewardSpec);
+            }
+        }
+
+        String payload = "QUEST	"
+                + containerId + "	"
+                + view.name() + "	"
+                + coins + "	"
+                + claimedOrProgress + "	"
+                + totalCount + "	"
+                + entries;
+        RefugioUiService.sendQuestState(owner, payload);
+    }
+
+    public void syncShopState() {
+        if (!isShopView()) return;
+        int coins = RefugioPlayerData.getCoins(owner);
+        int totalItems = 0;
+        int totalPages = 1;
+        StringBuilder itemsBuilder = new StringBuilder();
+
+        if (view == View.SUBCATEGORIES) {
+            List<String> subcategories = ShopCatalog.subcategories(categoryIndex);
+            totalItems = subcategories.size();
+            totalPages = Math.max(1, (totalItems + SUBCATEGORY_SLOTS.length - 1) / SUBCATEGORY_SLOTS.length);
+            int start = page * SUBCATEGORY_SLOTS.length;
+            for (int i = 0; i < SUBCATEGORY_SLOTS.length && start + i < subcategories.size(); i++) {
+                int slot = SUBCATEGORY_SLOTS[i];
+                String key = subcategories.get(start + i);
+                List<Offer> products = ShopCatalog.offersInSubcategory(categoryIndex, key);
+                String icon = products.isEmpty() ? "minecraft:paper" : products.getFirst().itemId();
+                if (!itemsBuilder.isEmpty()) itemsBuilder.append(';');
+                itemsBuilder.append(slot).append('|').append(key).append('|')
+                        .append(products.size()).append('|').append(icon);
+            }
+        } else if (view == View.CATEGORY || view == View.SEARCH) {
+            List<Offer> offers = visibleOffers();
+            totalItems = offers.size();
+            totalPages = Math.max(1, (totalItems + PAGE_SIZE - 1) / PAGE_SIZE);
+            int start = page * PAGE_SIZE;
+            int claimed = RefugioPlayerData.getClaimedQuestCount(owner);
+            boolean normalMode = RefugioPlayerData.getMode(owner) == RefugioPlayerData.MODE_PROGRESSION;
+            for (int slot = 0; slot < PAGE_SIZE && start + slot < offers.size(); slot++) {
+                Offer offer = offers.get(start + slot);
+                int req = ShopCatalog.requiredClaims(offer);
+                boolean locked = normalMode && claimed < req;
+                if (!itemsBuilder.isEmpty()) itemsBuilder.append(';');
+                itemsBuilder.append(slot).append('|').append(offer.itemId()).append('|')
+                        .append(offer.amount()).append('|').append(offer.price()).append('|')
+                        .append(req).append('|').append(locked ? 1 : 0);
+            }
+        } else if (view == View.SELL) {
+            for (int slot : SELL_DEPOSIT_SLOTS) {
+                ItemStack stack = buttons.getItem(slot);
+                if (stack.isEmpty()) continue;
+                String id = itemId(stack);
+                int unitPrice = sellable(stack) ? ShopCatalog.sellValue(id) : 0;
+                if (!itemsBuilder.isEmpty()) itemsBuilder.append(';');
+                itemsBuilder.append(slot).append('|').append(id).append('|')
+                        .append(stack.getCount()).append('|').append(unitPrice);
+            }
+            for (int slot = CONTAINER_SIZE; slot < CONTAINER_SIZE + 36; slot++) {
+                ItemStack stack = getSlot(slot).getItem();
+                if (stack.isEmpty()) continue;
+                String id = itemId(stack);
+                int unitPrice = sellable(stack) ? ShopCatalog.sellValue(id) : 0;
+                if (!itemsBuilder.isEmpty()) itemsBuilder.append(';');
+                itemsBuilder.append(slot).append('|').append(id).append('|')
+                        .append(stack.getCount()).append('|').append(unitPrice);
+            }
+        }
+
+        long detailUnitPrice = 0L;
+        int detailQty = 1;
+        long detailTotal = 0L;
+        int detailStackLimit = 64;
+        int detailReqClaims = 0;
+        boolean detailCanAction = false;
+        String detailItemId = "minecraft:air";
+
+        if (view == View.PRODUCT_DETAIL && selectedOffer != null) {
+            detailItemId = selectedOffer.itemId();
+            detailUnitPrice = selectedOffer.price();
+            detailQty = selectedQuantity;
+            detailTotal = ShopCatalog.totalPrice(selectedOffer, selectedQuantity);
+            detailStackLimit = ShopCatalog.maxStackSize(selectedOffer);
+            detailReqClaims = RefugioPlayerData.hasAllShopCategoriesUnlocked(owner)
+                    ? 0 : ShopCatalog.requiredClaims(selectedOffer);
+            boolean unlocked = RefugioQuests.isCategoryUnlocked(owner, categoryIndex)
+                    && (RefugioPlayerData.getMode(owner) != RefugioPlayerData.MODE_PROGRESSION
+                    || RefugioPlayerData.getClaimedQuestCount(owner) >= detailReqClaims);
+            detailCanAction = unlocked && coins >= detailTotal
+                    && !(detailStackLimit == 1 && selectedQuantity != 1);
+        } else if (view == View.SELL_CONFIRM) {
+            ItemStack current = selectedInventorySlot >= CONTAINER_SIZE
+                    ? getSlot(selectedInventorySlot).getItem() : ItemStack.EMPTY;
+            detailItemId = selectedSellItemId != null ? selectedSellItemId : "minecraft:air";
+            detailUnitPrice = selectedSellItemId != null ? ShopCatalog.sellValue(selectedSellItemId) : 0;
+            detailQty = selectedSellQuantity;
+            detailTotal = detailUnitPrice * detailQty;
+            detailStackLimit = Math.max(1, current.getCount());
+            detailCanAction = !current.isEmpty() && detailUnitPrice > 0 && detailQty >= 1 && detailQty <= current.getCount();
+        }
+
+        long sellTotal = 0L;
+        int sellAccepted = 0;
+        int sellRejected = 0;
+        if (view == View.SELL) {
+            sellTotal = depositedSellValue();
+            for (int slot : SELL_DEPOSIT_SLOTS) {
+                ItemStack stack = buttons.getItem(slot);
+                if (stack.isEmpty()) continue;
+                if (sellable(stack)) sellAccepted += stack.getCount();
+                else sellRejected += stack.getCount();
+            }
+        }
+
+        int catUnlockMask = 0;
+        StringBuilder catCounts = new StringBuilder();
+        StringBuilder catReqs = new StringBuilder();
+        for (int i = 0; i < ShopCatalog.categoryCount(); i++) {
+            if (RefugioQuests.isCategoryUnlocked(owner, i)) catUnlockMask |= (1 << i);
+            if (i > 0) {
+                catCounts.append(',');
+                catReqs.append(',');
+            }
+            catCounts.append(ShopCatalog.category(i).offers().size());
+            catReqs.append(RefugioQuests.claimsRequiredForCategory(i));
+        }
+
+        ItemStack carried = getCarried();
+        String carriedId = carried.isEmpty() ? "" : itemId(carried);
+        int carriedCount = carried.isEmpty() ? 0 : carried.getCount();
+
+        String safeSubcat = selectedSubcategory == null ? "" : selectedSubcategory.replace('\t', ' ');
+        String safeSearch = searchTerm == null ? "" : searchTerm.replace('\t', ' ');
+
+        String payload = "SHOP\t"
+                + containerId + "\t"
+                + view.name() + "\t"
+                + coins + "\t"
+                + categoryIndex + "\t"
+                + safeSubcat + "\t"
+                + safeSearch + "\t"
+                + sortMode + "\t"
+                + page + "\t"
+                + totalPages + "\t"
+                + totalItems + "\t"
+                + detailItemId + "\t"
+                + detailUnitPrice + "\t"
+                + detailQty + "\t"
+                + detailTotal + "\t"
+                + detailStackLimit + "\t"
+                + detailReqClaims + "\t"
+                + (detailCanAction ? 1 : 0) + "\t"
+                + sellTotal + "\t"
+                + sellAccepted + "\t"
+                + sellRejected + "\t"
+                + catUnlockMask + "\t"
+                + catCounts + "\t"
+                + catReqs + "\t"
+                + carriedId + "\t"
+                + carriedCount + "\t"
+                + itemsBuilder;
+        RefugioUiService.sendShopState(owner, payload);
     }
 
     private void renderHome() {
@@ -900,6 +1200,12 @@ public final class RefugioMenu extends ChestMenu {
 
     private void returnDepositedItems() {
         undecorateSellSlots();
+        ItemStack carried = getCarried();
+        if (!carried.isEmpty()) {
+            ItemStack returnedCarried = carried.copy();
+            if (!owner.getInventory().add(returnedCarried)) owner.drop(returnedCarried, false);
+            setCarried(ItemStack.EMPTY);
+        }
         for (int slot : SELL_DEPOSIT_SLOTS) {
             ItemStack stack = buttons.getItem(slot);
             if (stack.isEmpty()) continue;
@@ -1036,7 +1342,7 @@ public final class RefugioMenu extends ChestMenu {
                 Component.translatable("gui.refugio.offer_price", offer.price()),
                 Component.translatable("gui.refugio.offer_buy_hint"),
                 Component.translatable("gui.refugio.offer_sell_hint")));
-        if (offer.requiredClaims() > 0) {
+        if (offer.requiredClaims() > 0 && !RefugioPlayerData.hasAllShopCategoriesUnlocked(owner)) {
             lore.add(Component.translatable("gui.refugio.offer_requires", offer.requiredClaims()));
         }
         stack.set(DataComponents.LORE, new ItemLore(lore));

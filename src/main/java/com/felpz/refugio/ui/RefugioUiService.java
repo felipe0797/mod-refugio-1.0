@@ -54,6 +54,18 @@ public final class RefugioUiService {
         ServerPlayNetworking.send(player, new RefugioUiPayload(encoded));
     }
 
+    public static void sendShopState(ServerPlayer player, String encodedPayload) {
+        ServerPlayNetworking.send(player, new RefugioUiPayload(encodedPayload));
+    }
+
+    public static void sendQuestState(ServerPlayer player, String encodedPayload) {
+        ServerPlayNetworking.send(player, new RefugioUiPayload(encodedPayload));
+    }
+
+    public static void sendShopClosed(ServerPlayer player, int containerId) {
+        ServerPlayNetworking.send(player, new RefugioUiPayload("SHOP_CLOSED\t" + containerId));
+    }
+
     private static void handle(ServerPlayer player, String data) {
         String[] parts = data.split("\\t", -1);
         if (parts.length == 0) return;
@@ -75,8 +87,75 @@ public final class RefugioUiService {
             case "ABILITY_CLOSE" -> ABILITY_SESSIONS.remove(player.getUUID());
             case "DIALOGUE_ACTION" -> handleDialogueAction(player, parts);
             case "DIALOGUE_CLOSE" -> DIALOGUE_SESSIONS.remove(player.getUUID());
+            case "SHOP_CLICK" -> handleShopClick(player, parts);
+            case "SHOP_CLOSE" -> handleShopClose(player, parts);
+            case "QUEST_CLICK" -> handleQuestClick(player, parts);
+            case "QUEST_CLOSE" -> handleQuestClose(player, parts);
+            case "MOVEMENT_ACTIVATE" -> {
+                String mode = parts.length >= 2 ? parts[1] : "ALL";
+                RefugioAbilityData.activateMovement(player, mode);
+            }
             default -> { }
         }
+    }
+
+    private static void handleShopClick(ServerPlayer player, String[] parts) {
+        if (parts.length < 5 || !player.isAlive()) return;
+        if (!(player.containerMenu instanceof RefugioMenu menu) || !menu.isShopView()) return;
+        try {
+            int containerId = Integer.parseInt(parts[1]);
+            int slotId = Integer.parseInt(parts[2]);
+            int mouseButton = Integer.parseInt(parts[3]);
+            boolean quickMove = "1".equals(parts[4]);
+            if (menu.containerId != containerId) return;
+            if (mouseButton != 0 && mouseButton != 1) return;
+            if (slotId < 0 || slotId >= 90) return;
+            menu.handleClientClick(slotId, mouseButton, quickMove);
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static void handleShopClose(ServerPlayer player, String[] parts) {
+        if (parts.length < 2) return;
+        if (!(player.containerMenu instanceof RefugioMenu menu) || !menu.isShopView()) return;
+        try {
+            int containerId = Integer.parseInt(parts[1]);
+            if (menu.containerId == containerId) {
+                player.closeContainer();
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static void handleQuestClick(ServerPlayer player, String[] parts) {
+        if (parts.length < 3 || !player.isAlive()) return;
+        if (!(player.containerMenu instanceof RefugioMenu menu) || !menu.isQuestView()) return;
+        try {
+            int containerId = Integer.parseInt(parts[1]);
+            int slotId = Integer.parseInt(parts[2]);
+            if (menu.containerId != containerId) return;
+            if (!isAllowedQuestSlot(slotId)) return;
+            menu.handleClientClick(slotId, 0, false);
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static void handleQuestClose(ServerPlayer player, String[] parts) {
+        if (parts.length < 2) return;
+        if (!(player.containerMenu instanceof RefugioMenu menu) || !menu.isQuestView()) return;
+        try {
+            int containerId = Integer.parseInt(parts[1]);
+            if (menu.containerId == containerId) {
+                player.closeContainer();
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static boolean isAllowedQuestSlot(int slot) {
+        return slot == 10 || slot == 12 || slot == 14 || slot == 16
+                || slot == 28 || slot == 30 || slot == 32 || slot == 34
+                || slot == 45 || slot == 53;
     }
 
     private static boolean hasLiveAbilitySession(ServerPlayer player) {

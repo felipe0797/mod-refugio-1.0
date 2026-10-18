@@ -1,0 +1,334 @@
+REFÚGIO — ÁRVORE DE HABILIDADES (ESTADO ATUAL)
+Documento de referência para planejar a próxima atualização das habilidades
+
+Este documento descreve o que está implementado no código atual do projeto. Ele serve como fotografia da versão existente antes de propor mudanças. Nomes, valores e efeitos devem ser conferidos novamente nos fontes antes de qualquer alteração futura.
+
+======================================================================
+1. VISÃO GERAL
+======================================================================
+
+A árvore é apresentada por Kael e possui quatro categorias principais:
+
+1. Mestre da Lâmina
+2. Resistência
+3. Reflexos
+4. Sobrevivente
+
+Há atualmente 30 habilidades implementadas no modelo de dados. As categorias Mestre da Lâmina, Resistência e Sobrevivente abrem subcategorias. Reflexos não tem subcategorias: suas cinco habilidades aparecem diretamente.
+
+RESUMO DE CONTAGEM
+
+- Mestre da Lâmina: 15 habilidades em 4 subcategorias.
+- Resistência: 4 habilidades implementadas em 2 subcategorias; Vitalidade está vazia/“Em breve”.
+- Reflexos: 5 habilidades, sem submenu de subcategorias.
+- Sobrevivente: 6 habilidades em 3 subcategorias.
+- Total atual implementado: 30 habilidades.
+
+O número de habilidades é a quantidade de nós distintos na árvore, não a quantidade de ranks. Cada habilidade pode chegar ao rank 5.
+
+======================================================================
+2. PROGRESSÃO, CUSTOS E ATIVAÇÃO
+======================================================================
+
+RANKS E CUSTOS
+
+Cada habilidade possui cinco ranks. O custo para comprar cada rank é:
+
+- Rank 1: 500 moedas.
+- Rank 2: 1.000 moedas.
+- Rank 3: 2.000 moedas.
+- Rank 4: 3.000 moedas.
+- Rank 5: 4.000 moedas.
+
+A exceção é o presente inicial de Kael: o jogador pode receber gratuitamente uma única habilidade de rank 1, em vez de pagar o custo do rank 1. Essa escolha é individual e só pode acontecer uma vez por jogador.
+
+PRESENTE GRATUITO DE KAEL
+
+O jogador escolhe uma das primeiras habilidades disponíveis em qualquer trilha que tenha pelo menos uma habilidade. A habilidade escolhida deve ser o primeiro nó daquela trilha. Exemplos de primeira habilidade elegível:
+
+- Espada: Chance Crítica de Espadas.
+- Machado: Chance Crítica de Machados.
+- Arco: Chance Crítica de Arcos.
+- Extras: Retaliação.
+- Defesa Ativa: Postura Firme.
+- Reflexos: Passo Leve.
+- Mineração: Escavação Ágil.
+- Alquimia: Preparação.
+- Exploração: Rastreador.
+
+Vitalidade está vazia e, portanto, não tem habilidade para escolher neste momento. Kael oferece uma única habilidade gratuita no total; não é um presente gratuito para cada categoria ou subcategoria.
+
+DESBLOQUEIO EM CADA TRILHA
+
+- A progressão é sequencial e independente dentro de cada subcategoria/trilha.
+- O primeiro nó de uma trilha pode ser comprado, sujeito à escolha gratuita de Kael já ter sido feita.
+- Para liberar o próximo nó, é necessário possuir pelo menos rank 1 da habilidade imediatamente anterior naquela mesma trilha.
+- Não é necessário maximizar o rank anterior para liberar o próximo nó; possuir rank 1 é suficiente.
+- Comprar habilidades em uma trilha não libera as habilidades de outra trilha.
+- A categoria Reflexos funciona como uma única trilha em sequência, na ordem apresentada neste documento.
+
+COMPRA, ATIVAÇÃO E EXCLUSIVIDADE
+
+- A habilidade inicial gratuita é ativada ao ser recebida.
+- Uma habilidade comprada pela primeira vez (rank 1) também é ativada automaticamente.
+- Habilidades aprendidas podem ser ativadas ou desativadas pelo jogador.
+- Super Pulo e Pulo Duplo são mutuamente exclusivos: ativar um desativa o outro. O Arranque pode coexistir com qualquer um deles.
+- O efeito requer que a habilidade esteja ativada, salvo regras inerentes ao estado da própria habilidade.
+- A lógica de ranks, compras, ativação e efeitos é autoritativa no servidor.
+
+======================================================================
+3. CATEGORIA: MESTRE DA LÂMINA — 15 HABILIDADES
+======================================================================
+
+Mestre da Lâmina tem quatro subcategorias. Chance Crítica e Dano Crítico são separadas por tipo de arma: evoluir a versão de Espada não aumenta os valores de Machado ou Arco.
+
+3.1 SUBCATEGORIA ESPADA — 4 HABILIDADES
+
+1. Chance Crítica (ID: sword_critical_chance)
+   - Em cada rank acrescenta 10 pontos percentuais à chance de gerar um crítico em ataques com espada.
+   - Máximo no rank 5: +50 pontos percentuais.
+   - Funciona contra inimigos; não aplica o bônus a ataques contra entidades que não sejam inimigas.
+   - Pode gerar um crítico mesmo em um golpe que não seria crítico por salto. Um crítico natural de Minecraft continua valendo.
+
+2. Dano Crítico (ID: sword_critical_damage)
+   - Aumenta o multiplicador de dano dos críticos feitos com espada.
+   - Cada rank dá +10% ao multiplicador crítico; máximo +50% no rank 5.
+   - Afeta tanto críticos naturais de salto quanto os críticos gerados por Chance Crítica de Espadas.
+
+3. Primeiro Corte (ID: sword_first_cut)
+   - Após 10 segundos sem causar nem receber dano de combate, o próximo ataque elegível com espada contra um inimigo recebe bônus de dano.
+   - Cada rank acrescenta +5%; máximo +25% no rank 5.
+   - O tempo de espera é compartilhado com a medição geral de atividade de combate. A próxima interação de combate reinicia a janela de 10 segundos.
+
+4. Maestria com Espadas (ID: sword_mastery)
+   - Aumenta o dano causado com espadas em +2% por rank.
+   - Máximo: +10% no rank 5.
+
+3.2 SUBCATEGORIA MACHADO — 4 HABILIDADES
+
+1. Chance Crítica (ID: axe_critical_chance)
+   - Em cada rank acrescenta 10 pontos percentuais à chance de gerar um crítico em ataques com machados.
+   - Máximo: +50 pontos percentuais no rank 5.
+   - Funciona contra inimigos. É independente da Chance Crítica de Espadas e de Arcos.
+
+2. Dano Crítico (ID: axe_critical_damage)
+   - Cada rank aumenta em 10% o multiplicador crítico aplicado a ataques com machado.
+   - Máximo: +50% no rank 5.
+   - Afeta críticos naturais de salto e os gerados por Chance Crítica de Machados.
+
+3. Primeiro Corte (ID: axe_first_cut)
+   - Depois de 10 segundos sem causar nem receber dano de combate, o próximo ataque elegível com machado contra um inimigo ganha bônus.
+   - +5% por rank, até +25% no rank 5.
+
+4. Maestria com Machados (ID: axe_mastery)
+   - Aumenta o dano de ataques com machado em +2% por rank.
+   - Máximo: +10% no rank 5.
+
+3.3 SUBCATEGORIA ARCO — 5 HABILIDADES
+
+1. Chance Crítica (ID: bow_critical_chance)
+   - Cada rank acrescenta 10 pontos percentuais à chance de uma flecha disparada com arco causar um crítico contra um inimigo.
+   - Máximo: +50 pontos percentuais no rank 5.
+   - Se a flecha já for crítica pelo comportamento normal do jogo, o sistema mantém o crítico natural em vez de fazer uma segunda rolagem.
+
+2. Dano Crítico (ID: bow_critical_damage)
+   - Cada rank aumenta em 10% o multiplicador de dano crítico de flechas de arco.
+   - Máximo: +50% no rank 5.
+   - Atua sobre críticos naturais e críticos gerados por Chance Crítica de Arcos.
+
+3. Primeiro Tiro (ID: bow_first_shot)
+   - Após 10 segundos sem causar nem receber dano de combate, a próxima flecha que atingir um inimigo recebe bônus de dano.
+   - +5% por rank, até +25% no rank 5.
+   - É a versão de arco do Primeiro Corte; não compartilha ranks com Espada ou Machado.
+
+4. Maestria com Arcos (ID: bow_mastery)
+   - Aumenta em +5% por rank o dano de flechas disparadas com arco contra inimigos.
+   - Máximo: +25% no rank 5.
+
+5. Mira Estável (ID: steady_aim)
+   - Reduz a dispersão/inexatidão do disparo de arco em 10% por rank.
+   - Máximo: redução de 50% no rank 5.
+   - Afeta a dispersão do disparo, não concede acerto automático.
+
+3.4 SUBCATEGORIA EXTRAS — 2 HABILIDADES
+
+1. Retaliação (ID: retaliation)
+   - Quando o jogador bloqueia um ataque de inimigo com escudo, prepara um bônus para o próximo ataque.
+   - O bônus dura 3 segundos e dá +5% de dano por rank, até +25% no rank 5.
+   - Recarga: 10 segundos entre ativações.
+   - O bônus é consumido quando um ataque do jogador causa dano a um inimigo. O código também considera o bônus nos impactos de flechas elegíveis.
+
+2. Vigor da Horda (ID: horde_vigor)
+   - Ao matar um inimigo, ativa um bônus de dano por 5 segundos.
+   - Cada rank acrescenta +6% de dano, até +30% no rank 5.
+   - Matar outro inimigo durante o efeito renova sua duração por mais 5 segundos.
+   - O efeito é aplicado a ataques elegíveis contra inimigos, incluindo os ataques de arco tratados pelo código.
+
+======================================================================
+4. CATEGORIA: RESISTÊNCIA — 4 HABILIDADES IMPLEMENTADAS
+======================================================================
+
+A categoria tem duas subcategorias. Vitalidade está vazia no estado atual; Defesa Ativa possui quatro habilidades.
+
+4.1 SUBCATEGORIA VITALIDADE — 0 HABILIDADES
+
+- Sem habilidades implementadas. A interface apresenta a trilha como “Em breve”.
+- Não há nó inicial gratuito selecionável nesta subcategoria enquanto estiver vazia.
+
+4.2 SUBCATEGORIA DEFESA ATIVA — 4 HABILIDADES
+
+1. Postura Firme (ID: firm_stance)
+   - Reduz o dano recebido de inimigos em 4% por rank.
+   - Máximo: redução de 20% no rank 5.
+   - Não é a redução universal de todo dano: o código aplica o efeito a dano causado por inimigos.
+
+2. Última Reserva (ID: last_reserve)
+   - Quando um golpe de inimigo levaria a vida do jogador a 30% da vida máxima ou menos, reduz aquele golpe uma vez e inicia a recarga.
+   - Redução por rank: rank 1 = 30%, rank 2 = 40%, rank 3 = 50%, rank 4 = 60%, rank 5 = 70%.
+   - Recarga por rank: rank 1 = 60 s, rank 2 = 50 s, rank 3 = 40 s, rank 4 = 30 s, rank 5 = 20 s.
+   - A condição verifica a vida prevista após o golpe; o sistema tenta impedir que o golpe seja fatal com base na redução calculada.
+
+3. Âncora (ID: anchor)
+   - Aumenta a resistência a empurrão em 8 pontos percentuais por rank.
+   - Máximo: +40 pontos percentuais no rank 5.
+   - Implementado como modificador do atributo de resistência a empurrão.
+
+4. Defesa em Área (ID: area_defense)
+   - Depois que um ataque corpo a corpo do jogador causa dano a um inimigo, pode atingir inimigos adicionais próximos ao alvo principal.
+   - Somente inimigos vivos e visíveis (linha de visão) são selecionados; o jogador precisa estar usando esta habilidade.
+   - Progressão por rank: raio começa em 3,4 blocos no rank 1 e chega a 5 blocos no rank 5; alvos secundários começam em 2 e chegam a 4; dano secundário começa em 15% e chega a 35% do dano primário.
+   - O dano secundário tem limite de 8 pontos por alvo.
+   - Recarga: 7 segundos no rank 1, reduzindo até 3 segundos no rank 5.
+   - Não presumir que essa habilidade propague o efeito de flechas: o código atual a aciona no caminho de ataque corpo a corpo do jogador.
+
+======================================================================
+5. CATEGORIA: REFLEXOS — 5 HABILIDADES, SEM SUBCATEGORIAS
+======================================================================
+
+Estas cinco habilidades formam uma trilha sequencial direta. Super Pulo e Pulo Duplo não podem ficar ativos ao mesmo tempo.
+
+1. Passo Leve (ID: light_step)
+   - Reduz dano de queda em 4% por rank.
+   - Máximo: redução de 20% no rank 5.
+   - Efeito distinto do rastreamento de altura usado por Super Pulo/Pulo Duplo: a habilidade reduz a parcela de dano de queda calculada.
+
+2. Arranque (ID: burst)
+   - Pressione G para receber um impulso horizontal para frente, na direção da orientação do jogador.
+   - Força cresce com o rank: começa em 0,63 no rank 1 e chega a 0,95 no rank 5 (unidades de velocidade usadas pelo jogo).
+   - Recarga: 6 segundos.
+   - Não pode ser ativado montado ou dentro d’água. Pode coexistir com Super Pulo ou Pulo Duplo.
+
+3. Ímpeto (ID: momentum)
+   - Aumenta a velocidade de movimento em 6% por rank.
+   - Máximo: +30% no rank 5.
+
+4. Super Pulo (ID: super_jump)
+   - Pressione G enquanto estiver no chão para saltar com velocidade vertical maior que a normal.
+   - A força vertical é 0,62 + 0,06 por rank; rank 1 = 0,68 e rank 5 = 0,92.
+   - Recarga técnica: 1 segundo. O uso exige estar no chão, não estar montado e não estar na água.
+   - O controle de dano de queda considera a altura de partida do salto para não cobrar dano relativo à parte do salto que ficou acima da origem rastreada.
+   - É mutuamente exclusivo com Pulo Duplo.
+
+5. Pulo Duplo (ID: double_jump)
+   - Pressione G uma vez no ar para receber um segundo impulso vertical.
+   - Força vertical: 0,50 + 0,04 por rank; rank 1 = 0,54 e rank 5 = 0,70.
+   - Só pode ser usado uma vez antes de pousar; o uso renova quando o jogador toca o chão.
+   - Não pode ser usado montado ou dentro d’água. É mutuamente exclusivo com Super Pulo.
+   - O ajuste de dano de queda considera a altura de ativação do salto conforme o rastreamento implementado.
+
+ATALHO DE MOVIMENTO
+
+- A tecla configurada por padrão é G (pode ser remapeada nas configurações de controles).
+- Ao pressionar a tecla, o servidor tenta ativar Super Pulo ou Pulo Duplo — o que estiver ativo — e também Arranque se estiver ativo e disponível.
+- Se nenhuma habilidade puder ser ativada, o servidor envia a mensagem correspondente de recarga/ausência de habilidade.
+
+======================================================================
+6. CATEGORIA: SOBREVIVENTE — 6 HABILIDADES
+======================================================================
+
+6.1 SUBCATEGORIA MINERAÇÃO — 1 HABILIDADE
+
+1. Escavação Ágil (ID: mining)
+   - Aumenta a velocidade de mineração em 5% por rank.
+   - Máximo: +25% no rank 5.
+   - Não revela minério, não marca blocos e não oferece visão através de paredes.
+
+6.2 SUBCATEGORIA ALQUIMIA — 1 HABILIDADE
+
+1. Preparação (ID: preparation)
+   - Cada alimento consumido concede bônus de saturação de +0,5 por rank, até +2,5 no rank 5.
+   - Não amplia duração ou potência de poções.
+
+6.3 SUBCATEGORIA EXPLORAÇÃO — 4 HABILIDADES
+
+1. Rastreador (ID: tracker)
+   - A cada 2 segundos, procura o inimigo vivo e visível mais próximo dentro do alcance.
+   - Alcance: 18 blocos no rank 1, aumentando 2 blocos por rank, até 26 no rank 5.
+   - Mostra no máximo uma ameaça por atualização, com nome e distância na mensagem de ação.
+   - Não revela entidades através de paredes.
+
+2. Coletor (ID: collector)
+   - Atrai gradualmente itens dropados visíveis em direção ao jogador.
+   - Raio: 2 blocos no rank 1, aumentando até 4 blocos no rank 5.
+   - Não cria nem duplica drops; apenas altera gradualmente o movimento de itens existentes.
+
+3. Exploração (ID: exploration)
+   - Reduz a exaustão gerada fora da dimensão do Refúgio em 3% por rank.
+   - Máximo: redução de 15% no rank 5.
+   - O código não aplica essa redução dentro do Refúgio.
+
+4. Logística (ID: logistics)
+   - Cada rank dá 5% de chance de ignorar 1 ponto de dano de durabilidade quando o item sofre perda de durabilidade.
+   - Máximo: 25% de chance no rank 5.
+   - Não aumenta durabilidade máxima; pode apenas evitar algumas perdas de durabilidade.
+
+======================================================================
+7. NOTAS IMPORTANTES PARA A PRÓXIMA REVISÃO DE DESIGN
+======================================================================
+
+- A árvore contém nomes repetidos de propósito: Chance Crítica e Dano Crítico aparecem separadamente nas trilhas de Espada, Machado e Arco, cada uma com ID e rank independentes.
+- Primeiro Corte também é separado entre Espada e Machado; Primeiro Tiro é a versão separada para Arco.
+- As habilidades de Extras são compartilhadas com os estilos de arma: Retaliação e Vigor da Horda não pertencem somente à espada, ao machado ou ao arco.
+- Os números listados são o estado atual do código, não uma recomendação de balanceamento.
+- Parte dos efeitos soma bônus diferentes no mesmo ataque. O código atual limita a soma de alguns bônus gerais de dano a +75% antes do multiplicador crítico; críticos são aplicados separadamente. Confirme a fórmula no mixin antes de recalcular qualquer dano final.
+- Chance Crítica adiciona uma chance a cada ataque; não garante crítico em todos os golpes. O valor é determinado pelo rank e por uma rolagem aleatória do servidor.
+- As alterações futuras devem declarar claramente se mudam somente descrição/visual ou também valores, condições, cooldowns, alvos, compatibilidade de armas e regras de ativação.
+- O presente gratuito de Kael e os pré-requisitos de trilha são regras importantes da progressão; não presumir que cada categoria/subcategoria dá um presente.
+
+======================================================================
+8. FONTES DE VERDADE NO PROJETO
+======================================================================
+
+Modelo de categorias, trilhas, IDs e descrições-base:
+src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+
+Custos, ranks máximos e fórmulas numéricas:
+src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
+
+Implementação dos efeitos e persistência/ativação:
+src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+
+Efeitos de ataques corpo a corpo e crítico:
+src/main/java/com/felpz/refugio/mixin/PlayerAbilityMixin.java
+
+Efeitos de flechas, críticos e maestria de arco:
+src/main/java/com/felpz/refugio/mixin/AbstractArrowAbilityMixin.java
+
+Mira Estável:
+src/main/java/com/felpz/refugio/mixin/BowItemAbilityMixin.java
+
+Proteções/dano recebidos:
+src/main/java/com/felpz/refugio/mixin/LivingEntityAbilityMixin.java
+
+Alimentos e saturação:
+src/main/java/com/felpz/refugio/mixin/ConsumableAbilityMixin.java
+
+Durabilidade:
+src/main/java/com/felpz/refugio/mixin/ItemStackAbilityMixin.java
+
+Interface e textos localizados:
+src/client/java/com/felpz/refugio/client/RefugioAbilityScreen.java
+src/main/resources/assets/refugio/lang/pt_br.json
+src/main/resources/assets/refugio/lang/en_us.json
+
+Este documento é uma fotografia técnica para discussão de mudanças. Antes de programar, conferir novamente as fontes acima, pois elas prevalecem sobre qualquer resumo ou descrição deste TXT.

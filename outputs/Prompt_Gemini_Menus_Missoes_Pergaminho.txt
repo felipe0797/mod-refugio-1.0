@@ -1,0 +1,217 @@
+PROJETO REFÚGIO — PROMPT PARA GEMINI
+PERSONALIZAÇÃO VISUAL DOS MENUS DE MISSÕES E RESGATE DE NPCs
+
+OBJETIVO
+
+Quero transformar os menus padrão de inventário/baú do Minecraft usados pelas missões e pelo resgate de recompensas dos NPCs Eldrin, Marta e Dário em interfaces customizadas no estilo medieval de pergaminho, combinando visualmente com:
+
+- o menu customizado da loja de Baldur, que já está integrado no projeto;
+- a árvore de habilidades de Kael;
+- os diálogos customizados dos NPCs.
+
+A tarefa é somente sobre a apresentação e usabilidade visual dos menus de missões já existentes. Não invente missões ou recompensas, não crie outro sistema de quest, não altere critérios de conclusão, ordem, economia, recompensas, consumo de itens ou persistência. Toda decisão de resgate e entrega de recompensa precisa continuar sendo feita no servidor pelo código existente.
+
+Antes de alterar qualquer arquivo, inspecione os fontes atuais da branch/repositório anexado e apresente um plano curto, listando os arquivos que pretende modificar e como vai assegurar que apenas os três fluxos de missões recebam o visual novo. Não presuma que o código ou os IDs deste briefing continuem iguais: confirme-os nos arquivos atuais antes de implementar.
+
+AMBIENTE
+
+O projeto local está configurado para Minecraft 26.2, Fabric e Java 25 conforme o estado atual de desenvolvimento. Os valores podem mudar entre branches: confirme as versões efetivas em gradle.properties, build.gradle e fabric.mod.json antes de codificar. Use somente as APIs e os mapeamentos presentes nessa versão. As telas customizadas atuais usam GuiGraphicsExtractor e minecraft:uniform; confirme no código e nas dependências as assinaturas reais de qualquer método gráfico ou de entrada.
+
+Não baseie a implementação em documentação de Minecraft 1.21.1 ou em snippets antigos. Não adivinhe nomes de métodos. Use a API compatível com o projeto anexado e compile no Gradle Wrapper existente.
+
+ARQUIVOS-FONTE PARA INSPECIONAR
+
+1. Menu servidor e fluxo de cliques:
+   src/main/java/com/felpz/refugio/menu/RefugioMenu.java
+   É um único ChestMenu genérico que também atende a loja de Baldur. Os estados atuais incluem SHOP_HOME, SUBCATEGORIES, CATEGORY, SEARCH, PRODUCT_DETAIL, SELL, SELL_CONFIRM, QUESTS, GARDEN_QUESTS e EXPEDITION_QUESTS. Leia os métodos de abertura, clicked/handleButton, clickQuest, clickSideQuest, renderQuests e renderSideQuests.
+
+2. Serviço de payload e ações dos NPCs:
+   src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+   As ações de diálogo que abrem missões são OPEN_QUESTS, OPEN_GARDEN_QUESTS e OPEN_EXPEDITION_QUESTS. Confirme o roteamento atual e o formato de RefugioUiPayload antes de estender qualquer protocolo.
+
+3. Missões da campanha de Eldrin:
+   src/main/java/com/felpz/refugio/quest/RefugioQuests.java
+   Esta classe é a fonte de verdade para avanços vanilla, ordem de resgate e recompensas da campanha principal.
+
+4. Missões opcionais de Marta e Dário:
+   src/main/java/com/felpz/refugio/quest/RefugioSideQuests.java
+   Esta classe define os objetivos, progresso persistente, requisitos de entrega, consumo de itens no resgate e recompensas das trilhas GARDEN e EXPEDITION.
+
+5. Estado persistente e moedas:
+   src/main/java/com/felpz/refugio/data/RefugioPlayerData.java
+   Use o servidor para obter progresso e moedas. Não crie estado local ou paralelo no cliente.
+
+6. Inicialização e telas cliente existentes:
+   src/client/java/com/felpz/refugio/client/RefugioClient.java
+   src/client/java/com/felpz/refugio/client/RefugioShopScreen.java
+   src/client/java/com/felpz/refugio/client/RefugioAbilityScreen.java
+   src/client/java/com/felpz/refugio/client/RefugioDialogueScreen.java
+   A loja fornece um exemplo recente de moldura/pergaminho, layouts, desenhos dinâmicos e hover dourado. Inspecione a versão realmente ativa. Não copie às cegas código de outros arquivos ou de versões anteriores.
+
+7. NPCs, ações e nomes localizados:
+   src/main/java/com/felpz/refugio/npc/RefugioNPCs.java
+   src/main/resources/assets/refugio/lang/pt_br.json
+   src/main/resources/assets/refugio/lang/en_us.json
+   PT-BR é o idioma principal, mas mantenha ambos os arquivos de idioma válidos e consistentes se forem necessárias novas chaves.
+
+COMO OS MENUS FUNCIONAM HOJE
+
+RefugioMenu herda de ChestMenu e usa MenuType.GENERIC_9x6, com 54 slots decorativos do menu e 36 slots do inventário do jogador. A aparência atual é a interface padrão de baú/inventário. Os itens desses 54 slots apresentam missões e funcionam como botões. Os menus de missões não são a loja de Baldur, embora compartilhem a classe RefugioMenu e o mesmo tipo genérico de container.
+
+A abertura de campanha é RefugioUiService → RefugioMenu.openQuests(player), estado QUESTS. A abertura da horta é openSideQuests(..., Track.GARDEN), estado GARDEN_QUESTS. A abertura de expedições é openSideQuests(..., Track.EXPEDITION), estado EXPEDITION_QUESTS. Estes fluxos são chamados pelos diálogos dos NPCs. Preserve essas chamadas e os diálogos.
+
+A tela customizada precisa ser exclusiva desses três estados de missão. Não registre uma tela substituta global para MenuType.GENERIC_9x6. Essa mesma classe/tipo é usada pela loja de Baldur e por baús comuns do Minecraft; alterar o tipo globalmente quebraria outros menus. O menu da loja já recebeu uma implementação visual customizada. Não reescreva nem desfaça a loja, a árvore de habilidades ou os diálogos para realizar esta tarefa.
+
+ARQUITETURA DE INTEGRAÇÃO — REQUISITO CENTRAL
+
+Estude a solução que está sendo usada na tela customizada da loja: o servidor mantém o menu ativo e envia estado ao cliente para que uma tela própria desenhe a apresentação. Use o padrão apenas se ele for compatível com os fontes atuais e estenda-o de modo claramente separado para os estados de missão.
+
+A identificação deve depender de um estado explícito do servidor (por exemplo, QUESTS, GARDEN_QUESTS ou EXPEDITION_QUESTS e o containerId correspondente), e nunca apenas de comparar o texto traduzido do título. Só esses três estados emitem payloads de missão. Os estados da loja continuam sendo tratados pela RefugioShopScreen; Ability e Dialogue continuam inalterados; baús vanilla continuam vanilla.
+
+Não substitua a tela de todos os ChestMenu/GENERIC_9x6. Não crie um menu paralelo sem sincronização. Não descarte ou desative o container ativo sem entender como a tela atual transmite cliques. Os cliques nos cartões de missão devem chegar ao servidor, validar containerId, jogador, estado e slot permitido, e delegar às regras existentes de RefugioMenu/RefugioQuests/RefugioSideQuests.
+
+Como esses menus de missão usam slots decorativos, não slots de depósito/venda, uma tela cliente pode desenhar cards independentes; ainda assim, a operação de resgate, consumo de requisitos e entrega dos itens/moedas permanece server-authoritative. O snapshot enviado ao cliente deve representar o estado real calculado no servidor. Não aceite do cliente campos como “missão concluída”, progresso, recompensa ou moedas como verdade.
+
+A sincronização deve acontecer na abertura e depois de cada clique/resgate bem-sucedido ou tentativa relevante. Ao mudar o progresso, redesenhe os cartões e os estados sem exigir fechar e reabrir. Validar que o payload não permita agir em outro container ou em um estado SHOP.
+
+FLUXOS E COMPORTAMENTOS A PRESERVAR
+
+A. Campanha de Eldrin — QUESTS
+
+- A campanha contém oito missões, ordenadas e vinculadas a avanços vanilla.
+- Somente a próxima missão não resgatada pode ser resgatada. Concluir o avanço não equivale a resgatar: o jogador precisa retornar ao menu e clicar no cartão atual.
+- O servidor chama RefugioQuests.claimNext(player), marca a missão como resgatada, concede moedas e item, atualiza a persistência e emite a mensagem existente.
+- As missões anteriores aparecem concluídas/resgatadas; a próxima deve distinguir “em andamento” de “concluída — pronta para resgate”; as futuras devem continuar bloqueadas.
+- Quando o avanço atual está concluído, clicar no cartão da próxima missão é a ação de resgate. Quando não está, a lógica atual informa que ainda não está pronta. Não criar confirmação adicional que dificulte o resgate sem necessidade.
+- Recompensas da campanha definidas hoje em RefugioQuests.java:
+  0. A Idade da Pedra — 40 moedas + 16 tochas.
+  1. Era do Ferro — 60 moedas + 1 peitoral de ferro.
+  2. A Obsidiana e a Fagulha — 100 moedas + 1 calça de diamante.
+  3. Além do Portal — 200 moedas + 16 maçãs douradas.
+  4. Caça às Chamas — 500 moedas + 20 olhos do Ender.
+  5. Rastro do Olho — 500 moedas + 12 olhos do Ender.
+  6. O Portal do Fim — 1.000 moedas + 64 foguetes de fogos de artifício.
+  7. O Último Desafio — 10.000 moedas + 32 sopros de dragão.
+- A lista acima serve para entender e testar a interface. A fonte autoritativa é sempre o arquivo atual RefugioQuests.java; não replique esses valores em lógica do cliente.
+
+B. Missões da Horta de Marta — GARDEN_QUESTS
+
+- O progresso é independente da campanha principal e persistido por attachment próprio.
+- Existem oito missões. Objetivos de entrega exigem que os itens estejam no inventário e são consumidos somente ao resgatar com sucesso a missão atual.
+- Algumas tarefas são verificadas por avanço vanilla. Só o índice igual ao progresso atual pode ser resgatado; futuras permanecem bloqueadas.
+- O servidor usa RefugioSideQuests.claimNext(player, Track.GARDEN), concede a recompensa e as moedas ou informa que a missão ainda não está pronta.
+- Resumo das recompensas atuais definidas no código:
+  0. 50 moedas; 16 pães e 5 batatas.
+  1. 70 moedas; 16 carvões e 5 cenouras.
+  2. 100 moedas; 16 cenouras douradas.
+  3. 150 moedas; 10 maçãs douradas.
+  4. 150 moedas; 2 guias.
+  5. 100 moedas; 1 espada de ferro com Afiação II.
+  6. 150 moedas; 30 pós de osso.
+  7. 250 moedas; 16 tochas e 1 picareta de diamante com Eficiência III.
+- As descrições e requisitos completos — trigo, alimentos cozidos, batatas/cenouras, avanço de reprodução, couro, avanço de armadura, carne podre, pães e tochas — estão em RefugioSideQuests.java e nas traduções. Não codifique de novo esses requisitos no cliente.
+
+C. Expedições de Dário — EXPEDITION_QUESTS
+
+- O progresso é independente das missões de Eldrin e da horta, também persistido em attachment próprio.
+- Existem oito missões. Podem exigir entrega de itens, estatísticas do jogador ou avanços vanilla. Requisitos de entrega só são consumidos no resgate bem-sucedido da missão atual.
+- O servidor usa RefugioSideQuests.claimNext(player, Track.EXPEDITION); moedas, itens e bloqueios vêm dessa chamada.
+- Resumo das recompensas atuais definidas no código:
+  0. 50 moedas; 8 pães.
+  1. 100 moedas; 16 tochas e 1 picareta de ferro com Eficiência II.
+  2. 200 moedas; 16 maçãs douradas.
+  3. 200 moedas; 1 bloco de esmeralda.
+  4. 250 moedas; 10 poções prolongadas de resistência ao fogo e 2 poções de força II.
+  5. 100 moedas; 5 maçãs douradas e 1 capacete de diamante com Proteção III.
+  6. 200 moedas; 2 olhos do Ender, 10 pérolas do Ender e 1 machado de diamante com Afiação III.
+  7. 500 moedas; 12 maçãs douradas encantadas, 64 flechas espectrais e 1 livro encantado com Poder V.
+- Objetivos e requisitos completos estão em RefugioSideQuests.java e nos idiomas. Não os duplique em código cliente.
+
+REGRAS DOS CARTÕES E DADOS VISUAIS
+
+Os renderizadores atuais de RefugioMenu colocam no item dos slots o título, lore/descrição, progresso de entrega, recompensa (quando visível) e estado. O novo menu deve apresentar essas informações com hierarquia visual legível:
+
+- NPC/linha de contexto e título da trilha no cabeçalho.
+- Cartões individuais com número, título, resumo do objetivo, estado e um ícone real de item/avanço quando adequado.
+- Estado distinguível visualmente: resgatada/concluída; missão atual em andamento; missão atual pronta para resgate; missão futura bloqueada.
+- Objetivos de entrega devem exibir progresso atual/necessário e nome dos itens ou grupo aceito, quando a API de dados atual fornecer essa informação.
+- Recompensa pode aparecer para missões concluídas/resgatadas segundo a regra atual; antes da conclusão a horta/expedição atualmente ocultam a recompensa. Preserve essa regra de visibilidade salvo se os arquivos atuais explicitamente mostrarem algo diferente.
+- Mostrar recompensa como texto dinâmico e ícones ItemStack quando possível. Não renderizar texto de recompensa na imagem estática; moeda, quantidade, nomes, encantamentos e poções precisam refletir os dados reais.
+- Saldo de moedas pode ser exibido como informação visual, mas não é a ação principal nem deve permitir edição pelo cliente.
+- O cartão atual pronto para resgate deve deixar claro que clicar irá reivindicar a recompensa. A ação continua sendo um clique server-side no mesmo slot lógico já usado.
+
+SLOTS E COMPORTAMENTO ATUAL A CONFIRMAR
+
+No estado atual inspecionado:
+- Os cartões de missão usam slots `{10, 12, 14, 16, 28, 30, 32, 34}`.
+- Em QUESTS, o menu principal processa a missão clicada conforme o índice atual do jogador; slot 45 e slot 53 atualmente voltam para SHOP_HOME.
+- Em GARDEN_QUESTS e EXPEDITION_QUESTS, os mesmos oito slots representam missões; slots 45 e 53 atualmente fecham o container.
+- O renderizador coloca uma seta/retorno no slot 45. A semântica diferente de 45/53 entre campanha e missões secundárias precisa ser examinada cuidadosamente no código atual.
+
+IMPORTANTE SOBRE A NAVEGAÇÃO DE ELDRIN
+
+Há uma particularidade no comportamento atual que não deve ser alterada silenciosamente: clickQuest trata os slots 45 e 53 como retorno para View.SHOP_HOME, embora o menu aberto por Eldrin seja de missões. Isso pode ser intencional ou legado. Antes de codificar, informe essa divergência no plano. Não transforme esse retorno em “fechar”, “abrir loja” ou outro comportamento por conta própria. Para esta tarefa, preservar a ação existente é o padrão; se parecer um bug, descreva-o em separado para que eu decida depois.
+
+DIREÇÃO VISUAL
+
+Use o mesmo estilo medieval de pergaminho bege e madeira escura das telas atuais: moldura contendo integralmente o pergaminho, placa de título, tipografia nativa minecraft:uniform, contraste forte, botões temáticos, acabamento dourado discreto no hover, ícones reais do Minecraft e textos desenhados dinamicamente. Evite a aparência de inventário/baú, bordas exageradamente grossas, texto pixelado artificial, sombras excessivas e hover branco padrão.
+
+Inspecione as texturas e a implementação da RefugioShopScreen já integrada. Reutilize assets que existirem, por exemplo os localizados em:
+- src/main/resources/assets/refugio/textures/gui/dialogue/parchment.png
+- src/main/resources/assets/refugio/textures/gui/dialogue/wood_frame.png
+- src/main/resources/assets/refugio/textures/gui/dialogue/title_plaque.png
+- src/main/resources/assets/refugio/textures/gui/dialogue/button_primary.png
+- src/main/resources/assets/refugio/textures/gui/dialogue/button_close.png
+- src/main/resources/assets/refugio/textures/gui/dialogue/portraits/ (verifique quais retratos de Eldrin, Marta e Dário existem)
+
+Não presuma que todo retrato existe. Se faltar retrato, use somente os assets realmente presentes ou um ícone de item/representação simples; não desenhe rostos manualmente nem invente novos NPCs.
+
+RESPONSIVIDADE, INPUT E ESCALA
+
+A interface deve permanecer utilizável em GUI Scale diferente, em janela e tela cheia. Calcule o layout com base nas dimensões lógicas atuais da Screen; não use posições absolutas que só funcionem numa única resolução. Crie um Layout/Rect ou abordagem equivalente como fonte única de geometria, compartilhada por render e eventos de mouse, para que o que aparece seja exatamente o que recebe clique.
+
+Os cartões devem se reorganizar conforme a área disponível. Em janelas baixas/estreitas, reduza a quantidade visível de cards por página e adicione paginação própria no cliente, sem alterar a ordem server-side das oito missões. Cards não podem invadir moldura, placa, saldo, navegação ou controles de fechar/voltar. Textos longos devem quebrar linha, caber em área rolável ou ser apresentados por tooltip legível.
+
+Testar pelo menos resoluções 1920x1080, 1366x768, 1280x720 e janela pequena próxima de 854x480, com GUI Scale Auto/1/2/3/4 quando viável. Registrar o que foi verificado por build/simulação e o que ainda precisa ser testado no cliente real.
+
+Fechamento por ESC e botão visual devem fechar a tela customizada sem fechar indevidamente o container do servidor, exceto quando a ação atual do menu realmente fecha o container. Verifique com a API desta versão o ciclo de vida da Screen e o comportamento de client.player.containerMenu. Não acesse campos inexistentes como Minecraft.screen se não existirem na versão atual.
+
+LIMITES E NÃO-OBJETIVOS
+
+- Não alterar missão, nome, descrição, requisito, avanço vanilla, ordem, número de missões, moedas ou item de recompensa.
+- Não alterar RefugioQuests.claimNext, RefugioSideQuests.claimNext, os attachments de progresso ou persistência.
+- Não consumir requisitos ao abrir ou apenas visualizar o menu; entregas são consumidas somente pelo fluxo server-side de resgate existente.
+- Não aceitar do cliente afirmações de que uma missão foi concluída, resgatada ou que itens estão disponíveis.
+- Não criar uma economia, quest manager ou protocolo paralelo que duplique a lógica existente.
+- Não alterar loja do Baldur, RefugioShopScreen, árvore de Kael ou telas de diálogo, salvo integração mínima necessária e explicada.
+- Não substituir globalmente MenuType.GENERIC_9x6 nem alterar baús vanilla.
+- Não aplicar a interface nova a categorias da loja, menu de venda, horta como parte da loja, ou outras telas que não sejam exatamente os três fluxos de missões aqui especificados.
+- Não remover interações existentes nem trocar slots lógicos server-side apenas por causa da posição visual. A interface pode mapear cards visuais aos slots de missão existentes, mantendo a mesma ação do servidor.
+- Não remover nem traduzir de forma incompleta chaves já existentes. Se novas chaves forem necessárias, atualizar PT-BR e EN-US em paralelo.
+
+PLANO DE IMPLEMENTAÇÃO ESPERADO
+
+1. Inspecione os arquivos atuais e descreva a arquitetura de abertura e clique dos estados QUESTS, GARDEN_QUESTS e EXPEDITION_QUESTS.
+2. Confirme a identificação segura dos três fluxos e explique como ela não afetará SHOP, Ability, Dialogue nem baús vanilla.
+3. Apresente a lista de arquivos que pretende modificar antes de editar. Mantenha o escopo mínimo: possivelmente RefugioMenu, RefugioUiService, RefugioClient e uma nova tela compartilhada de missões, mas escolha apenas após a inspeção.
+4. Implemente a interface usando dados/payload de missão calculados pelo servidor. Não repita as regras das quests no cliente.
+5. Use o mesmo protocolo de cliques server-side com validação de containerId/estado/slot ou extensão mínima equivalente. A paginação visual local deve selecionar o slot lógico correto sem permitir clicar em missão fora do estado atual.
+6. Preserve explicitamente a semântica atual de retorno/fechamento, incluindo a diferença do slot 45/53 na campanha de Eldrin, salvo decisão posterior do usuário.
+7. Faça compilação cliente e execute `.\gradlew.bat clean build` no PowerShell. Execute também os testes Gradle existentes. Corrija os erros introduzidos.
+8. Inspecione o JAR para confirmar inclusão da nova tela, payloads e assets necessários. Não declare validação visual no jogo se não executou o cliente.
+9. Entregue um resumo dos arquivos alterados, do mecanismo de identificação, dos testes realmente executados e dos limites de validação.
+
+CHECKLIST FUNCIONAL PARA TESTE NO JOGO
+
+1. Falar com Eldrin e abrir a campanha; conferir título, oito cartões e estados inicializados corretamente.
+2. Com o avanço da primeira missão incompleto, clicar nela: não conceder recompensa; a mensagem server-side existente deve permanecer.
+3. Completar o avanço vanilla da missão atual, voltar a Eldrin e resgatar: conferir moedas, item, estado concluído e mensagem.
+4. Confirmar que não é possível resgatar uma missão futura antes da atual, nem receber uma mesma recompensa duas vezes.
+5. Abrir as missões da horta com Marta. Testar uma entrega ainda incompleta (não deve consumir itens), uma entrega completa e o resgate (deve consumir os itens exigidos uma única vez e conceder a recompensa correta). Testar também missões por avanço.
+6. Abrir as expedições com Dário. Testar uma missão de entrega, uma baseada em dormir/trocar/navegar e uma baseada em avanço ou arco encantado. Confirmar progresso independente das outras trilhas.
+7. Fechar por ESC e pelo botão visual; confirmar que o menu fecha ou navega exatamente conforme o comportamento já implementado.
+8. Abrir a loja de Baldur, a árvore de Kael, um baú vanilla e outros menus para confirmar que permanecem inalterados.
+9. Repetir em diferentes GUI Scales e resoluções; conferir layout, rolagem/paginação, hover, tooltips e clique alinhado aos cards.
+10. Confirmar que nenhuma tela concede item ou moeda baseada apenas no estado visual do cliente.
+
+A implementação só será considerada pronta quando os três fluxos tiverem aparência de pergaminho, todas as recompensas continuarem sendo verificadas e concedidas pelo servidor, e os demais menus do projeto permanecerem intactos.

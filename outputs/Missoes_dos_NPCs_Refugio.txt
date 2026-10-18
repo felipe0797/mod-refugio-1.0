@@ -1,0 +1,210 @@
+REFÚGIO — COMO FUNCIONAM AS MISSÕES DOS NPCs
+Referência do funcionamento atual do código
+Minecraft/Fabric: versão do projeto 26.2
+Data da leitura: 18/10/2026
+
+IMPORTANTE
+Este arquivo descreve o comportamento implementado atualmente no projeto, não uma proposta nova. Use-o como linha de base para decidir quais regras, objetivos e recompensas serão alterados.
+
+============================================================
+1. VISÃO GERAL: QUAL NPC FAZ O QUÊ?
+============================================================
+
+ELDRIN — CRONISTA DO FIM
+• Entrega a campanha principal do Refúgio: 8 missões em sequência, relacionadas à progressão vanilla até o Ender Dragon.
+• As missões são baseadas em avanços (advancements) do Minecraft. O jogador realiza o objetivo no mundo e depois clica no cartão da missão para resgatar.
+• O resgate da campanha principal também conta para desbloquear categorias da loja do Baldur.
+
+MARTA — GUARDIÃ DA HORTA
+• Oferece uma trilha secundária de 8 missões ligadas à agricultura, alimentos, criação de animais e materiais.
+• A trilha de Marta tem progresso próprio e independente da campanha de Eldrin e da trilha de Dário.
+
+DÁRIO — CARTÓGRAFO E ALQUIMISTA
+• Oferece uma trilha secundária de 8 missões de exploração, preparação, comércio, viagem de barco e equipamentos.
+• A trilha de Dário também possui progresso independente.
+
+KAEL
+• No sistema atual, Kael oferece a árvore de habilidades e a escolha da habilidade inicial gratuita; não é um dos três NPCs das listas de missões deste documento.
+
+BALDUR
+• É o lojista. A loja não é uma trilha de missões própria; a campanha de Eldrin é que libera categorias da loja conforme o jogador resgata missões.
+
+============================================================
+2. REGRAS GERAIS DE PROGRESSO E RESGATE
+============================================================
+
+• A campanha de Eldrin tem uma sequência única de 8 missões. Só a missão correspondente ao próximo índice de progresso pode ser resgatada. Mesmo que um avanço de uma missão futura já tenha sido concluído, o jogador precisa resgatar as anteriores primeiro.
+• Marta e Dário têm trilhas separadas, cada uma com 8 missões sequenciais. O progresso de uma trilha não avança a outra e não depende da campanha de Eldrin.
+• Em todas as trilhas, apenas a missão atual pode ser reivindicada. As futuras aparecem bloqueadas até que as anteriores sejam resgatadas.
+• Quando o objetivo da missão atual é concluído, o cartão informa que ela está pronta para resgate. O jogador precisa clicar no cartão; cumprir o objetivo, por si só, não entrega automaticamente a recompensa.
+• As missões da campanha de Eldrin consultam avanços do jogador. Elas não retiram itens do inventário.
+• Nas missões de entrega de Marta e Dário, o progresso conta itens do inventário do jogador. Os itens exigidos só são consumidos quando a missão é efetivamente resgatada. Se faltar algum item no momento do resgate, a missão não avança.
+• Os objetivos não baseados em entrega são verificados por avanços ou estatísticas do Minecraft, por exemplo dormir, comerciar ou navegar de barco.
+• Moedas e recompensas são concedidas pelo servidor no resgate. A lógica é autoritativa no servidor, não apenas visual na tela.
+• Se o inventário não tiver espaço para uma recompensa, os itens que não couberem são deixados no mundo ao lado do jogador.
+• As recompensas de missão recebem uma marca interna do Refúgio. O sistema de venda da loja rejeita itens com essa marca, impedindo que sejam revendidos ao Baldur.
+• O saldo de moedas é compartilhado entre todas as trilhas. No primeiro ingresso, o jogador recebe 50 moedas iniciais; as moedas de missão são somadas a esse saldo.
+• A tela pode ocultar os prêmios de uma missão que ainda não foi concluída. Em geral, o valor fica visível para a missão concluída/pronta para resgate e para as já resgatadas.
+
+============================================================
+3. CAMPANHA PRINCIPAL — ELDRIN
+============================================================
+
+A campanha possui 8 objetivos. Os IDs entre parênteses são os avanços consultados pelo código.
+
+1) A IDADE DA PEDRA
+Objetivo exibido: Obtenha pedra e avance além das ferramentas de madeira.
+Verificação técnica: avanço minecraft:story/mine_stone.
+Recompensa: 40 moedas + 16 tochas.
+
+2) ERA DO FERRO
+Objetivo exibido: Crie ferramentas de ferro e prepare seu equipamento.
+Verificação técnica: avanço minecraft:story/iron_tools.
+Recompensa: 60 moedas + 1 peitoral de ferro.
+
+3) A OBSIDIANA E A FAGULHA
+Objetivo exibido: Consiga obsidiana e prepare a ignição do portal.
+Verificação técnica: avanço minecraft:story/form_obsidian.
+Recompensa: 100 moedas + 1 calça de diamante.
+
+4) ALÉM DO PORTAL
+Objetivo exibido: Construa um portal e entre no Nether.
+Verificação técnica: avanço minecraft:story/enter_the_nether.
+Recompensa: 200 moedas + 16 maçãs douradas.
+
+5) CAÇA ÀS CHAMAS
+Objetivo exibido: Encontre uma fortaleza e obtenha uma vara de Blaze.
+Verificação técnica: avanço minecraft:nether/obtain_blaze_rod.
+Recompensa: 500 moedas + 20 Olhos do Ender.
+
+6) RASTRO DO OLHO
+Objetivo exibido: Use um Olho do Ender para localizar a fortaleza.
+Verificação técnica: avanço minecraft:story/follow_ender_eye.
+Recompensa: 500 moedas + 12 Olhos do Ender.
+
+7) O PORTAL DO FIM
+Objetivo exibido: Ative o portal e entre na dimensão do End.
+Verificação técnica: avanço minecraft:story/enter_the_end.
+Recompensa: 1.000 moedas + 64 foguetes de artifício (duração de voo 3).
+
+8) O ÚLTIMO DESAFIO
+Objetivo exibido: Derrote o Ender Dragon. Esta é a missão final.
+Verificação técnica: avanço minecraft:end/kill_dragon.
+Recompensa: 10.000 moedas + 32 bafo de dragão.
+
+TOTAL DA CAMPANHA PRINCIPAL: 12.400 moedas, além dos itens acima.
+
+Desbloqueio de categorias da loja por missões da campanha resgatadas:
+• Categoria 0 — Sobrevivência: 0 resgates exigidos.
+• Categoria 1 — Construção e mecanismos: 1 resgate.
+• Categoria 2 — Ferramentas e equipamento: 2 resgates.
+• Categoria 3 — Exploração e aventura: 4 resgates.
+• Categoria 4 — Relíquias Plus: 8 resgates.
+O teste administrativo de liberar todas as categorias da loja ignora esses requisitos. A implementação atual acompanha o número de missões principais resgatadas, não apenas o número de avanços concluídos.
+
+============================================================
+4. TRILHA DA HORTA — MARTA
+============================================================
+
+São 8 missões sequenciais. Nas entregas de grupos, qualquer combinação dos itens aceitos que alcance a quantidade exigida serve.
+
+1) SEMEANDO O REFÚGIO
+Objetivo: entregar 16 trigos.
+Recompensa: 50 moedas + 16 pães + 5 batatas.
+
+2) FORNO ABASTECIDO
+Objetivo: entregar 12 alimentos cozidos. O código aceita carne bovina, suína, frango, carneiro, bacalhau, salmão, coelho ou batata assada.
+Recompensa: 70 moedas + 16 carvões + 5 cenouras.
+
+3) COLHEITA VARIADA
+Objetivo: entregar 16 batatas e/ou cenouras, em qualquer combinação.
+Recompensa: 100 moedas + 16 cenouras douradas.
+
+4) REBANHO SOB CUIDADO
+Objetivo: reproduzir animais e concluir o avanço vanilla correspondente.
+Verificação técnica: avanço minecraft:husbandry/breed_an_animal.
+Recompensa: 150 moedas + 10 maçãs douradas.
+
+5) MATERIAL DE ARMADURA
+Objetivo: entregar 12 couros.
+Recompensa: 150 moedas + 2 guias.
+
+6) PROTEÇÃO DE VIAGEM
+Objetivo: obter uma peça de armadura e concluir o avanço vanilla correspondente.
+Verificação técnica: avanço minecraft:story/obtain_armor.
+Recompensa: 100 moedas + 1 espada de ferro com Afiação II.
+
+7) SE LIVRANDO DOS PODRES
+Objetivo: entregar 16 carnes podres.
+Recompensa: 150 moedas + 30 pós de osso.
+
+8) PROVISÕES PARA A TRAVESSIA
+Objetivo: entregar 30 pães e 32 tochas. Os dois requisitos são obrigatórios.
+Recompensa: 250 moedas + 16 tochas + 1 picareta de diamante com Eficiência III.
+
+TOTAL DA TRILHA DE MARTA: 1.020 moedas, além dos itens acima.
+
+============================================================
+5. TRILHA DE EXPEDIÇÃO — DÁRIO
+============================================================
+
+São 8 missões sequenciais. As metas de estatística são acumuladas no mundo/jogador, conforme indicado.
+
+1) AINDA SE ADAPTANDO?
+Objetivo: dormir em uma cama pelo menos uma vez; o código consulta a estatística de dormir.
+Recompensa: 50 moedas + 8 pães.
+
+2) LUZ NAS CAVERNAS
+Objetivo: entregar 5 carvões e 5 ferros brutos. Os dois requisitos são obrigatórios.
+Recompensa: 100 moedas + 16 tochas + 1 picareta de ferro com Eficiência II.
+
+3) RESERVA DE EXPEDIÇÃO
+Objetivo: entregar 12 lápis-lazúlis e 5 lingotes de ouro. Os dois requisitos são obrigatórios.
+Recompensa: 200 moedas + 16 maçãs douradas.
+
+4) A PRIMEIRA TROCA
+Objetivo: realizar pelo menos uma troca comercial com um aldeão; o código consulta a estatística de comércio.
+Recompensa: 200 moedas + 1 bloco de esmeralda.
+
+5) O ALQUIMISTA
+Objetivo: entregar 1 poção. O código aceita poção normal, arremessável ou persistente.
+Recompensa: 250 moedas + 10 poções prolongadas de resistência ao fogo + 2 poções de força II.
+
+6) EM BUSCA DE TERRA FIRME
+Objetivo: navegar 1.000 blocos de barco, somando a distância registrada pelo jogo. A descrição e a barra de progresso usam blocos acumulados.
+Recompensa: 100 moedas + 5 maçãs douradas + 1 capacete de diamante com Proteção III.
+
+7) QUE MINÉRIO É ESSE?
+Objetivo exibido: encontrar detritos ancestrais e concluir o avanço.
+Verificação técnica: avanço minecraft:nether/obtain_ancient_debris.
+Recompensa: 200 moedas + 2 Olhos do Ender + 10 pérolas do Ender + 1 machado de diamante com Afiação III.
+
+8) ÚLTIMOS PREPARATIVOS
+Objetivo: manter no inventário um arco com pelo menos um encantamento. A verificação atual aceita qualquer encantamento no arco.
+Recompensa: 500 moedas + 12 maçãs douradas encantadas + 64 flechas espectrais + 1 livro encantado com Poder V.
+
+TOTAL DA TRILHA DE DÁRIO: 1.600 moedas, além dos itens acima.
+
+============================================================
+6. REGRAS DE IMPLEMENTAÇÃO IMPORTANTES PARA A PRÓXIMA REVISÃO
+============================================================
+
+• O número atual é de 8 missões na campanha principal, 8 na trilha de Marta e 8 na trilha de Dário: 24 missões no total.
+• As moedas atuais somam 12.400 na campanha principal, 1.020 na trilha de Marta e 1.600 na trilha de Dário, se todas forem resgatadas.
+• Cada trilha secundária possui um contador persistente próprio. O contador da campanha principal é separado e também controla os desbloqueios da loja.
+• A ordem atual é parte da regra de progressão. Alterar a ordem, inserir/remover missões ou mudar os índices pode afetar saves já existentes.
+• Há uma migração de versão no contador da campanha: para jogadores com saves antigos, o código compensa a inclusão anterior da missão de obsidiana quando o número antigo de resgates era 3 ou mais. Uma nova reorganização da campanha deve revisar essa migração para não duplicar, pular ou bloquear missões.
+• As recompensas de itens e moedas são distintas: os itens podem mudar sem necessariamente mudar os requisitos ou o avanço da progressão, mas qualquer alteração deve preservar a validação e o resgate no servidor.
+• As descrições em português ficam no arquivo de idioma assets/refugio/lang/pt_br.json; os requisitos/recompensas são definidos no código Java, principalmente em RefugioQuests.java e RefugioSideQuests.java. RefugioMenu.java monta o estado enviado às telas e processa cliques/resgates. RefugioUiService.java encaminha as ações entre o cliente e o servidor.
+• O texto exibido deve ser mantido sincronizado com o critério real do código. Exemplo: a missão de arco atualmente aceita qualquer encantamento, e a missão de barco usa distância acumulada, não uma única viagem contínua.
+
+============================================================
+7. ARQUIVOS-FONTE CONSULTADOS
+============================================================
+
+src/main/java/com/felpz/refugio/quest/RefugioQuests.java
+src/main/java/com/felpz/refugio/quest/RefugioSideQuests.java
+src/main/java/com/felpz/refugio/menu/RefugioMenu.java
+src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+src/main/java/com/felpz/refugio/data/RefugioPlayerData.java
+src/main/resources/assets/refugio/lang/pt_br.json

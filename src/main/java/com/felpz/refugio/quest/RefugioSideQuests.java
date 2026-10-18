@@ -86,6 +86,65 @@ public final class RefugioSideQuests {
     }
     public record MissionView(String titleKey, String descriptionKey) { }
 
+    public static int coins(Track track, int index) {
+        return missions(track).get(index).coins();
+    }
+
+    public static String objectiveIconId(Track track, int index) {
+        Mission m = missions(track).get(index);
+        if (!m.requirements().isEmpty() && !m.requirements().getFirst().itemIds().isEmpty()) {
+            String raw = m.requirements().getFirst().itemIds().getFirst();
+            if ("@cooked_food".equals(raw)) return "minecraft:cooked_beef";
+            if ("@potion".equals(raw)) return "minecraft:potion";
+            return raw;
+        }
+        return switch (m.objective()) {
+            case SLEEP -> "minecraft:red_bed";
+            case TRADE -> "minecraft:emerald";
+            case BOAT -> "minecraft:oak_boat";
+            case ENCHANTED_BOW -> "minecraft:bow";
+            case ADVANCEMENT -> "husbandry/breed_an_animal".equals(m.advancement()) ? "minecraft:wheat"
+                    : "story/obtain_armor".equals(m.advancement()) ? "minecraft:iron_chestplate"
+                    : "nether/obtain_ancient_debris".equals(m.advancement()) ? "minecraft:ancient_debris"
+                    : (!m.rewards().isEmpty() ? m.rewards().getFirst().itemId() : "minecraft:book");
+            case DELIVERY -> !m.rewards().isEmpty() ? m.rewards().getFirst().itemId() : "minecraft:book";
+        };
+    }
+
+    public static String serializeProgressSpecs(ServerPlayer player, Track track, int index) {
+        Mission m = missions(track).get(index);
+        if (m.objective() == Objective.DELIVERY) {
+            StringBuilder sb = new StringBuilder();
+            for (Requirement req : m.requirements()) {
+                int found = countMatching(player, req.itemIds());
+                String target = (req.itemIds().size() == 1 && !req.itemIds().getFirst().startsWith("@"))
+                        ? req.itemIds().getFirst() : "@group";
+                if (!sb.isEmpty()) sb.append('~');
+                sb.append("DELIVERY^").append(found).append('^').append(req.count()).append('^').append(target);
+            }
+            return sb.toString();
+        }
+        if (m.objective() == Objective.BOAT) {
+            long blocks = Math.min(1000L, player.getStats().getValue(Stats.CUSTOM.get(Stats.BOAT_ONE_CM)) / 100L);
+            return "BOAT^" + blocks + "^1000^";
+        }
+        return "";
+    }
+
+    public static String serializeRewardSpecs(Track track, int index) {
+        Mission m = missions(track).get(index);
+        StringBuilder sb = new StringBuilder();
+        for (Reward r : m.rewards()) {
+            if (!sb.isEmpty()) sb.append('~');
+            sb.append(r.itemId()).append('^')
+                    .append(r.count()).append('^')
+                    .append(r.enchantment() != null ? r.enchantment() : "").append('^')
+                    .append(r.level()).append('^')
+                    .append(r.potion() != null ? r.potion() : "");
+        }
+        return sb.toString();
+    }
+
     public static boolean isComplete(ServerPlayer player, Track track, int index) {
         if (index < 0 || index >= count(track)) return false;
         Mission mission = missions(track).get(index);

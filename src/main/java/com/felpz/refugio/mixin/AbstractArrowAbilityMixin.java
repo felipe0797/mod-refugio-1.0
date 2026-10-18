@@ -4,7 +4,6 @@ import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.ability.RefugioAbilityRules;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.phys.EntityHitResult;
@@ -60,7 +59,7 @@ public abstract class AbstractArrowAbilityMixin {
         }
         if (bonus <= 0.0f && criticalMultiplier == 1.0) return;
         refugio$originalArrowDamage = baseDamage;
-        baseDamage *= 1.0 + Math.min(0.75f, bonus);
+        baseDamage *= 1.0 + bonus;
         baseDamage *= criticalMultiplier;
         refugio$boostedArrowDamage = true;
     }

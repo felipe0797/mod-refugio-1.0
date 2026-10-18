@@ -1,0 +1,178 @@
+PROJETO REFÚGIO — BRIEFING PARA O GEMINI
+MENU PERSONALIZADO DA LOJA DE BALDUR
+
+OBJETIVO
+
+Quero substituir a aparência padrão de inventário/baú do Minecraft usada na loja de Baldur por uma interface própria, medieval, bonita e legível, feita com pergaminho bege, moldura de madeira escura, placa de título, botões temáticos e realce dourado no hover. O estilo deve combinar com as telas customizadas de diálogo dos NPCs e da árvore de habilidades que já existem no projeto.
+
+Esta tarefa é principalmente visual. A loja já funciona e não deve perder suas regras, transações, progresso ou interações. Antes de alterar qualquer código, leia a implementação atual, confirme as APIs que realmente existem na versão do projeto e proponha uma estratégia curta para substituir somente a apresentação da loja.
+
+AMBIENTE REAL DO PROJETO
+
+O projeto anexado é a fonte de verdade. No momento da preparação deste briefing, gradle.properties declara:
+- Minecraft: 26.2
+- Fabric Loader: 0.19.5
+- Fabric API: 0.161.0+26.2
+- Fabric Loom: 1.18-SNAPSHOT
+- Java: 25 (sourceCompatibility/targetCompatibility)
+
+Não converta o projeto para Minecraft 1.21.1 nem use exemplos de APIs de outra versão. Antes de codificar, confira novamente gradle.properties, build.gradle, fabric.mod.json, mappings e os métodos usados nas telas atuais. A API gráfica cliente usada neste projeto inclui GuiGraphicsExtractor e eventos de entrada da versão instalada; confirme as assinaturas diretamente no projeto e nas dependências Gradle.
+
+ARQUIVOS PRINCIPAIS PARA INSPECIONAR
+
+1. Loja e ações no servidor:
+   src/main/java/com/felpz/refugio/menu/RefugioMenu.java
+   É a implementação principal da loja e também contém outras telas de menu. Não reescreva a economia. Leia a classe completa antes de alterar qualquer coisa.
+
+2. Catálogo, preços e dados das ofertas:
+   src/main/java/com/felpz/refugio/shop/ShopCatalog.java
+   src/main/java/com/felpz/refugio/shop/ShopPricing.java
+   Estes arquivos definem itens, quantidades, preços, subcategorias, limites, regras de venda e outras informações. Não altere o conteúdo comercial para esta tarefa visual.
+
+3. Entrada da loja a partir do diálogo do NPC:
+   src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+   A ação OPEN_SHOP chama RefugioMenu.openShop(player). Preserve esse fluxo.
+
+4. Tela de diálogo, que já tem a identidade visual desejada:
+   src/client/java/com/felpz/refugio/client/RefugioDialogueScreen.java
+   Ela usa GuiGraphicsExtractor, a fonte minecraft:uniform, moldura, pergaminho, placa, retrato, botões e efeitos de hover dourado.
+
+5. Árvore de habilidades, também referência de layout e navegação:
+   src/client/java/com/felpz/refugio/client/RefugioAbilityScreen.java
+   Observe especialmente os helpers de desenho, o hover dourado, o uso de itens vanilla como ícones e o modelo de cálculo de layout compartilhado por renderização e hitboxes (computeLayout e records de retângulos/layout).
+
+6. Inicialização do cliente:
+   src/client/java/com/felpz/refugio/client/RefugioClient.java
+   Atualmente registra as telas customizadas de diálogo e habilidades a partir de RefugioUiPayload. Não há uma tela cliente própria da loja registrada aqui.
+
+7. Localização:
+   src/main/resources/assets/refugio/lang/pt_br.json
+   src/main/resources/assets/refugio/lang/en_us.json
+   PT-BR é o idioma principal. Preserve as chaves existentes. Se novas chaves visuais forem realmente necessárias, adicione-as nos dois arquivos, com valores naturais e correspondentes.
+
+ARQUITETURA ATUAL — PONTO CRÍTICO
+
+RefugioMenu extends ChestMenu e chama o construtor com MenuType.GENERIC_9x6 e uma SimpleContainer de 54 slots. A tela que aparece é a tela genérica de contêiner do Minecraft; os itens nos slots dessa SimpleContainer são usados como botões e como conteúdo visual. Não foi encontrada uma tela customizada de loja já registrada no RefugioClient.
+
+Isso significa que não se deve registrar uma tela própria globalmente para MenuType.GENERIC_9x6 sem um filtro: esse é o tipo genérico de baú do Minecraft e uma substituição global pode alterar baús comuns e outros menus. RefugioMenu também serve telas de missões principais, horta e expedições, além da loja. A mudança desejada é somente para os fluxos de loja/venda de Baldur; não transforme automaticamente todos os baús ou menus de missão no novo menu de loja.
+
+Antes de implementar, descubra a forma mais segura e compatível com as APIs reais do Minecraft/Fabric instaladas de desenhar uma tela customizada somente para os títulos/contextos da loja, mantendo o contêiner ativo. Os fluxos podem abrir com títulos localizados como gui.refugio.shop_title, gui.refugio.search_results e gui.refugio.sell_title. Inspecione todos os pontos de openMenu em RefugioMenu.java e escolha uma identificação robusta. Não dependa de comparar texto traduzido já renderizado se houver uma alternativa segura usando Component/key, estado do menu ou uma extensão de protocolo pequena e estritamente validada.
+
+Se a arquitetura atual não permitir identificar a loja com segurança sem uma alteração maior, explique isso antes de realizar uma substituição global. Prefira uma integração localizada e compatível. Se for inevitável criar um tipo de menu próprio, descreva a mudança de arquitetura necessária, incluindo construção cliente/servidor e sincronização, e não remova as interações de contêiner existentes.
+
+Uma tela customizada deve continuar sendo uma tela de contêiner/handled screen compatível com o menu ativo, ou usar um mecanismo equivalente que preserve a sincronização vanilla. Não troque simplesmente por uma Screen independente que desenhe itens sem manter o menu do servidor: isso pode quebrar clique em slots, arraste, cursor, shift-click, sincronização de inventário, fechamento e devolução dos itens depositados.
+
+FLUXO ATUAL DE ABERTURA
+
+O diálogo de Baldur usa a ação OPEN_SHOP. RefugioUiService valida a ação da sessão e chama RefugioMenu.openShop(player). O servidor então abre RefugioMenu; os itens dos slots são desenhados como opções clicáveis. Preserve o diálogo e essa ação. A tela nova deve aparecer quando o jogador clicar na ação de abrir a loja de Baldur, sem criar um segundo diálogo ou um sistema de comércio paralelo.
+
+FUNCIONALIDADES DA LOJA QUE PRECISAM CONTINUAR FUNCIONANDO
+
+RefugioMenu contém os estados internos SHOP_HOME, SUBCATEGORIES, CATEGORY, SEARCH, PRODUCT_DETAIL, SELL e SELL_CONFIRM. Também contém QUESTS, GARDEN_QUESTS e EXPEDITION_QUESTS, que não são a loja de Baldur e não devem ser convertidos acidentalmente nesta tarefa.
+
+A. Página inicial da loja
+- Apresenta cinco categorias de produtos e a opção de vender itens.
+- Categorias bloqueadas continuam visualmente e funcionalmente bloqueadas conforme a progressão de missões; a tela não pode permitir contornar o bloqueio.
+- Mostra o saldo de moedas.
+- Os nomes e ícones oficiais vêm de ShopCatalog e das traduções.
+
+B. Subcategorias
+- Abre depois que o jogador escolhe uma categoria.
+- Exibe subcategorias, contagem de ofertas, voltar, paginação, busca, saldo e acesso à venda.
+- A progressão e os requisitos continuam sendo decididos no servidor.
+
+C. Lista de produtos e resultados de busca
+- As ofertas exibem itens reais do jogo, incluindo stack/count, nome, preço e requisitos quando aplicáveis.
+- Há paginação, busca e opções de ordenação.
+- O servidor usa atualmente até PAGE_SIZE = 45 ofertas por página e recebe cliques pelos IDs de slot. Preserve a associação correta entre cada representação visual e o slot/oferta correspondente.
+- Os preços e os requisitos exibidos devem vir dos dados sincronizados/itens fornecidos pelo menu, sem criar valores paralelos no cliente.
+- A busca usa o comando existente /refugio buscar <termo> e o método RefugioMenu.applySearch.
+
+D. Detalhe e compra
+- Ao selecionar uma oferta, abre a tela de detalhe do produto.
+- Quantidades predefinidas: 1, 8, 16, 32 e 64; existe quantidade personalizada pelo comando /refugio quantidade <valor> (1 a 2304).
+- Itens de stack máximo 1 não podem ser comprados em quantidade maior que 1.
+- Exibe quantidade, preço unitário, total, saldo e saldo restante, usando os dados e componentes do item.
+- Confirmar compra continua acionando a lógica server-side já existente. Cancelar/voltar deve continuar funcionando.
+- Validações de saldo, espaço no inventário, item válido, categoria desbloqueada, requisitos de missões, limites numéricos e transações simultâneas permanecem exclusivamente no servidor.
+
+E. Venda de itens
+- O modo SELL precisa manter o inventário real do jogador e os slots de depósito. Existem vários slots centrais para depositar; o jogador pode mover itens e também usar shift-click para depositar.
+- Mostrar itens aceitos e rejeitados, valores unitários/por pilha, total, saldo após venda, devolver itens e confirmar venda.
+- O detalhe de venda permite escolher quantidades predefinidas, quantidade personalizada via /refugio vender <valor>, vender a pilha toda e confirmar/cancelar.
+- Preservar os cliques normais de inventário, divisão de pilha, arraste quando suportado, quick-move, validação de itens vendáveis e devolução automática dos itens depositados se o contêiner for fechado.
+- Nunca ocultar ou desativar os slots de inventário/de depósito ao ponto de impedir a interação; não descartar nem duplicar itens.
+
+DIREÇÃO VISUAL
+
+Use a identidade existente, não desenhe o menu inteiro como uma imagem estática. Todos os textos, preços, nomes, estados, itens, quantidades e descrições devem continuar sendo desenhados dinamicamente pelo jogo.
+
+Recursos existentes reutilizáveis:
+- Pergaminho: src/main/resources/assets/refugio/textures/gui/dialogue/parchment.png
+- Moldura de madeira: src/main/resources/assets/refugio/textures/gui/dialogue/wood_frame.png
+- Placa de título: src/main/resources/assets/refugio/textures/gui/dialogue/title_plaque.png
+- Botão principal verde: src/main/resources/assets/refugio/textures/gui/dialogue/button_primary.png
+- Botão secundário/marrom: src/main/resources/assets/refugio/textures/gui/dialogue/button_close.png
+- Retrato do Baldur, se for útil: src/main/resources/assets/refugio/textures/gui/dialogue/portraits/baldur.png
+
+Leia como as telas existentes desenham essas texturas; não assuma coordenadas UV incorretas. Na tela de diálogo, a placa usa recorte de UV da faixa útil da imagem. Os botões têm hover dourado feito por código. Reutilize o método/ideia que corresponde à versão atual e confirme a assinatura real do blit em Minecraft 26.2.
+
+Requisitos de aparência:
+- Pergaminho bege sempre contido dentro da moldura de madeira, sem ultrapassar os ornamentos.
+- Placa superior com título “Lojista do Refúgio” (localizado dinamicamente).
+- Área de moedas clara, com ícone de moeda e número atualizado.
+- Botão fechar/voltar visível, com hitbox alinhada à imagem e afastado das vigas e ornamentos.
+- Botões principais verdes e secundários marrons, com hover dourado elegante. Não usar overlay branco padrão do Minecraft.
+- Usar a fonte nativa minecraft:uniform, conforme as telas existentes; evitar fonte pixelada artificial, contornos grossos e sombras exageradas.
+- Usar graphics.item/renderização de ItemStack para ícones reais dos itens, inclusive quantidade e encantamentos, em vez de desenhar ícones à mão.
+- Tipografia, cores e espaçamento devem ser legíveis, com contraste de tinta escura no pergaminho.
+- A aparência precisa permanecer proporcional e utilizável em diferentes resoluções e GUI Scales. Deve haver breakpoints/layout compacto em vez de coordenadas fixas que se sobreponham.
+- Se houver texto longo, usar quebra de linha e/ou tooltip/área rolável. Não deixar preços ou descrições cortados sem indicação.
+
+RESPONSIVIDADE E HITBOXES
+
+- Crie uma única fonte de verdade para a geometria (por exemplo Layout/Rect calculado uma vez por frame/entrada), reutilizada por render, mouse clicks, scroll e qualquer drag. Evite calcular as coordenadas de desenho e clique em fórmulas separadas.
+- Recalcule o layout a partir de width/height atuais do Screen. Mantenha painel e conteúdo dentro de uma área segura da moldura, sem sair dos limites em resoluções lógicas pequenas.
+- Faça o número/organização de colunas e o tamanho de texto se adaptarem à largura. Cards/controles não podem sobrepor saldo, título, navegação ou borda.
+- Teste pelo menos: GUI Scale Auto/1/2/3/4, tela cheia e janela; 1920x1080, 1366x768, 1280x720 e uma janela pequena perto de 854x480, considerando que a resolução lógica muda conforme o GUI Scale.
+- Se o menu redesenhar/reposicionar slots do contêiner, garanta que as coordenadas clicáveis correspondam aos mesmos IDs de slot que RefugioMenu espera. Preserve o cursor/stack carried e o comportamento padrão de clique do contêiner.
+
+LIMITES — NÃO ALTERAR
+
+- Não alterar ShopCatalog, ShopPricing, preços, itens oferecidos, quantidades, descontos ou venda.
+- Não alterar progressão de categorias, missões, requisitos de desbloqueio, moedas ou regras de compra/venda.
+- Não reescrever RefugioMenu como uma economia client-side nem duplicar validações no cliente.
+- Não alterar o fluxo de diálogos nem as ações de Baldur.
+- Não substituir globalmente a tela de baús vanilla ou o MenuType.GENERIC_9x6.
+- Não aplicar a nova interface aos menus de missões, horta ou expedições sem uma autorização separada.
+- Não substituir textos dinâmicos por uma imagem estática nem apagar o inventário real do modo de venda.
+- Não remover comandos ou protocolos usados para busca e quantidade personalizada.
+- Não alterar arquivos fora do escopo necessário. Se precisar de uma mudança de protocolo/registro/menu, explicar antes e mantê-la mínima.
+
+PLANO DE TRABALHO ESPERADO
+
+1. Inspecione o repositório completo e descreva como a loja é aberta, como a tela genérica aparece e quais opções de integração existem na versão atual.
+2. Antes de editar, apresente um plano curto com os arquivos que pretende mudar e como vai garantir que só a loja de Baldur receba o novo visual.
+3. Implemente a camada visual reutilizando parchment, wood_frame, title_plaque e os botões já existentes. Mantenha a lógica server-side e as interações do contêiner.
+4. Se houver incerteza sobre a API de telas/menus do Minecraft 26.2, confirme nas dependências e exemplos do próprio projeto. Não adivinhe nomes de classes/métodos antigos.
+5. Execute primeiro compilação cliente; depois o build completo e os testes existentes. Corrija erros introduzidos.
+6. Verifique que baús vanilla e telas de missões continuam usando a tela original, e que o menu de Baldur é o único que usa a tela personalizada.
+7. Entregue um resumo dos arquivos alterados, da estratégia de identificação da loja, dos testes executados e das funções que não puderam ser verificadas dentro do jogo.
+
+VALIDAÇÃO FUNCIONAL OBRIGATÓRIA
+
+Após a implementação, confirmar:
+- Baldur abre o menu de pergaminho por meio do diálogo existente.
+- A navegação categoria → subcategoria → produto → detalhe permanece correta.
+- Os controles de voltar, fechar, paginação, busca e ordenação funcionam.
+- Saldo e preços correspondem aos dados do servidor.
+- A compra funciona; falta de moedas, inventário cheio, categorias bloqueadas e requisitos de missão continuam sendo tratados pelo servidor.
+- Quantidades personalizadas de compra e venda continuam funcionando pelos comandos existentes.
+- A venda permite depositar, retirar, shift-clickar, ver total, confirmar e cancelar; fechar a tela devolve os itens.
+- Um baú vanilla normal continua com sua interface padrão.
+- Menus de missões principais, horta e expedições continuam com seu comportamento e aparência atuais.
+- Escalas diferentes não fazem moldura, saldo, botões, cards, paginação ou inventário se sobreporem.
+
+IMPORTANTE
+
+Não assuma que “menu da loja” é uma classe cliente isolada: hoje o servidor monta um ChestMenu genérico e usa itens dos slots como botões. O desafio principal é adicionar uma apresentação medieval específica para a loja sem tomar conta dos baús vanilla ou perder a sincronização do contêiner. Priorize preservar o sistema existente e fazer a menor mudança arquitetural possível.

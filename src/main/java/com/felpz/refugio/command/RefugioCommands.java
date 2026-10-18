@@ -31,6 +31,17 @@ public final class RefugioCommands {
                                         }
                                         return 1;
                                     })))
+                    .then(Commands.literal("vender")
+                            .then(Commands.argument("valor", IntegerArgumentType.integer(1, 2304))
+                                    .executes(context -> {
+                                        ServerPlayer player = context.getSource().getPlayerOrException();
+                                        int quantity = IntegerArgumentType.getInteger(context, "valor");
+                                        if (!RefugioMenu.applyCustomSellQuantity(player, quantity)) {
+                                            player.sendSystemMessage(Component.translatable("message.refugio.custom_sell_quantity_invalid"));
+                                            return 0;
+                                        }
+                                        return 1;
+                                    })))
                     .then(Commands.literal("buscar")
                             .then(Commands.argument("termo", StringArgumentType.greedyString())
                                     .executes(context -> {

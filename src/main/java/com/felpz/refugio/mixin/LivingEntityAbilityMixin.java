@@ -42,13 +42,20 @@ public abstract class LivingEntityAbilityMixin {
             float reduction = RefugioAbilityRules.firmStanceReduction(RefugioAbilityData.rank(player, "firm_stance"));
             damageMultiplier *= 1.0f - reduction;
         }
-        float reserveReduction = RefugioAbilityData.tryLastReserve(player, adjustedAmount * damageMultiplier);
+        float reserveReduction = (source.getEntity() instanceof Enemy)
+                ? RefugioAbilityData.tryLastReserve(player, adjustedAmount * damageMultiplier)
+                : 0.0f;
         damageMultiplier *= 1.0f - reserveReduction;
         if (damageMultiplier >= 1.0f && adjustedAmount == amount) return;
 
+        float finalDamage = adjustedAmount * damageMultiplier;
+        if (reserveReduction > 0.0f && player.getHealth() - finalDamage <= 0.0f) {
+            finalDamage = Math.max(0.0f, player.getHealth() - 1.0f);
+        }
+
         refugio$applyingReducedDamage = true;
         try {
-            cir.setReturnValue(player.hurtServer(level, source, adjustedAmount * damageMultiplier));
+            cir.setReturnValue(player.hurtServer(level, source, finalDamage));
         } finally {
             refugio$applyingReducedDamage = false;
         }
