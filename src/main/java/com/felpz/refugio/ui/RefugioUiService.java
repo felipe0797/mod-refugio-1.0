@@ -37,6 +37,7 @@ public final class RefugioUiService {
             player.sendSystemMessage(Component.translatable("message.refugio.ability.castle_only"));
             return;
         }
+        RefugioAbilityData.clearSuperJumpCharge(player, true);
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         ABILITY_SESSIONS.put(player.getUUID(), expiresAt);
         DIALOGUE_SESSIONS.remove(player.getUUID());
@@ -46,6 +47,7 @@ public final class RefugioUiService {
     public static void openDialogue(ServerPlayer player, String speakerKey, List<String> lineKeys,
                                    String action, String actionLabelKey) {
         if (lineKeys.isEmpty() || lineKeys.size() > 6) return;
+        RefugioAbilityData.clearSuperJumpCharge(player, true);
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         DIALOGUE_SESSIONS.put(player.getUUID(), new DialogueSession(action, expiresAt));
         ABILITY_SESSIONS.remove(player.getUUID());
@@ -92,7 +94,7 @@ public final class RefugioUiService {
             case "QUEST_CLICK" -> handleQuestClick(player, parts);
             case "QUEST_CLOSE" -> handleQuestClose(player, parts);
             case "MOVEMENT_ACTIVATE" -> {
-                String mode = parts.length >= 2 ? parts[1] : "ALL";
+                String mode = parts.length >= 2 ? parts[1] : "JUMP_PASSIVE";
                 RefugioAbilityData.activateMovement(player, mode);
             }
             default -> { }
@@ -202,6 +204,7 @@ public final class RefugioUiService {
         String payload = "ABILITY\t" + RefugioPlayerData.getCoins(player) + "\t"
                 + RefugioAbilityData.freeChoice(player) + "\t" + ranks + "\t" + activeMask + "\t" + feedbackKey;
         ServerPlayNetworking.send(player, new RefugioUiPayload(payload));
+        RefugioAbilityData.syncMovementState(player);
     }
 
     private static String feedbackKey(RefugioAbilityData.PurchaseResult result) {

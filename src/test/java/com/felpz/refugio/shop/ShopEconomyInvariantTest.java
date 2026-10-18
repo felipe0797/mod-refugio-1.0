@@ -62,7 +62,10 @@ public final class ShopEconomyInvariantTest {
         near(RefugioAbilityRules.miningSpeedBonus(1), 0.06, "mining rank 1");
         near(RefugioAbilityRules.miningSpeedBonus(5), 0.30, "mining cap");
         near(RefugioAbilityRules.anchorKnockbackBonus(5), 0.40, "anchor cap");
+        near(RefugioAbilityRules.superJumpVelocity(1), 0.68, "super-jump rank 1");
         near(RefugioAbilityRules.superJumpVelocity(5), 0.92, "super-jump rank 5");
+        require(RefugioAbilityRules.superJumpChargeTicks() == 20L, "super-jump 1s charge bar ticks");
+        near(RefugioAbilityRules.doubleJumpVelocity(1), 0.54, "double-jump rank 1");
         near(RefugioAbilityRules.doubleJumpVelocity(5), 0.70, "double-jump rank 5");
         near(RefugioAbilityRules.burstVelocity(1), 1.0, "burst rank 1");
         near(RefugioAbilityRules.burstVelocity(5), 5.0, "burst cap");

@@ -843,11 +843,12 @@ public final class RefugioMenu extends ChestMenu {
             for (int slot = 0; slot < PAGE_SIZE && start + slot < offers.size(); slot++) {
                 Offer offer = offers.get(start + slot);
                 int req = ShopCatalog.requiredClaims(offer);
-                boolean locked = normalMode && claimed < req;
+                boolean locked = normalMode && !RefugioPlayerData.hasAllShopCategoriesUnlocked(owner) && claimed < req;
                 if (!itemsBuilder.isEmpty()) itemsBuilder.append(';');
                 itemsBuilder.append(slot).append('|').append(offer.itemId()).append('|')
                         .append(offer.amount()).append('|').append(offer.price()).append('|')
-                        .append(req).append('|').append(locked ? 1 : 0);
+                        .append(req).append('|').append(locked ? 1 : 0).append('|')
+                        .append(serializeEnchantmentSpecs(offer.enchantments()));
             }
         } else if (view == View.SELL) {
             for (int slot : SELL_DEPOSIT_SLOTS) {
@@ -877,6 +878,7 @@ public final class RefugioMenu extends ChestMenu {
         int detailReqClaims = 0;
         boolean detailCanAction = false;
         String detailItemId = "minecraft:air";
+        String detailEnchants = "";
 
         if (view == View.PRODUCT_DETAIL && selectedOffer != null) {
             detailItemId = selectedOffer.itemId();
@@ -886,6 +888,7 @@ public final class RefugioMenu extends ChestMenu {
             detailStackLimit = ShopCatalog.maxStackSize(selectedOffer);
             detailReqClaims = RefugioPlayerData.hasAllShopCategoriesUnlocked(owner)
                     ? 0 : ShopCatalog.requiredClaims(selectedOffer);
+            detailEnchants = serializeEnchantmentSpecs(selectedOffer.enchantments());
             boolean unlocked = RefugioQuests.isCategoryUnlocked(owner, categoryIndex)
                     && (RefugioPlayerData.getMode(owner) != RefugioPlayerData.MODE_PROGRESSION
                     || RefugioPlayerData.getClaimedQuestCount(owner) >= detailReqClaims);
@@ -961,8 +964,19 @@ public final class RefugioMenu extends ChestMenu {
                 + catReqs + "\t"
                 + carriedId + "\t"
                 + carriedCount + "\t"
-                + itemsBuilder;
+                + itemsBuilder + "\t"
+                + detailEnchants;
         RefugioUiService.sendShopState(owner, payload);
+    }
+
+    private static String serializeEnchantmentSpecs(List<EnchantmentSpec> specs) {
+        if (specs == null || specs.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (EnchantmentSpec spec : specs) {
+            if (!sb.isEmpty()) sb.append('~');
+            sb.append(spec.id()).append('^').append(spec.level());
+        }
+        return sb.toString();
     }
 
     private void renderHome() {
@@ -1035,14 +1049,16 @@ public final class RefugioMenu extends ChestMenu {
         long total = ShopCatalog.totalPrice(selectedOffer, selectedQuantity);
         long remaining = (long) RefugioPlayerData.getCoins(owner) - total;
         ItemStack product = offerStack(selectedOffer);
-        product.set(DataComponents.LORE, new ItemLore(List.of(
+        List<Component> detailLore = new ArrayList<>(describeEnchantmentLines(selectedOffer.enchantments()));
+        detailLore.addAll(List.of(
                 Component.translatable("gui.refugio.purchase_unit_price", selectedOffer.price()),
                 Component.translatable("gui.refugio.purchase_quantity", selectedQuantity),
                 Component.translatable("gui.refugio.purchase_total", total),
                 Component.translatable("gui.refugio.balance_value", RefugioPlayerData.getCoins(owner)),
                 Component.translatable("gui.refugio.purchase_remaining", Math.max(0L, remaining)),
                 Component.translatable("gui.refugio.product_stack_size", ShopCatalog.maxStackSize(selectedOffer)),
-                Component.translatable("gui.refugio.package_discount"))));
+                Component.translatable("gui.refugio.package_discount")));
+        product.set(DataComponents.LORE, new ItemLore(detailLore));
         buttons.setItem(22, product);
         int[] slots = {10, 12, 14, 16, 28};
         int[] quantities = {1, 8, 16, 32, 64};
@@ -1337,7 +1353,8 @@ public final class RefugioMenu extends ChestMenu {
         if (item == net.minecraft.world.item.Items.AIR) return ItemStack.EMPTY;
         ItemStack stack = new ItemStack(item, offer.amount());
         applyEnchantments(stack, offer.enchantments());
-        List<Component> lore = new ArrayList<>(List.of(
+        List<Component> lore = new ArrayList<>(describeEnchantmentLines(offer.enchantments()));
+        lore.addAll(List.of(
                 Component.translatable("gui.refugio.offer_pack", offer.amount()),
                 Component.translatable("gui.refugio.offer_price", offer.price()),
                 Component.translatable("gui.refugio.offer_buy_hint"),
@@ -1347,6 +1364,19 @@ public final class RefugioMenu extends ChestMenu {
         }
         stack.set(DataComponents.LORE, new ItemLore(lore));
         return stack;
+    }
+
+    private List<Component> describeEnchantmentLines(List<EnchantmentSpec> enchantments) {
+        if (enchantments == null || enchantments.isEmpty()) return List.of();
+        var registry = owner.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        List<Component> lines = new ArrayList<>(enchantments.size() + 1);
+        lines.add(Component.translatable("gui.refugio.offer_enchantments_header"));
+        for (EnchantmentSpec spec : enchantments) {
+            ResourceKey<Enchantment> key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(spec.id()));
+            Holder<Enchantment> holder = registry.getOrThrow(key);
+            lines.add(Component.literal("• ").append(Enchantment.getFullname(holder, spec.level())));
+        }
+        return lines;
     }
 
     private void applyEnchantments(ItemStack stack, List<EnchantmentSpec> enchantments) {

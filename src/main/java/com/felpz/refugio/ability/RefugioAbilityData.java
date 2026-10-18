@@ -7,8 +7,9 @@ import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -110,10 +111,10 @@ public final class RefugioAbilityData {
             skill("anchor", "Âncora", "+8 pontos percentuais de resistência a empurrão por rank, até +40%.", Track.ACTIVE_DEFENSE, "minecraft:iron_boots"),
 
             skill("light_step", "Passo Leve", "Reduz o dano de queda em 10% por rank, até 50%.", Track.REFLEXES, "minecraft:feather"),
-            skill("burst", "Arranque", "Pressione CTRL Esquerdo (configurável) para avançar na direção da mira; força de 1 a 5 por rank, recarga de 60–30 s e 2 usos seguidos no rank 5.", Track.REFLEXES, "minecraft:sugar"),
+            skill("burst", "Arranque", "Use o atalho configurado de Arranque para avançar na direção da mira; força de 1 a 5 por rank, recarga de 60–30 s e 2 usos seguidos no rank 5.", Track.REFLEXES, "minecraft:sugar"),
             skill("momentum", "Ímpeto", "+7% de velocidade de movimento por rank, até +30% no rank 5.", Track.REFLEXES, "minecraft:rabbit_foot"),
-            skill("super_jump", "Super Pulo", "Pressione Espaço (configurável) no chão para saltar mais alto; força de 0,68 a 0,92 por rank e recarga de 1 s. O dano de queda considera a altura de partida.", Track.REFLEXES, "minecraft:slime_block"),
-            skill("double_jump", "Pulo Duplo", "Pressione Espaço (configurável) uma vez no ar para saltar novamente; força de 0,54 a 0,70 por rank. Renova ao pousar.", Track.REFLEXES, "minecraft:phantom_membrane"),
+            skill("super_jump", "Super Pulo", "Segure o atalho de Pulo Especial no chão para carregar a barra e solte para saltar mais alto; força de 0,68 a 0,92 por rank, renovando ao tocar o chão. O dano de queda considera a altura de partida no salto.", Track.REFLEXES, "minecraft:slime_block"),
+            skill("double_jump", "Pulo Duplo", "Salte normalmente no chão e pressione o atalho de Pulo Especial uma vez no ar para um segundo impulso vertical (0,54 a 0,70 por rank). Renova ao tocar o chão; não ativa montado nem na água.", Track.REFLEXES, "minecraft:phantom_membrane"),
 
             skill("mining", "Escavação Ágil", "+6% de velocidade de mineração por rank, até +30%; sem revelar minérios.", Track.MINING, "minecraft:iron_pickaxe"),
             skill("preparation", "Preparação", "Cada alimento concede +0,5 de saturação por rank, até +2,5; não amplia poções.", Track.ALCHEMY, "minecraft:potion"),
@@ -142,12 +143,20 @@ public final class RefugioAbilityData {
             Refugio.id("ability_horde_vigor_until"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Long> LAST_RESERVE_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_last_reserve_cooldown"), builder -> builder.initializer(() -> 0L));
-    private static final AttachmentType<Long> JUMP_COOLDOWN_UNTIL = AttachmentRegistry.create(
-            Refugio.id("ability_jump_cooldown"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Long> BURST_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_burst_cooldown"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Integer> BURST_CHARGES_USED = AttachmentRegistry.create(
             Refugio.id("ability_burst_charges_used"), builder -> builder.initializer(() -> 0));
+    private static final AttachmentType<Boolean> SUPER_JUMP_CHARGING = AttachmentRegistry.create(
+            Refugio.id("ability_super_jump_charging"), builder -> builder.initializer(() -> false));
+    private static final AttachmentType<Long> SUPER_JUMP_CHARGE_STARTED_AT = AttachmentRegistry.create(
+            Refugio.id("ability_super_jump_charge_started_at"), builder -> builder.initializer(() -> 0L));
+    private static final AttachmentType<String> SUPER_JUMP_CHARGE_DIMENSION = AttachmentRegistry.create(
+            Refugio.id("ability_super_jump_charge_dimension"), builder -> builder.initializer(() -> ""));
+    private static final AttachmentType<Boolean> SUPER_JUMP_USED = AttachmentRegistry.create(
+            Refugio.id("ability_super_jump_used"), builder -> builder.initializer(() -> false));
+    private static final AttachmentType<Long> SUPER_JUMP_LAUNCHED_AT = AttachmentRegistry.create(
+            Refugio.id("ability_super_jump_launched_at"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Boolean> DOUBLE_JUMP_USED = AttachmentRegistry.create(
             Refugio.id("ability_double_jump_used"), builder -> builder.initializer(() -> false));
     private static final AttachmentType<Boolean> JUMP_TRACKING = AttachmentRegistry.create(
@@ -162,6 +171,7 @@ public final class RefugioAbilityData {
             Refugio.id("ability_area_defense_cooldown"), builder -> builder.initializer(() -> 0L));
 
     private static final Set<UUID> APPLYING_AREA_DEFENSE = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, Integer> LAST_SYNCED_MOVEMENT_MASK = new ConcurrentHashMap<>();
 
     private RefugioAbilityData() { }
 
@@ -205,17 +215,19 @@ public final class RefugioAbilityData {
     public static boolean hasFreeChoice(ServerPlayer player) { return !freeChoice(player).isEmpty(); }
 
     public static void registerEvents() {
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> LAST_SYNCED_MOVEMENT_MASK.clear());
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            LAST_SYNCED_MOVEMENT_MASK.remove(handler.player.getUUID());
+            clearSuperJumpCharge(handler.player, false);
+        });
         ServerTickEvents.END_SERVER_TICK.register(server ->
                 server.getPlayerList().getPlayers().forEach(player -> {
+                    enforceJumpExclusivity(player);
+                    syncMovementStateIfNeeded(player);
                     refreshAttributeSkills(player);
                     refreshJumpState(player);
                     refreshUtilitySkills(player);
                 }));
-        PayloadTypeRegistry.serverboundPlay()
-                .register(ActivateMovementPayload.TYPE, ActivateMovementPayload.CODEC);
-        ServerPlayNetworking.registerGlobalReceiver(
-                ActivateMovementPayload.TYPE, (payload, context) ->
-                        context.server().execute(() -> activateMovement(context.player())));
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (entity instanceof ServerPlayer victim) {
                 if (blocked && source.getEntity() instanceof Enemy && isActive(victim, "retaliation")) {
@@ -234,6 +246,10 @@ public final class RefugioAbilityData {
             }
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            if (entity instanceof ServerPlayer deadPlayer) {
+                clearSuperJumpCharge(deadPlayer, false);
+                clearJumpTracking(deadPlayer);
+            }
             if (!(source.getEntity() instanceof ServerPlayer killer)) return;
             recordCombatActivity(killer);
             if (entity instanceof Enemy) {
@@ -244,6 +260,36 @@ public final class RefugioAbilityData {
                 triggerAreaDefenseOnKill(killer, entity);
             }
         });
+    }
+
+    private static void enforceJumpExclusivity(ServerPlayer player) {
+        if (isActive(player, "super_jump") && isActive(player, "double_jump")) {
+            Map<String, Boolean> states = new HashMap<>(player.getAttachedOrCreate(ACTIVE));
+            states.put("double_jump", false);
+            player.setAttached(ACTIVE, states);
+        }
+    }
+
+    public static void syncMovementState(ServerPlayer player) {
+        if (player == null) return;
+        int sj = isActive(player, "super_jump") ? rank(player, "super_jump") : 0;
+        int dj = isActive(player, "double_jump") ? rank(player, "double_jump") : 0;
+        int burst = isActive(player, "burst") ? rank(player, "burst") : 0;
+        int mask = (sj & 0xF) | ((dj & 0xF) << 4) | ((burst & 0xF) << 8);
+        LAST_SYNCED_MOVEMENT_MASK.put(player.getUUID(), mask);
+        ServerPlayNetworking.send(player, new RefugioUiPayload("MOVEMENT_STATE\t" + mask));
+    }
+
+    private static void syncMovementStateIfNeeded(ServerPlayer player) {
+        int sj = isActive(player, "super_jump") ? rank(player, "super_jump") : 0;
+        int dj = isActive(player, "double_jump") ? rank(player, "double_jump") : 0;
+        int burst = isActive(player, "burst") ? rank(player, "burst") : 0;
+        int mask = (sj & 0xF) | ((dj & 0xF) << 4) | ((burst & 0xF) << 8);
+        Integer prev = LAST_SYNCED_MOVEMENT_MASK.get(player.getUUID());
+        if (prev == null || prev != mask) {
+            LAST_SYNCED_MOVEMENT_MASK.put(player.getUUID(), mask);
+            ServerPlayNetworking.send(player, new RefugioUiPayload("MOVEMENT_STATE\t" + mask));
+        }
     }
 
     /** Returns the equipped weapon's opening-strike rank after a 5-second window without dealing combat damage. */
@@ -357,24 +403,35 @@ public final class RefugioAbilityData {
     }
 
     public static void activateMovement(ServerPlayer player) {
-        activateMovement(player, "ALL");
+        activateMovement(player, "JUMP_PASSIVE");
     }
 
     public static void activateMovement(ServerPlayer player, String mode) {
         if (player == null || !player.isAlive()) return;
         switch (mode) {
+            case "SUPER_JUMP_START" -> startSuperJumpCharge(player);
+            case "SUPER_JUMP_RELEASE" -> releaseSuperJumpCharge(player);
+            case "SUPER_JUMP_CANCEL" -> clearSuperJumpCharge(player, true);
+            case "DOUBLE_JUMP" -> {
+                if (isActive(player, "double_jump") && !player.onGround()) {
+                    activateDoubleJump(player);
+                }
+            }
             case "JUMP_PASSIVE" -> {
                 if (isActive(player, "super_jump") && player.onGround()) {
-                    activateSuperJump(player);
+                    startSuperJumpCharge(player);
                 } else if (isActive(player, "double_jump") && !player.onGround()) {
                     activateDoubleJump(player);
                 }
             }
             case "JUMP_EXPLICIT" -> {
                 boolean activated = false;
-                if (isActive(player, "super_jump")) activated = activateSuperJump(player);
-                else if (isActive(player, "double_jump")) activated = activateDoubleJump(player);
-                if (!activated) {
+                if (isActive(player, "super_jump")) {
+                    activated = startSuperJumpCharge(player);
+                } else if (isActive(player, "double_jump")) {
+                    activated = activateDoubleJump(player);
+                }
+                if (!activated && !isActive(player, "super_jump") && !isActive(player, "double_jump")) {
                     sendNoMovementSkillMessage(player);
                 }
             }
@@ -390,33 +447,83 @@ public final class RefugioAbilityData {
                     sendNoMovementSkillMessage(player);
                 }
             }
-            default -> {
-                boolean activated = false;
-                if (isActive(player, "super_jump")) activated |= activateSuperJump(player);
-                else if (isActive(player, "double_jump")) activated |= activateDoubleJump(player);
-                boolean burstTried = isActive(player, "burst");
-                if (burstTried) {
-                    activated |= activateBurst(player, !activated);
-                }
-                if (!activated && !burstTried) {
-                    sendNoMovementSkillMessage(player);
-                }
-            }
+            default -> { }
         }
     }
 
-    private static boolean activateSuperJump(ServerPlayer player) {
-        if (player.isPassenger() || player.isInWater() || !player.onGround()) return false;
+    private static boolean startSuperJumpCharge(ServerPlayer player) {
+        if (!canChargeSuperJump(player)) return false;
         long now = gameTime(player);
-        if (player.getAttachedOrCreate(JUMP_COOLDOWN_UNTIL) > now) return false;
+        player.setAttached(SUPER_JUMP_CHARGING, true);
+        player.setAttached(SUPER_JUMP_CHARGE_STARTED_AT, now);
+        player.setAttached(SUPER_JUMP_CHARGE_DIMENSION, player.level().dimension().toString());
+        sendSuperJumpChargeOverlay(player, 0L);
+        return true;
+    }
+
+    private static boolean releaseSuperJumpCharge(ServerPlayer player) {
+        boolean wasCharging = player.getAttachedOrCreate(SUPER_JUMP_CHARGING);
+        clearSuperJumpCharge(player, true);
+        if (!wasCharging || !canChargeSuperJump(player)) return false;
         int rank = rank(player, "super_jump");
         if (rank <= 0) return false;
+
+        long now = gameTime(player);
         beginJumpTracking(player);
-        player.setAttached(JUMP_COOLDOWN_UNTIL, now + 20L);
+        player.setAttached(SUPER_JUMP_USED, true);
+        player.setAttached(SUPER_JUMP_LAUNCHED_AT, now);
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x, Math.max(velocity.y, RefugioAbilityRules.superJumpVelocity(rank)), velocity.z);
         player.hurtMarked = true;
         return true;
+    }
+
+    private static boolean canChargeSuperJump(ServerPlayer player) {
+        return player != null
+                && player.isAlive()
+                && !player.isPassenger()
+                && !player.isInWater()
+                && !player.isFallFlying()
+                && !player.getAbilities().flying
+                && player.onGround()
+                && !player.getAttachedOrCreate(SUPER_JUMP_USED)
+                && isActive(player, "super_jump")
+                && rank(player, "super_jump") > 0;
+    }
+
+    public static void clearSuperJumpCharge(ServerPlayer player, boolean clearHud) {
+        if (player == null) return;
+        boolean wasCharging = player.getAttachedOrCreate(SUPER_JUMP_CHARGING);
+        player.setAttached(SUPER_JUMP_CHARGING, false);
+        player.setAttached(SUPER_JUMP_CHARGE_STARTED_AT, 0L);
+        player.setAttached(SUPER_JUMP_CHARGE_DIMENSION, "");
+        if (wasCharging && clearHud) {
+            player.sendSystemMessage(Component.empty(), true);
+        }
+    }
+
+    private static void sendSuperJumpChargeOverlay(ServerPlayer player, long elapsedTicks) {
+        long maxTicks = Math.max(1L, RefugioAbilityRules.superJumpChargeTicks());
+        long clamped = Math.max(0L, Math.min(maxTicks, elapsedTicks));
+        int segments = 10;
+        int filled = (int) Math.min(segments, (clamped * segments) / maxTicks);
+        int pct = (int) Math.min(100L, (clamped * 100L) / maxTicks);
+
+        MutableComponent bar = Component.literal("[")
+                .withStyle(Style.EMPTY.withColor(0xFFC39A59));
+        if (filled > 0) {
+            bar.append(Component.literal("█".repeat(filled))
+                    .withStyle(Style.EMPTY.withColor(pct >= 100 ? 0xFF66E275 : 0xFFFFD369)));
+        }
+        if (filled < segments) {
+            bar.append(Component.literal("░".repeat(segments - filled))
+                    .withStyle(Style.EMPTY.withColor(0xFF6E5C44)));
+        }
+        bar.append(Component.literal("]").withStyle(Style.EMPTY.withColor(0xFFC39A59)));
+
+        MutableComponent message = Component.translatable("message.refugio.ability.super_jump_charge", bar, pct)
+                .withStyle(Style.EMPTY.withColor(0xFFFFF0D0).withBold(true));
+        player.sendSystemMessage(message, true);
     }
 
     private static boolean activateDoubleJump(ServerPlayer player) {
@@ -500,15 +607,37 @@ public final class RefugioAbilityData {
     }
 
     private static void refreshJumpState(ServerPlayer player) {
+        long now = gameTime(player);
+        if (player.getAttachedOrCreate(SUPER_JUMP_CHARGING)) {
+            boolean chargeInvalid = !canChargeSuperJump(player)
+                    || !player.level().dimension().toString().equals(player.getAttachedOrCreate(SUPER_JUMP_CHARGE_DIMENSION));
+            if (chargeInvalid) {
+                clearSuperJumpCharge(player, true);
+            } else {
+                long elapsed = Math.max(0L, now - player.getAttachedOrCreate(SUPER_JUMP_CHARGE_STARTED_AT));
+                sendSuperJumpChargeOverlay(player, elapsed);
+            }
+        }
+        if (player.getAttachedOrCreate(SUPER_JUMP_USED)) {
+            long launchedAt = player.getAttachedOrCreate(SUPER_JUMP_LAUNCHED_AT);
+            if (!player.onGround()) {
+                player.setAttached(SUPER_JUMP_LAUNCHED_AT, Math.min(launchedAt, now - 10L));
+            } else if (now - launchedAt > 8L) {
+                player.setAttached(SUPER_JUMP_USED, false);
+            }
+        }
         if (player.getAttachedOrCreate(DOUBLE_JUMP_USED) && player.onGround()) {
             player.setAttached(DOUBLE_JUMP_USED, false);
         }
         if (!player.getAttachedOrCreate(JUMP_TRACKING)) return;
+        long startedAt = player.getAttachedOrCreate(JUMP_STARTED_AT);
         boolean invalid = !player.isAlive() || player.isPassenger() || player.isInWater()
                 || player.isFallFlying() || player.getAbilities().flying
                 || !player.level().dimension().toString().equals(player.getAttachedOrCreate(JUMP_DIMENSION))
-                || gameTime(player) - player.getAttachedOrCreate(JUMP_STARTED_AT) > 1200L;
-        if (invalid || player.onGround()) clearJumpTracking(player);
+                || now - startedAt > 1200L;
+        if (invalid || (player.onGround() && now - startedAt > 10L)) {
+            clearJumpTracking(player);
+        }
     }
 
     private static void clearJumpTracking(ServerPlayer player) {
@@ -596,6 +725,7 @@ public final class RefugioAbilityData {
             player.setAttached(RANKS, ranks);
             player.setAttached(FREE_CHOICE, id);
             setActive(player, id, true);
+            syncMovementState(player);
             return PurchaseResult.FREE;
         }
         if (currentRank == 0 && !hasFreeChoice(player)) return PurchaseResult.CHOOSE_FREE_FIRST;
@@ -606,6 +736,7 @@ public final class RefugioAbilityData {
         ranks.put(id, currentRank + 1);
         player.setAttached(RANKS, ranks);
         if (currentRank == 0) setActive(player, id, true);
+        syncMovementState(player);
         return PurchaseResult.PURCHASED;
     }
 
@@ -617,6 +748,10 @@ public final class RefugioAbilityData {
         }
         states.put(id, active);
         player.setAttached(ACTIVE, states);
+        if (!states.getOrDefault("super_jump", false)) {
+            clearSuperJumpCharge(player, true);
+        }
+        syncMovementState(player);
         return true;
     }
 

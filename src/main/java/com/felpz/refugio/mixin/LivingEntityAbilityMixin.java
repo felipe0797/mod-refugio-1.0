@@ -2,6 +2,7 @@ package com.felpz.refugio.mixin;
 
 import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.ability.RefugioAbilityRules;
+import com.felpz.refugio.npc.RefugioNPCs;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -22,7 +23,14 @@ public abstract class LivingEntityAbilityMixin {
     @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
     private void refugio$mitigateSkillDamage(ServerLevel level, DamageSource source, float amount,
                                              CallbackInfoReturnable<Boolean> cir) {
-        if (refugio$applyingReducedDamage || !((Object) this instanceof ServerPlayer player) || amount <= 0.0f) return;
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (RefugioNPCs.isRefugeNpc(self)
+                && !source.is(DamageTypes.GENERIC_KILL)
+                && !source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
+            cir.setReturnValue(false);
+            return;
+        }
+        if (refugio$applyingReducedDamage || !(self instanceof ServerPlayer player) || amount <= 0.0f) return;
 
         float adjustedAmount = amount;
         if (source.is(DamageTypes.FALL)) {

@@ -1,18 +1,16 @@
 package com.felpz.refugio.command;
 
-import com.felpz.refugio.Refugio;
 import com.felpz.refugio.data.RefugioPlayerData;
 import com.felpz.refugio.menu.RefugioMenu;
 import com.felpz.refugio.npc.RefugioTrainingDummy;
-import com.felpz.refugio.world.RefugioSustainability;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 
 public final class RefugioCommands {
     private RefugioCommands() { }
@@ -68,17 +66,6 @@ public final class RefugioCommands {
                 }
                 player.sendSystemMessage(Component.translatable("message.refugio.training_dummy.spawned", 100));
                 return 1;
-            }));
-            admin.then(Commands.literal("resetar_baus").executes(context -> {
-                var world = context.getSource().getServer().getLevel(Refugio.DIMENSION);
-                if (world == null) {
-                    context.getSource().sendFailure(Component.translatable("command.refugio.chest_reset_dimension_missing"));
-                    return 0;
-                }
-                int count = RefugioSustainability.resetLoadedChests(world);
-                context.getSource().sendSuccess(() -> Component.translatable(
-                        "command.refugio.chest_reset_complete", count), true);
-                return count;
             }));
             admin.then(Commands.literal("moedas")
                     .then(Commands.argument("jogador", EntityArgument.player())

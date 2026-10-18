@@ -3,6 +3,8 @@ package com.felpz.refugio.ability;
 /** Pure skill-tree balance rules, intentionally independent from the Minecraft runtime. */
 public final class RefugioAbilityRules {
     private static final int[] RANK_COSTS = {500, 1000, 2000, 3000, 4000};
+    /** Visual charge duration in ticks (1.0s at 20 TPS) for filling the Super Jump bar; never increases velocity beyond superJumpVelocity(rank). */
+    public static final long SUPER_JUMP_CHARGE_TICKS = 20L;
 
     private RefugioAbilityRules() { }
 
@@ -38,6 +40,7 @@ public final class RefugioAbilityRules {
     public static double miningSpeedBonus(int rank) { return Math.min(0.30, boundedRank(rank) * 0.06); }
     public static double anchorKnockbackBonus(int rank) { return Math.min(0.40, boundedRank(rank) * 0.08); }
     public static double superJumpVelocity(int rank) { return 0.62 + boundedRank(rank) * 0.06; }
+    public static long superJumpChargeTicks() { return SUPER_JUMP_CHARGE_TICKS; }
     public static double doubleJumpVelocity(int rank) { return 0.50 + boundedRank(rank) * 0.04; }
     public static double burstVelocity(int rank) { return boundedRank(rank) * 1.0; }
     public static int burstMaxCharges(int rank) { return boundedRank(rank) >= 5 ? 2 : (boundedRank(rank) > 0 ? 1 : 0); }

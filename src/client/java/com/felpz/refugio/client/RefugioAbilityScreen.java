@@ -32,7 +32,7 @@ public final class RefugioAbilityScreen extends Screen {
     private static final Style INK_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF4A3520);
     private static final Style MUTED_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF80684B);
     private static final Style GOLD_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF87551F);
-    private static final Style SUCCESS_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF456B3A);
+    private static final Style SUCCESS_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF2D5B22);
     private static final Style LIGHT_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFFFF0D0);
     private static final Style DISABLED_BUTTON_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFBBAA8D);
 
@@ -655,7 +655,7 @@ public final class RefugioAbilityScreen extends Screen {
         Component name;
         if (showingSkillDetails && selectedSkill() != null) {
             iconStack = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(selectedSkill().icon())));
-            name = Component.literal(selectedSkill().name()).withStyle(GOLD_STYLE);
+            name = skillNameComponent(selectedSkill()).withStyle(GOLD_STYLE);
         } else if (showingSubcategories) {
             RefugioAbilityData.Skill first = RefugioAbilityData.skills(currentBranch()).stream().findFirst().orElse(null);
             iconStack = first == null
@@ -684,6 +684,23 @@ public final class RefugioAbilityScreen extends Screen {
 
     private MutableComponent trackName(RefugioAbilityData.Track track) {
         return Component.translatable("gui.refugio.abilities.track." + track.id());
+    }
+
+    private MutableComponent skillNameComponent(RefugioAbilityData.Skill skill) {
+        if (skill == null) return Component.empty();
+        return Component.translatableWithFallback("skill.refugio." + skill.id() + ".name", skill.name());
+    }
+
+    private MutableComponent skillDescriptionComponent(RefugioAbilityData.Skill skill) {
+        if (skill == null) return Component.empty();
+        String key = "skill.refugio." + skill.id() + ".desc";
+        if ("burst".equals(skill.id())) {
+            return Component.translatable(key, RefugioClient.burstKeyDisplayName());
+        }
+        if ("super_jump".equals(skill.id()) || "double_jump".equals(skill.id())) {
+            return Component.translatable(key, RefugioClient.jumpKeyDisplayName());
+        }
+        return Component.translatableWithFallback(key, skill.description());
     }
 
     private void drawSkillPath(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
@@ -747,31 +764,85 @@ public final class RefugioAbilityScreen extends Screen {
         boolean selected = skill.id().equals(selectedSkillId);
         boolean unlocked = isUnlocked(skillIndex);
         int currentRank = rank(skill);
+        boolean owned = currentRank > 0;
+        boolean maxRank = currentRank >= MAX_RANK;
+        boolean active = owned && isActive(skill);
         boolean hovered = card.contains(mouseX, mouseY);
         int accent = ACCENTS[branchIndex % ACCENTS.length];
-        int bg = selected ? 0xFFF7E8C9 : hovered ? 0xFFF1DFBC : unlocked ? 0xFFEAD8B2 : 0xFFDCC9A4;
-        int stroke = currentRank > 0 ? accent : unlocked ? 0xFF9A7849 : 0xFFB19A70;
+
+        // Visual separation of Locked vs Available vs Owned (Active / Inactive) vs Max Rank
+        int bg;
+        int stroke;
+        int leftStripe;
+        if (maxRank) {
+            bg = hovered ? 0xFFFFF1CE : 0xFFF7E5B8;
+            stroke = hovered ? 0xFFFFDF7A : 0xFFC88A28;
+            leftStripe = 0xFFD4921A;
+        } else if (owned) {
+            bg = active
+                    ? (hovered ? 0xFFDFEDD2 : 0xFFD5E5C6)
+                    : (hovered ? 0xFFF2E3C2 : 0xFFE8D8B4);
+            stroke = active
+                    ? (hovered ? 0xFF5A8F49 : 0xFF3A682E)
+                    : (hovered ? 0xFFD3A34F : accent);
+            leftStripe = active ? 0xFF2D5B22 : accent;
+        } else if (unlocked) {
+            bg = hovered ? 0xFFF5E4C0 : 0xFFEAD8B2;
+            stroke = hovered ? 0xFFD3A34F : 0xFF987348;
+            leftStripe = accent;
+        } else {
+            bg = hovered ? 0xFFD4C8B4 : 0xFFCBC0AA;
+            stroke = hovered ? 0xFF948773 : 0xFF7D7262;
+            leftStripe = 0xFF756C5E;
+        }
+
         graphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, bg);
-        border(graphics, cardX, cardY, cardW, cardH, selected ? 0xFFD4A34F : hovered ? 0xFFD3A34F : stroke);
-        graphics.fill(cardX + 3, cardY + 3, cardX + 6, cardY + cardH - 3, accent);
+        border(graphics, cardX, cardY, cardW, cardY + cardH - cardY, selected ? 0xFFD4A34F : stroke);
+        if (owned) {
+            int innerBorder = maxRank ? 0x99FFE08A : (active ? 0x887BA868 : 0x66C39A59);
+            border(graphics, cardX + 1, cardY + 1, cardW - 2, cardH - 2, innerBorder);
+        }
+        graphics.fill(cardX + 2, cardY + 2, cardX + 6, cardY + cardH - 2, leftStripe);
 
         ItemStack icon = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(skill.icon())));
-        Component skillName = Component.literal(skill.name()).withStyle(unlocked ? INK_STYLE : MUTED_STYLE);
-        MutableComponent footer = currentRank > 0
-                ? Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, MAX_RANK)
-                : isFreeCandidate(skill) ? Component.translatable("gui.refugio.abilities.skill_card.free")
-                : !unlocked ? Component.translatable("gui.refugio.abilities.skill_card.locked")
-                : Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(1));
-        Style footerStyle = currentRank > 0 ? SUCCESS_STYLE : !unlocked ? MUTED_STYLE : GOLD_STYLE;
+        Component skillName = skillNameComponent(skill).withStyle(unlocked || owned ? INK_STYLE : MUTED_STYLE);
+
+        MutableComponent footer;
+        Style footerStyle;
+        if (maxRank) {
+            footer = Component.translatable("gui.refugio.abilities.skill_card.max_rank", currentRank, MAX_RANK);
+            footerStyle = GOLD_STYLE;
+        } else if (owned) {
+            footer = Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, MAX_RANK);
+            footerStyle = SUCCESS_STYLE;
+        } else if (isFreeCandidate(skill)) {
+            footer = Component.translatable("gui.refugio.abilities.skill_card.free");
+            footerStyle = GOLD_STYLE;
+        } else if (!unlocked) {
+            footer = Component.translatable("gui.refugio.abilities.skill_card.locked");
+            footerStyle = MUTED_STYLE;
+        } else {
+            footer = Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(1));
+            footerStyle = GOLD_STYLE;
+        }
 
         if (cardH < 52) {
             int iconX = cardX + 8;
             int iconY = cardY + Math.max(0, (cardH - 16) / 2);
             graphics.item(icon, iconX, iconY);
+            if (owned) {
+                drawOwnedCheckSeal(graphics, iconX + 10, iconY + 10, maxRank);
+            }
             int textX = iconX + 19;
             int textW = Math.max(16, cardW - (textX - cardX) - 5);
             List<FormattedCharSequence> nameLines = font.split(skillName, textW);
-            List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), textW);
+            MutableComponent compactStatus = owned
+                    ? footer.copy().append(Component.literal(" • "))
+                    .append(Component.translatable(active
+                            ? "gui.refugio.abilities.state_active_short"
+                            : "gui.refugio.abilities.state_inactive_short"))
+                    : footer;
+            List<FormattedCharSequence> footerLines = font.split(compactStatus.withStyle(footerStyle), textW);
             if (cardH >= font.lineHeight * 2 + 3) {
                 int blockH = font.lineHeight * 2 + 1;
                 int startY = cardY + Math.max(1, (cardH - blockH) / 2);
@@ -788,27 +859,37 @@ public final class RefugioAbilityScreen extends Screen {
             return;
         }
 
+        // Top-right activation / availability pill badge
+        drawCardStatePill(graphics, cardX + cardW - 3, cardY + 3, cardW - 10, owned, maxRank, active, unlocked, isFreeCandidate(skill));
+
         int footerPadBottom = cardH < 68 ? 3 : 5;
         int footerY = cardY + cardH - font.lineHeight - footerPadBottom;
+        int rankBarH = cardH >= 64 ? 4 : 3;
+        int rankBarY = footerY - rankBarH - (cardH >= 74 ? 3 : 2);
+        drawCardRankSegments(graphics, cardX + 9, rankBarY, Math.max(16, cardW - 16), rankBarH,
+                currentRank, maxRank ? 0xFFD4921A : (active ? 0xFF2D5B22 : accent), unlocked || owned);
+
         boolean showMedallion = cardH >= 78 && cardW >= 68;
-        int iconY = cardY + (cardH >= 90 ? 10 : (cardH >= 68 ? 6 : 3));
+        int iconY = cardY + (cardH >= 96 ? 14 : (cardH >= 74 ? 11 : 6));
         int iconCenterX = cardX + cardW / 2;
         if (showMedallion) {
             int boxSize = 22;
             int boxX = iconCenterX - boxSize / 2;
             int boxY = iconY - 3;
-            graphics.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, 0x38987348);
-            border(graphics, boxX, boxY, boxSize, boxSize, 0x88987348);
+            int medBg = maxRank ? 0x44D4921A : owned ? 0x443A682E : 0x38987348;
+            int medBorder = maxRank ? 0xCCD4921A : owned ? 0xAA3A682E : 0x88987348;
+            graphics.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, medBg);
+            border(graphics, boxX, boxY, boxSize, boxSize, medBorder);
         }
         graphics.item(icon, iconCenterX - 8, iconY);
-
-        int nameAreaTop = iconY + (showMedallion ? 22 : 18);
-        int dividerLineY = footerY - (cardH >= 74 ? 4 : 2);
-        if (cardH >= 74 && cardW > 24) {
-            graphics.fill(cardX + 10, dividerLineY, cardX + cardW - 8, dividerLineY + 1, 0x55987348);
+        if (owned) {
+            drawOwnedCheckSeal(graphics, iconCenterX + 3, iconY + 10, maxRank);
         }
-        int availNameH = Math.max(font.lineHeight, dividerLineY - nameAreaTop - 1);
-        List<FormattedCharSequence> nameLines = font.split(skillName, Math.max(12, cardW - 14));
+
+        int nameAreaTop = iconY + (showMedallion ? 21 : 17);
+        int nameAreaBottom = rankBarY - 2;
+        int availNameH = Math.max(font.lineHeight, nameAreaBottom - nameAreaTop);
+        List<FormattedCharSequence> nameLines = font.split(skillName, Math.max(12, cardW - 12));
         int maxTitleLines = availNameH >= font.lineHeight * 2 ? 2 : 1;
         int titleLineCount = Math.min(maxTitleLines, nameLines.size());
         int titleBlockH = titleLineCount * font.lineHeight;
@@ -819,11 +900,81 @@ public final class RefugioAbilityScreen extends Screen {
                     titleY + line * font.lineHeight, sequence);
         }
 
-        List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), Math.max(12, cardW - 12));
+        List<FormattedCharSequence> footerLines = font.split(footer.withStyle(footerStyle), Math.max(12, cardW - 10));
         if (!footerLines.isEmpty()) {
             FormattedCharSequence footerLine = footerLines.getFirst();
             graphics.textRenderer().accept(cardX + (cardW - font.width(footerLine)) / 2, footerY, footerLine);
         }
+    }
+
+    private void drawCardStatePill(GuiGraphicsExtractor graphics, int rightX, int topY, int maxW,
+                                   boolean owned, boolean maxRank, boolean active, boolean unlocked, boolean free) {
+        if (maxW < 36) return;
+        Component badgeText;
+        int fill;
+        int stroke;
+        int textColor;
+        if (owned) {
+            badgeText = Component.translatable(active
+                    ? "gui.refugio.abilities.card.active_badge"
+                    : "gui.refugio.abilities.card.inactive_badge");
+            fill = active ? 0xFF2D5B22 : 0xFF6B5035;
+            stroke = active ? 0xFFB89A52 : 0xFFA88964;
+            textColor = active ? 0xFFEFFAE6 : 0xFFF2E2C4;
+        } else if (free) {
+            badgeText = Component.translatable("gui.refugio.abilities.skill_card.free");
+            fill = 0xFF24504F;
+            stroke = 0xFFFFD878;
+            textColor = 0xFFFFF0B8;
+        } else if (unlocked) {
+            badgeText = Component.translatable("gui.refugio.abilities.state_unlocked_short");
+            fill = 0xFF6B4C2B;
+            stroke = 0xFFB89455;
+            textColor = 0xFFF5E6C8;
+        } else {
+            badgeText = Component.translatable("gui.refugio.abilities.state_locked_short");
+            fill = 0xFF5C5246;
+            stroke = 0xFF8A7E6E;
+            textColor = 0xFFD2C5B0;
+        }
+
+        Style pillStyle = Style.EMPTY.withFont(UI_FONT).withColor(textColor);
+        List<FormattedCharSequence> lines = font.split(Component.literal(badgeText.getString()).withStyle(pillStyle),
+                Math.max(20, maxW - 6));
+        if (lines.isEmpty()) return;
+        FormattedCharSequence seq = lines.getFirst();
+        int pillW = font.width(seq) + 6;
+        int pillH = font.lineHeight + 1;
+        int px = rightX - pillW;
+        graphics.fill(px, topY, px + pillW, topY + pillH, fill);
+        border(graphics, px, topY, pillW, pillH, stroke);
+        graphics.textRenderer().accept(px + 3, topY + 1, seq);
+    }
+
+    private static void drawCardRankSegments(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
+                                             int currentRank, int fillColor, boolean unlocked) {
+        int trackBg = unlocked ? 0xFF9C7E54 : 0xFF8A7E6E;
+        graphics.fill(x, y, x + w, y + h, trackBg);
+        for (int segment = 0; segment < MAX_RANK; segment++) {
+            int segLeft = x + segment * w / MAX_RANK;
+            int segRight = x + (segment + 1) * w / MAX_RANK;
+            int innerLeft = segLeft + 1;
+            int innerRight = Math.max(innerLeft + 1, segRight - 1);
+            int segColor = segment < currentRank ? fillColor : 0xFFD8C5A2;
+            graphics.fill(innerLeft, y + 1, innerRight, y + h - 1, segColor);
+        }
+    }
+
+    private static void drawOwnedCheckSeal(GuiGraphicsExtractor graphics, int x, int y, boolean maxRank) {
+        int bg = maxRank ? 0xFFD4921A : 0xFF2D5B22;
+        int stroke = maxRank ? 0xFFFFF0B8 : 0xFFE6C672;
+        graphics.fill(x, y, x + 7, y + 7, bg);
+        border(graphics, x, y, 7, 7, stroke);
+        graphics.fill(x + 1, y + 3, x + 2, y + 4, 0xFFFFFFFF);
+        graphics.fill(x + 2, y + 4, x + 3, y + 5, 0xFFFFFFFF);
+        graphics.fill(x + 3, y + 3, x + 4, y + 4, 0xFFFFFFFF);
+        graphics.fill(x + 4, y + 2, x + 5, y + 3, 0xFFFFFFFF);
+        graphics.fill(x + 5, y + 1, x + 6, y + 2, 0xFFFFFFFF);
     }
 
     private void drawSkillDetailsPage(GuiGraphicsExtractor graphics, int mouseX, int mouseY, AbilityLayout layout) {
@@ -834,17 +985,32 @@ public final class RefugioAbilityScreen extends Screen {
         if (skill == null) return;
 
         int rank = rank(skill);
+        boolean owned = rank > 0;
+        boolean maxRank = rank >= MAX_RANK;
+        boolean active = owned && isActive(skill);
         boolean unlocked = isUnlocked(currentTrackSkills().indexOf(skill));
         boolean free = isFreeCandidate(skill);
-        Component rankLabel = Component.translatable("gui.refugio.abilities.rank", rank, MAX_RANK)
-                .withStyle(GOLD_STYLE);
 
-        String stateKey = rank > 0 ? (isActive(skill) ? "gui.refugio.abilities.state_active_short"
-                : "gui.refugio.abilities.state_inactive_short")
-                : unlocked ? "gui.refugio.abilities.state_unlocked_short" : "gui.refugio.abilities.state_locked_short";
-        Style stateStyle = rank > 0 ? (isActive(skill) ? SUCCESS_STYLE : MUTED_STYLE)
-                : unlocked ? GOLD_STYLE : MUTED_STYLE;
-        String costKey = rank >= MAX_RANK ? "gui.refugio.abilities.cost_max_short"
+        Component rankLabel = maxRank
+                ? Component.translatable("gui.refugio.abilities.skill_card.max_rank", rank, MAX_RANK).withStyle(GOLD_STYLE)
+                : Component.translatable("gui.refugio.abilities.rank", rank, MAX_RANK).withStyle(owned ? SUCCESS_STYLE : GOLD_STYLE);
+
+        Component stateComp;
+        Style stateStyle;
+        if (owned) {
+            stateComp = Component.translatable(active
+                    ? "gui.refugio.abilities.detail_owned_active"
+                    : "gui.refugio.abilities.detail_owned_inactive");
+            stateStyle = active ? SUCCESS_STYLE : GOLD_STYLE;
+        } else if (unlocked) {
+            stateComp = Component.translatable("gui.refugio.abilities.state_unlocked_short");
+            stateStyle = GOLD_STYLE;
+        } else {
+            stateComp = Component.translatable("gui.refugio.abilities.state_locked_short");
+            stateStyle = MUTED_STYLE;
+        }
+
+        String costKey = maxRank ? "gui.refugio.abilities.cost_max_short"
                 : !unlocked ? "gui.refugio.abilities.cost_locked_short"
                 : free ? "gui.refugio.abilities.cost_free_short" : "gui.refugio.abilities.cost_next_short";
         MutableComponent cost = costKey.equals("gui.refugio.abilities.cost_next_short")
@@ -861,8 +1027,7 @@ public final class RefugioAbilityScreen extends Screen {
             int columnWidth = Math.max(12, (statusBox.w - columnGap * 2 - 8) / 3);
             int textY = statusBox.y + Math.max(1, (statusBox.h - font.lineHeight) / 2);
             List<FormattedCharSequence> rankLines = font.split(rankLabel, columnWidth);
-            List<FormattedCharSequence> stateLines = font.split(
-                    Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
+            List<FormattedCharSequence> stateLines = font.split(stateComp.copy().withStyle(stateStyle), columnWidth);
             Component compactCost = costKey.equals("gui.refugio.abilities.cost_next_short")
                     ? Component.translatable("gui.refugio.abilities.cost_next_compact",
                     RefugioAbilityData.costForRank(rank + 1)).withStyle(GOLD_STYLE)
@@ -891,8 +1056,7 @@ public final class RefugioAbilityScreen extends Screen {
             int columnGap = 12;
             int columnWidth = Math.max(16, (statusBox.w - columnGap - 16) / 2);
             int textY = statusBox.y + 3;
-            List<FormattedCharSequence> stateLines = font.split(
-                    Component.translatable(stateKey).withStyle(stateStyle), columnWidth);
+            List<FormattedCharSequence> stateLines = font.split(stateComp.copy().withStyle(stateStyle), columnWidth);
             List<FormattedCharSequence> costLines = font.split(cost.withStyle(GOLD_STYLE), columnWidth);
             if (!stateLines.isEmpty()) {
                 graphics.textRenderer().accept(statusBox.x + 8, textY, stateLines.getFirst());
@@ -910,13 +1074,14 @@ public final class RefugioAbilityScreen extends Screen {
         }
 
         graphics.fill(rankBar.x, rankBar.y, rankBar.right(), rankBar.bottom(), 0xFFB89A6A);
+        int fillBarColor = maxRank ? 0xFFD4921A : (active ? 0xFF2D5B22 : ACCENTS[branchIndex % ACCENTS.length]);
         for (int segment = 0; segment < MAX_RANK; segment++) {
             int segmentLeft = rankBar.x + segment * rankBar.w / MAX_RANK;
             int segmentRight = rankBar.x + (segment + 1) * rankBar.w / MAX_RANK;
             if (segment < rank) {
                 graphics.fill(segmentLeft + 1, rankBar.y + 1,
                         Math.max(segmentLeft + 2, segmentRight - 1), rankBar.bottom() - 1,
-                        ACCENTS[branchIndex % ACCENTS.length]);
+                        fillBarColor);
             }
         }
 
@@ -928,7 +1093,7 @@ public final class RefugioAbilityScreen extends Screen {
         int maxScroll = maxDetailScroll(skill, layout);
         detailScrollOffset = Math.max(0, Math.min(maxScroll, detailScrollOffset));
         List<FormattedCharSequence> description = font.split(
-                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
+                skillDescriptionComponent(skill).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
         graphics.enableScissor(descBox.x + 1, descBox.y + 1, descBox.right() - 1, descBox.bottom() - 1);
         int descriptionY = descBox.y + descPadY - detailScrollOffset;
         for (FormattedCharSequence line : description) {
@@ -950,13 +1115,16 @@ public final class RefugioAbilityScreen extends Screen {
 
         Rect buyBtn = layout.buyButton;
         Rect toggleBtn = layout.toggleButton;
-        String buyKey = free ? "gui.refugio.abilities.claim_free"
+        String buyKey = maxRank ? "gui.refugio.abilities.cost_max_short"
+                : free ? "gui.refugio.abilities.claim_free"
                 : rank == 0 ? "gui.refugio.abilities.buy" : "gui.refugio.abilities.upgrade";
         drawButton(graphics, buyBtn.x, buyBtn.y, buyBtn.w, buyBtn.h, Component.translatable(buyKey),
                 mouseX, mouseY, canPurchase(skill), 0xFF24504F);
+        Component toggleLabel = owned
+                ? Component.translatable(active ? "gui.refugio.abilities.disable_on" : "gui.refugio.abilities.enable_off")
+                : Component.translatable("gui.refugio.abilities.enable");
         drawButton(graphics, toggleBtn.x, toggleBtn.y, toggleBtn.w, toggleBtn.h,
-                Component.translatable(isActive(skill) ? "gui.refugio.abilities.disable" : "gui.refugio.abilities.enable"),
-                mouseX, mouseY, rank > 0, 0xFF293A48);
+                toggleLabel, mouseX, mouseY, owned, active ? 0xFF24504F : 0xFF293A48);
     }
 
     private int maxDetailScroll(RefugioAbilityData.Skill skill, AbilityLayout layout) {
@@ -964,7 +1132,7 @@ public final class RefugioAbilityScreen extends Screen {
         int descPadY = descBox.h < 36 ? 2 : 6;
         int lineStep = layout.compactDetails ? font.lineHeight + 1 : font.lineHeight + 2;
         List<FormattedCharSequence> lines = font.split(
-                Component.literal(skill.description()).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
+                skillDescriptionComponent(skill).withStyle(INK_STYLE), Math.max(16, descBox.w - 16));
         int contentH = lines.size() * lineStep;
         int viewportH = Math.max(1, descBox.h - descPadY * 2);
         return Math.max(0, contentH - viewportH);

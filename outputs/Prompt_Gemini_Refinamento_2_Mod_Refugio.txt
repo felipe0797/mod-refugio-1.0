@@ -1,0 +1,314 @@
+PROMPT PARA GEMINI — REFINAMENTO 2 DO MOD REFÚGIO
+
+Leia este briefing inteiro antes de editar. O objetivo é implementar as nove frentes abaixo no projeto existente (a solicitação de cartões foi dividida entre missões e habilidades), de forma seletiva e compatível com o código atual. Não reescreva o mod nem substitua classes inteiras por versões antigas. Inspecione primeiro cada arquivo e integre as mudanças ao estado atual do projeto.
+
+======================================================================
+1. CONTEXTO TÉCNICO E REGRAS GERAIS
+======================================================================
+
+Projeto: Refúgio, mod Fabric para Minecraft 26.2.
+Versões declaradas no checkout:
+- Minecraft: 26.2
+- Fabric Loader: 0.19.5
+- Fabric API: 0.161.0+26.2
+- Fabric Loom: 1.18-SNAPSHOT
+- Java: 25
+- Gradle Wrapper do projeto: gradlew.bat
+
+Use exclusivamente APIs compatíveis com essas versões. Não deduza APIs por exemplos de Minecraft 1.21.x ou por versões futuras. Confirme as assinaturas nos sources/jars mapeados e na Fabric API instalada antes de usar eventos, componentes, renderizadores ou bibliotecas externas.
+
+O idioma principal é PT-BR. Mantenha também en_us.json consistente quando alterar mensagens ou textos de interface. Não escreva frases de interface diretamente em código se o projeto já usa chaves de tradução.
+
+O mod usa interfaces customizadas e mensagens de estado server-authoritative. Dados de missão, compra, rank e ativação devem continuar validados pelo servidor. Não confie em estado visual do cliente para conceder recompensas, itens, moedas, ranks ou desbloqueios.
+
+Antes de editar:
+1. Examine o estado atual do repositório e os arquivos indicados abaixo.
+2. Verifique instruções locais AGENTS.md e diferenças/alterações já existentes.
+3. Faça mudanças cirúrgicas; não substitua arquivos inteiros por cópias geradas em outro estado do projeto.
+4. Não altere a loja inteira, a economia, os preços, as recompensas, a progressão, a história, coordenadas de NPCs ou a árvore de habilidades além do que este briefing solicita.
+5. Não remova nem substitua o mapa Stonehill, os modelos/skins, os retratos, as texturas medievais ou as telas existentes.
+6. Não faça commit, push, publicação ou envio de arquivos externos.
+
+======================================================================
+2. MIOJO: RESPOSTAS ROXAS COM COOLDOWN DE 2 SEGUNDOS
+======================================================================
+
+Arquivo principal:
+- src/main/java/com/felpz/refugio/npc/RefugioTrainingDummy.java
+- Traduções: src/main/resources/assets/refugio/lang/pt_br.json e en_us.json
+
+Estado atual identificado:
+- Miojo é um zumbi imóvel com 100 HP, tag refugio:training_dummy e respawn após 40 ticks quando morre.
+- Posição atual: (-322.027, 129, 206.169), rotação yaw -19.3 e pitch -3.8.
+- O clique atualmente seleciona uma das quatro respostas e toca ZOMBIE_AMBIENT, mas não tem cooldown e a mensagem ainda não recebe estilo roxo.
+
+Comportamento solicitado:
+- Ao clicar em Miojo, responder aleatoriamente com uma destas frases exatas: “Uuuhhh...”, “Groaaan...”, “Rrrhh...” ou “Bhuuuh...”.
+- A mensagem deve aparecer em roxo no chat do jogador que clicou.
+- Tocar o som ambiente de zumbi no clique aceito.
+- Aplicar cooldown de 2 segundos por jogador, no servidor (40 ticks a 20 TPS). Cliques durante o cooldown devem ser ignorados silenciosamente: não enviar mensagem, não tocar som e não exibir aviso sobre cooldown.
+- O cooldown de um jogador não pode bloquear os demais. Evite retenção ilimitada de entradas antigas; escolha uma implementação adequada ao ciclo de vida do servidor.
+- Preserve o HP, a posição, a imobilidade, o nome, a tag e o respawn atual de Miojo.
+
+Teste de aceitação: clique repetidamente; uma resposta roxa e um som devem ocorrer no máximo uma vez por intervalo de 2 segundos por jogador; durante o intervalo não deve aparecer nenhum aviso.
+
+======================================================================
+3. CARTÕES DE MISSÕES: MOSTRAR VISUALMENTE O QUE JÁ FOI RESGATADO
+======================================================================
+
+Arquivos a inspecionar:
+- src/client/java/com/felpz/refugio/client/RefugioQuestScreen.java
+- src/main/java/com/felpz/refugio/menu/RefugioMenu.java
+- src/main/java/com/felpz/refugio/quest/RefugioQuests.java
+- src/main/java/com/felpz/refugio/quest/RefugioSideQuests.java
+- src/main/java/com/felpz/refugio/data/RefugioPlayerData.java
+
+A tela RefugioQuestScreen já tem estados STATE_DONE, STATE_CLAIM_READY, STATE_IN_PROGRESS e STATE_LOCKED e recebe snapshots do servidor. O menu servidor também usa a contagem persistente de missões resgatadas para decidir o ícone/estado. Inspecione o fluxo atual de cada modo antes de mudar qualquer coisa.
+
+Solicitação visual:
+- Quando uma missão já tiver sido resgatada/recompensada, seu cartão deve parecer claramente concluído e diferente dos outros: por exemplo, selo/check visual, acabamento de sucesso ou cor de cartão distinta, mantendo contraste e legibilidade no tema pergaminho/madeira.
+- Diferencie visualmente, sem confundir: missão resgatada; missão pronta para resgate; missão em andamento; missão bloqueada.
+- Uma missão apenas com objetivo concluído, mas cuja recompensa ainda não foi resgatada, não pode ser apresentada como já resgatada.
+- Para missões secundárias, confira se elas têm estado de resgate ou somente progresso antes de lhes aplicar um selo. Use o significado real do estado mantido pelo servidor.
+- O estado visual deve atualizar após o servidor confirmar o resgate, sem exigir fechar e reabrir a interface.
+- Não altere requisitos, sequência, recompensa, valores, condições de resgate, progresso de NPCs ou armazenamento persistente.
+- Não crie um segundo sistema de missões; preserve o protocolo/snapshot atual e as ações existentes dos cartões.
+
+Teste de aceitação: compare missão bloqueada, em andamento, pronta para resgatar e já resgatada; resgate uma recompensa e confirme que somente o cartão correto muda para o estado final, inclusive após fechar/reabrir o menu e reconectar.
+
+======================================================================
+4. CARTÕES DE HABILIDADES: DIFERENCIAR AQUISIÇÃO DE ATIVAÇÃO
+======================================================================
+
+Arquivos a inspecionar:
+- src/client/java/com/felpz/refugio/client/RefugioAbilityScreen.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
+- src/main/java/com/felpz/refugio/menu/RefugioMenu.java
+- src/main/java/com/felpz/refugio/data/RefugioPlayerData.java
+
+A tela recebe ranks e uma máscara de ativação em snapshot do servidor. RefugioAbilityData armazena ranks e estado ativo em attachments persistentes. Preserve esse desenho autoritativo e o sistema atual de compra, escolha inicial, custos, ranks e ativação/desativação.
+
+Solicitação visual:
+- Uma habilidade comprada/adquirida deve ter estado de cartão claramente diferente de uma habilidade não adquirida; mostrar o rank atual e um indicador visual de aquisição (por exemplo, selo/check e barra de ranks).
+- Uma habilidade bloqueada pela trilha deve parecer bloqueada; uma habilidade disponível para compra deve ser distinguível de ambas.
+- O estado ativo/inativo é separado do estado adquirido: uma habilidade adquirida e desativada continua adquirida e deve continuar exibindo rank; o controle de ativação deve indicar claramente ligado/desligado.
+- Se uma habilidade tiver rank máximo, indicar isso sem tratar como bloqueada ou não adquirida.
+- Use os valores do snapshot atual do servidor, sem inventar flags locais. Atualize depois da compra ou do toggle quando chegar novo estado do servidor.
+- Não mude efeitos, balanceamento, preços, sequência de trilhas/categorias, ícones ou regras de desbloqueio, exceto as mecânicas de `super_jump` e `double_jump` que serão corrigidas exatamente na seção 6A. Atualize suas descrições em PT-BR/EN-US para corresponder ao comportamento novo. Não altere o funcionamento geral do botão de ativar/desativar.
+- Mantenha o layout responsivo, o tema medieval e a fonte nativa atual; confira a GUI em diferentes escalas.
+
+Teste de aceitação: compare habilidade bloqueada, comprável, adquirida ativa, adquirida desativada e rank máximo. Confirme que desativar uma adquirida não a faz parecer não comprada e que reiniciar/reabrir preserva o estado real.
+
+======================================================================
+5. ITENS “RELÍQUIAS PLUS”: EXIBIR ENCANTAMENTOS E EFEITOS COMPLETOS
+======================================================================
+
+Arquivos a inspecionar:
+- src/main/java/com/felpz/refugio/shop/ShopCatalog.java
+- src/main/java/com/felpz/refugio/menu/RefugioMenu.java (offerStack/applyEnchantments e payloads)
+- src/client/java/com/felpz/refugio/client/RefugioShopScreen.java
+- traduções PT-BR/EN-US aplicáveis
+
+No catálogo, Offer contém EnchantmentSpec(id, level). O servidor aplica os encantamentos reais ao ItemStack em applyEnchantments; a descrição atual de offerStack inclui pacote/preço e dicas, mas não lista necessariamente cada encantamento no texto do cartão.
+
+Solicitação:
+- Nas ofertas Plus/encantadas, a descrição detalhada da loja deve listar todos os encantamentos efetivamente aplicados, com o nome localizado e nível exato (ex.: Afiação V, Saque III, Durabilidade III), e qualquer outro efeito/modificador relevante do ItemStack, se houver.
+- Use o próprio catálogo/ItemStack como fonte de verdade. Não invente encantamentos, níveis, atributos ou efeitos. Inclua todos os encantamentos da oferta, sem omissões.
+- O tooltip nativo do Minecraft do ItemStack encantado deve continuar disponível e correto; a descrição customizada do cartão deve complementar, não falsificar nem substituir os componentes reais.
+- Se houver encantamento em livro, respeite stored enchantments; para itens comuns, respeite os encantamentos aplicados normalmente.
+- Mantenha preço, estoque/quantidade, compras, categorias, bloqueios e lógica econômica exatamente como estão.
+- Texto em PT-BR e EN-US, com quebra/rolagem apropriada para a interface customizada; não sobrepor moldura ou botões.
+
+Teste de aceitação: inspecione cada oferta encantada e compare a lista do cartão, o tooltip do Minecraft e os EnchantmentSpec do catálogo. Os nomes e níveis devem coincidir exatamente.
+
+======================================================================
+6. ATALHOS PERSONALIZÁVEIS: OPÇÕES DE CONTROLES E REMAPEAMENTO
+======================================================================
+
+Arquivos a inspecionar:
+- src/client/java/com/felpz/refugio/client/RefugioClient.java
+- src/main/java/com/felpz/refugio/ability/ActivateMovementPayload.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+- traduções em pt_br.json e en_us.json
+
+Atalhos atualmente registrados em RefugioClient (investigar e corrigir, não assumir que todos devem permanecer):
+- `key.refugio.activate_burst` — padrão Ctrl esquerdo; corresponde ao Arranque.
+- `key.refugio.activate_movement` — padrão G; envia `ActivateMovementPayload`. No servidor esse payload chama `activateMovement(player)` no modo `ALL`, que tenta ativar o pulo atualmente ativo e também pode tentar o Arranque. Investigue todos os usos e explique por que existe essa tecla separada.
+- `key.refugio.activate_jump` — padrão Espaço; atualmente envia `JUMP_PASSIVE` ou `JUMP_EXPLICIT` conforme a relação com o pulo vanilla. Deve ser o atalho de pulo para Super Pulo/Pulo Duplo.
+- Categoria pretendida: refugio:refugio (label de localização key.category.refugio.refugio). O código atual tenta resolver essa categoria por reflexão e pode cair na categoria Movement; confira se ela realmente aparece em Controles.
+
+Solicitação:
+- Verifique por que existe “Ativar Habilidade de Movimento (Unificado)” (G) e se ainda tem uma função distinta necessária depois de corrigir Espaço e Arranque. Se for redundante, duplicar funções ou causar conflito, remova-o: não registre a tecla G, não envie/processse o payload unificado e retire a classe/registro/imports e chaves de tradução somente se não houver outros consumidores. Se houver consumidor legítimo, preserve-o apenas se necessário, explique sua função e evite duplicar qualquer ação.
+- Garanta que apenas os atalhos realmente necessários apareçam de forma clara e remapeável em Opções > Controles, sob uma categoria localizada “Refúgio”, usando a API pública compatível com Minecraft 26.2.
+- Revise a resolução por reflexão/fallback de categoria e substitua-a por uma API pública apropriada se existir nesta versão; não introduza chamadas privadas frágeis sem necessidade.
+- Depois de remapear, cada habilidade deve usar a tecla vinculada atual, sem depender de GLFW_KEY_SPACE/LEFT_CONTROL/G hardcoded para a lógica. Preserve o Arranque em seu atalho configurado, o funcionamento vanilla quando aplicável e a proteção que impede ativação com uma tela aberta.
+- Trate colisões entre atalhos de forma previsível: uma tecla duplicada não deve ativar duas habilidades inadvertidamente; mantenha ou melhore as salvaguardas atuais.
+- Se descrições ou instruções mostrarem “Espaço”, “Ctrl” ou “G”, avalie como exibir a vinculação configurada atual (ou remova a afirmação fixa), sem alterar regras do jogo.
+- Mantenha traduções dos nomes de atalhos/categoria em PT-BR e EN-US.
+
+Teste de aceitação: abra Opções > Controles, confirme a categoria Refúgio, confirme que G foi removido se era redundante, remapeie cada atalho restante e valide Arranque, pulo, colisões, telas abertas e reconexão.
+
+======================================================================
+6A. CORRIGIR SUPER PULO E PULO DUPLO
+======================================================================
+
+Arquivos principais:
+- src/client/java/com/felpz/refugio/client/RefugioClient.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
+- src/main/java/com/felpz/refugio/ability/ActivateMovementPayload.java (só remover se não houver consumidor necessário)
+- src/main/java/com/felpz/refugio/mixin/LivingEntityAbilityMixin.java
+- src/main/resources/assets/refugio/lang/pt_br.json e en_us.json
+- configuração Mixin/HUD somente se a solução exigir
+
+Inspecione o fluxo atual antes de alterar: RefugioClient hoje percebe bordas de tecla pressionada e envia um pacote de pulo; `activateMovement(player, "ALL")` também pode tentar pulo e Arranque; `RefugioAbilityRules` já define `0.62 + 0.06 * rank` para Super Pulo e `0.50 + 0.04 * rank` para Pulo Duplo. O comportamento de carga ao soltar ainda precisa ser implementado. Preserve o servidor como autoridade para verificar rank, habilidade ativa, estado do jogador e aplicar a velocidade.
+
+Regra comum:
+- Super Pulo e Pulo Duplo são mutuamente exclusivos. O jogador pode ter um ou outro ativo, nunca ambos. Ao ativar um, desative o outro no servidor (ou mantenha a proteção existente que garante esse resultado) e atualize o estado da interface a partir do snapshot do servidor.
+- Ambos usam o atalho de pulo especial configurado (por padrão Espaço); não crie um segundo atalho genérico para selecionar o tipo de salto.
+- Se nenhuma dessas habilidades estiver ativa, o pulo vanilla deve continuar normal. Se Super Pulo estiver ativo, impedir que o mesmo pressionamento faça o pulo vanilla imediato antes da carga; se Pulo Duplo estiver ativo, preservar o primeiro pulo vanilla no chão.
+- Processar pressionamento e soltura de forma confiável mesmo com tecla remapeada; não depender de manter um código GLFW fixo. Não ativar quando uma tela de interface estiver aberta.
+
+Super Pulo (`super_jump`):
+- Segurar o atalho de pulo enquanto o jogador está no chão inicia e carrega o Super Pulo; exibir uma barra/indicador visual de carga. Soltar o atalho encerra a carga e aplica o salto. Não fazer o personagem pular imediatamente no primeiro key-down.
+- Força vertical por rank: `0.62 + 0.06 * rank`; rank 1 = 0.68 e rank 5 = 0.92. Os valores da regra já estão corretos; preserve a fórmula. O tempo segurando não pode ultrapassar o valor máximo definido pelo rank. Se a barra precisar de duração/curva, use uma constante clara e documentada, sem inventar bônus acima da fórmula; soltar deve concluir a ação e não deixar o jogador preso carregando.
+- Recarga técnica: um novo Super Pulo só pode ser iniciado depois que o jogador voltar a tocar o chão. Remova/ajuste a recarga temporal de 1 segundo se ela conflitar com essa regra; não permita novo salto no ar.
+- O controle de queda deve registrar a altura de partida no momento do salto efetivo (soltura/aplicação), e não a altura de um carregamento que possa ter começado em outro estado. A altura acima dessa origem não deve gerar dano de queda; a queda abaixo da origem continua sujeita à regra vanilla e às outras habilidades defensivas.
+
+Pulo Duplo (`double_jump`):
+- Pressionar o mesmo atalho enquanto estiver no ar aplica um segundo impulso vertical. O primeiro pressionamento no chão deve executar o pulo vanilla normal.
+- Força vertical por rank: `0.50 + 0.04 * rank`; rank 1 = 0.54 e rank 5 = 0.70. Preserve a fórmula já definida em RefugioAbilityRules.
+- Permitir no máximo um segundo pulo antes de pousar. O uso deve ser detectado uma vez por novo pressionamento, não repetido por tecla mantida; renove o uso somente quando o jogador tocar o chão.
+- Não permitir o segundo pulo enquanto montado ou dentro d’água. Validar essas condições no servidor.
+- No salto duplo, iniciar/atualizar o rastreamento da queda com a altura em que o impulso do segundo pulo foi ativado, conforme o sistema atual de `JUMP_TRACKING`/`JUMP_ORIGIN_Y`. A parte da trajetória acima dessa altura não deve ser cobrada como queda; dano por descida abaixo da origem continua funcionando.
+
+Implementação e compatibilidade:
+- Se forem necessários eventos de tecla pressionada/solta, um payload ou estado de carga, confirme APIs de cliente/servidor da versão 26.2. A carga e a aplicação final devem ser validadas no servidor para evitar movimento concedido só pelo cliente.
+- Limpar o estado de carga se o jogador soltar a tecla, morrer, desconectar, trocar de dimensão, abrir tela, ficar montado ou entrar em água; evite pacotes de soltura pendentes e estados presos. Use as restrições apropriadas sem prejudicar o uso normal.
+- O indicador de carga deve ser discreto, legível, não pausar o jogo e respeitar GUI Scale. Não criar uma nova tela/container para o salto.
+- Não dar imunidade total a dano de queda. Ajustar somente a distância acima da origem rastreada, preservar queda vanilla abaixo dela e evitar conflito com Passo Leve.
+- Atualize descrições e instruções PT-BR/EN-US: Super Pulo deve explicar segurar/carregar/soltar; Pulo Duplo deve explicar pulo no chão e segundo pulo no ar. Não deixar descrições dizendo que Super Pulo salta imediatamente ao pressionar.
+- Preserve Arranque, seu cooldown, cargas, atalhos configurados e regras. A tecla G não pode disparar Arranque ou saltos depois de ser removida; se G tiver uma função independente que precise ser mantida, documente-a e garanta que não duplica as ações acima.
+
+Testes de aceitação:
+1. Com Super Pulo ativo e ranks 1 e 5: segurar Espaço/carregar não deve iniciar o pulo vanilla; soltar aplica respectivamente 0.68 e 0.92, a barra acompanha a carga e não pode usar de novo até tocar o chão.
+2. Com Pulo Duplo ativo e ranks 1 e 5: o primeiro Espaço no chão dá pulo normal; um novo pressionamento no ar dá o segundo impulso 0.54/0.70; não há terceiro salto e o uso renova ao pousar.
+3. Pulo Duplo não funciona montado nem dentro d’água. Testar Super Pulo e Pulo Duplo sem rank ou desativados: não devem conceder impulso especial.
+4. Ativar uma habilidade desativa a outra; relogar e abrir novamente a árvore preserva o estado exclusivo correto.
+5. Cair após cada habilidade e verificar que a parte da elevação acima da origem rastreada não gera dano extra, mas quedas abaixo dela ainda causam dano vanilla apropriado.
+6. Testar tecla remapeada, tecla liberada, troca de dimensão, abertura de tela, morte/desconexão durante carga e uso de Arranque; nenhuma carga pode ficar presa nem ocorrer ativação duplicada.
+
+======================================================================
+7. REMOVER RESTAURAÇÃO AUTOMÁTICA DE BAÚS E SEU COMANDO
+======================================================================
+
+Arquivos a inspecionar:
+- src/main/java/com/felpz/refugio/world/RefugioSustainability.java
+- src/main/java/com/felpz/refugio/command/RefugioCommands.java
+- traduções em pt_br.json e en_us.json
+- testes relacionados, se existirem
+
+Estado atual identificado em RefugioSustainability:
+- REFILL_DELAY_TICKS = 12.000 ticks (10 minutos).
+- O código captura o estoque inicial dos baús do Refúgio, monitora sua carga, e restaura o conteúdo depois de esvaziado.
+- Há também o comando administrativo /refugio admin resetar_baus, que restaura baús carregados.
+- A mesma classe hidrata automaticamente terrenos arados próximos aos jogadores.
+
+Solicitação:
+- Remova a restauração automática dos baús, a captura/armazenamento do estoque inicial que só serve para essa restauração, o temporizador/attachments/rotinas correspondentes e o comando /refugio admin resetar_baus.
+- Remova imports, traduções e mensagens que fiquem sem uso por causa dessa remoção, sem apagar traduções ainda referenciadas por outras funções.
+- MUITO IMPORTANTE: mantenha a hidratação automática das plantações/terrenos arados e qualquer outro comportamento que não seja restauração de baús. Não remova RefugioSustainability.initialize() se ainda for necessário para hidratação.
+- Não limpe, substitua ou altere o conteúdo atual dos baús do mapa. Depois da mudança, baús devem simplesmente manter o estado normal do Minecraft e não se reabastecer após 10 minutos nem por comando do mod.
+- Preserve os demais comandos de admin e de economia.
+
+Teste de aceitação: confirme que /refugio admin resetar_baus não é registrado, que nenhum agendamento restaura baús, e que a hidratação das plantações continua funcionando.
+
+======================================================================
+8. CHAVE/ITEM DE PORTAL NÃO DEVE SUMIR NA MORTE
+======================================================================
+
+Arquivos a inspecionar:
+- src/main/java/com/felpz/refugio/item/RefugioKey.java
+- src/main/java/com/felpz/refugio/item/RefugioItems.java
+- eventos/mixins relacionados a morte, drop, inventário e armazenamento, se existirem
+
+A chave de portal parece ser o item refugio:chave_refugio (RefugioItems.CHAVE / RefugioKey). Ela é registrada com stack size 1. RefugioItems usa o attachment persistente STARTER_KEY_GIVEN e entrega a chave apenas uma vez no primeiro acesso. RefugioKey.use controla o teleporte e salva um RETURN_POINT copyOnDeath; esse attachment guarda a posição de retorno, não a ItemStack da chave.
+
+Solicitação:
+- Se a chave estiver no inventário do jogador quando ele morrer, ela deve continuar disponível após o respawn e continuar funcionando como portal.
+- Preserve o comportamento atual que impede o jogador de simplesmente jogar a chave no chão, caso essa proteção esteja presente em outra parte do projeto. Os arquivos RefugioKey/RefugioItems consultados não mostram uma proteção explícita contra drop; investigue o projeto todo e o comportamento real antes de alterar isso.
+- O jogador deve continuar podendo guardar a chave em baú, mochila ou outro container e retirá-la depois. Não bloqueie movimento entre slots, não torne o item “preso” ao inventário e não force a chave de volta ao jogador quando ela estiver armazenada em um container.
+- Evite duplicação: não entregue uma chave nova ao morrer se a original já estiver em inventário, mochila/container ou outro local. Não transforme STARTER_KEY_GIVEN em uma rotina de reentrega a cada login.
+- Preserve o RETURN_POINT copyOnDeath e o teleporte para dentro/fora do Refúgio. Use o método/evento de morte/respawn compatível com esta versão e mantenha a lógica no servidor.
+
+Teste de aceitação: morrer carregando a chave; confirmar que continua no inventário e funciona. Guardá-la em baú/mochila, morrer e confirmar que não surge uma cópia indevida; depois retirar a chave e confirmar que continua utilizável. Verificar também o comportamento de descarte manual existente.
+
+======================================================================
+9. NPCs DO REFÚGIO: IMUNIDADE A DANO E RESPAWN DE SEGURANÇA
+======================================================================
+
+Arquivos a inspecionar:
+- src/main/java/com/felpz/refugio/npc/RefugioNPCs.java
+- src/main/java/com/felpz/refugio/story/RefugioStory.java
+- src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+- outros eventos de dano/morte/spawn usados pelo projeto
+- recursos do pack src/main/resources/resourcepacks/npc_skins/
+
+Estado atual importante:
+- A lógica Java identifica NPCs por tags e cria entidades minecraft:villager com profissões customizadas; as interações de diálogo, loja e missões dependem dessas entidades/tags.
+- `spawnVillager` e `configureKael` já aplicam invulnerabilidade, persistência, NoAi e silêncio a NPCs recém-criados/configurados. Porém, confirme se NPCs antigos já salvos, caminhos de atualização como spawnOrUpdate e todos os papéis recebem novamente as mesmas propriedades. O relato de teste é que NPCs ainda podem morrer.
+- O visual player-like vem do pacote embutido `npc_skins`, ativado pelo RefugioClient, com texturas customizadas e arquivos CEM/EMF `.jem` sob `assets/minecraft/optifine/cem`; não substitua os aldeões por entidades jogador e não remova o pack.
+- Kael tem estado especial: começa na entrada e pode ser movido ao castelo com tags de progresso. Preserve esse estado e nunca crie duas cópias de Kael.
+
+Solicitação:
+- Garanta que todos os NPCs oficiais/tags do Refúgio (Baldur, Eldrin, Marta, Dário e Kael) não recebam dano normal de jogador, mobs, fogo, explosões ou ambiente, usando mecanismo server-side compatível com 26.2.
+- Aplique a proteção tanto a NPCs recém-criados quanto a NPCs já existentes carregados de mundos/saves antigos, sem depender de reiniciar o mundo várias vezes.
+- Implemente um mecanismo de recuperação: se um NPC marcado morrer/remover-se de forma inesperada, recrie-o após um intervalo curto na posição/rotação própria, com nome, profissão, tag, skin e persistência corretos. A recuperação não pode duplicar NPCs nem redefinir missão, diálogo, recompensas ou estado de Kael.
+- Preservar interações, cliques, menus, loja, missões, quests, teleporte e posições atuais. Não imobilize jogadores nem bloqueie dano a mobs comuns ou ao Miojo.
+- Se certos comandos/admin bypass podem remover uma entidade mesmo invulnerável, trate-os como cenário de recuperação; não elimine comandos globais do Minecraft.
+
+Teste de aceitação: em mundo novo e em mundo com NPCs existentes, tentar atacar cada NPC com diferentes fontes de dano; nenhum deve perder vida. Se for removido/morto por comando ou condição extraordinária, deve voltar uma única vez ao local correto e continuar interagindo. Testar Kael antes e depois de sua mudança para o castelo.
+
+======================================================================
+10. NPCs: ANIMAÇÃO OCIOSA SEM ANDAR OU PERDER O VISUAL
+======================================================================
+
+Arquitetura atual:
+- NPCs são Villager com NoAi para permanecerem no local.
+- O aspecto customizado usa o pack embutido `npc_skins`, texturas e modelos CEM/EMF `.jem` para villagers.
+- A solicitação é uma animação sutil de idle: mexer levemente cabeça, corpo e braços, sem caminhar, sair do ponto, atacar, trocar de profissão/modelo ou perder a capacidade de interação.
+
+Antes de implementar:
+- Inspecione os `.jem`, `.properties`, texturas, dependências e a versão do EMF/ETF realmente suportada pelo conjunto do jogador.
+- Verifique se o sistema CEM/EMF atual suporta animações necessárias e qual formato/API é aceito nessa versão do Minecraft.
+- Se considerar uma biblioteca compartilhada (por exemplo, uma biblioteca de animação de entidades), confirme release Fabric real para Minecraft 26.2, compatibilidade com loader/API/Java deste projeto, licença, dependências obrigatórias e se exige instalação adicional no cliente/servidor.
+- Não adicione biblioteca de versão incompatível, não invente compatibilidade, não baixe/copiei jars sem licença/autorizações, e não transforme isso em uma dependência obrigatória do mod sem explicar o impacto.
+
+Implementação preferida:
+- Se o CEM/EMF atual permitir, adicionar uma animação idle leve aos modelos existentes no próprio pack, mantendo tags, texturas, aparências individuais e NoAi.
+- Caso não seja possível com segurança, não habilite a AI vanilla de forma que os villagers caminhem ou mudem de lugar. Apresente primeiro uma alternativa tecnicamente compatível e explique qualquer mod adicional que o usuário precisaria instalar.
+- Animação discreta e contínua: respiração/balanço muito leve do tronco, movimento ocasional dos braços e pequenas viradas de cabeça. Sem movimentos exagerados, animação de ataque, caminhada, fuga ou rotação permanente.
+- Se for necessário sincronizar animação, prefira animação puramente visual client-side para não aumentar tráfego nem alterar lógica do servidor.
+
+Teste de aceitação: cada NPC continua parado no ponto, com aparência individual original e diálogo funcionando; há movimento idle sutil de corpo/cabeça/braços. Não há deslocamento, teleportação frequente ou conflito entre o modelo do pack e a animação.
+
+======================================================================
+11. COMPILAÇÃO, VERIFICAÇÃO E ENTREGA
+======================================================================
+
+Após as mudanças:
+1. Execute ` .\gradlew.bat build --console=plain ` no Windows, corrigindo apenas erros relacionados às alterações deste briefing.
+2. Execute também ` .\gradlew.bat shopEconomyChecks --console=plain ` se a tarefa continuar disponível; preserve a cobertura de economia.
+3. Execute `git diff --check` e verifique os JSONs de PT-BR/EN-US.
+4. Confirme que nenhum comando de reset de baús ficou registrado e que a hidratação de plantações não foi removida.
+5. Confirme que o JAR produzido contém o código e recursos alterados. Se não puder iniciar o Minecraft ou testar uma função visual no jogo, informe claramente; não declare que foi testada.
+6. Faça uma revisão final de alterações para garantir que nenhum sistema não solicitado foi alterado.
+
+Na resposta final, liste:
+- arquivos alterados e resumo de cada mudança;
+- decisões técnicas de animação e dependências (ou por que não foi seguro adicioná-las);
+- tarefas Gradle executadas e resultado;
+- testes manuais que ainda dependem do usuário.
+
+Não marque a tarefa como concluída se a compilação falhar. Não oculte incompatibilidades nem substitua silenciosamente os requisitos por outra solução.

@@ -7,19 +7,26 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -86,6 +93,7 @@ public final class RefugioShopScreen extends Screen {
     private int[] catReqs = {0, 1, 2, 4, 8};
     private String carriedItemId = "";
     private int carriedCount;
+    private List<ShopCatalog.EnchantmentSpec> detailEnchantments = List.of();
 
     private final List<SubcategoryEntry> subcategories = new ArrayList<>();
     private final List<OfferEntry> offers = new ArrayList<>();
@@ -196,10 +204,12 @@ public final class RefugioShopScreen extends Screen {
                     for (String entry : entries) {
                         String[] fields = entry.split("\\|", -1);
                         if (fields.length >= 6) {
+                            List<ShopCatalog.EnchantmentSpec> ench = fields.length >= 7
+                                    ? parseEnchantmentSpecs(fields[6]) : List.of();
                             offers.add(new OfferEntry(
                                     Integer.parseInt(fields[0]), fields[1],
                                     Integer.parseInt(fields[2]), Integer.parseInt(fields[3]),
-                                    Integer.parseInt(fields[4]), "1".equals(fields[5])));
+                                    Integer.parseInt(fields[4]), "1".equals(fields[5]), ench));
                         }
                     }
                 } else if ("SELL".equals(viewName)) {
@@ -213,8 +223,24 @@ public final class RefugioShopScreen extends Screen {
                     }
                 }
             }
+            detailEnchantments = parts.length >= 28 ? parseEnchantmentSpecs(parts[27]) : List.of();
         } catch (NumberFormatException ignored) {
         }
+    }
+
+    private static List<ShopCatalog.EnchantmentSpec> parseEnchantmentSpecs(String raw) {
+        if (raw == null || raw.isEmpty()) return List.of();
+        List<ShopCatalog.EnchantmentSpec> result = new ArrayList<>();
+        for (String token : raw.split("~")) {
+            String[] p = token.split("\\^", -1);
+            if (p.length >= 2 && !p[0].isBlank()) {
+                try {
+                    result.add(new ShopCatalog.EnchantmentSpec(p[0], Integer.parseInt(p[1])));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return List.copyOf(result);
     }
 
     private static void parseFixedInts(String csv, int[] target) {
@@ -548,7 +574,7 @@ public final class RefugioShopScreen extends Screen {
         int badgeY = headerY + (headerH - badgeH) / 2;
         Rect balanceBadge = new Rect(badgeX, badgeY, badgeW, badgeH);
 
-        Component titleComp = headerTitleComponent().copy().withStyle(LIGHT_STYLE);
+        Component titleComp = headerTitleComponent().withStyle(LIGHT_STYLE);
         int maxBannerRight = badgeX - headerGap;
         int availBannerArea = Math.max(64, maxBannerRight - innerX);
         int idealBannerW = Math.min(340, Math.max(140, font.width(titleComp) + 44));
@@ -774,7 +800,7 @@ public final class RefugioShopScreen extends Screen {
         );
     }
 
-    private Component headerTitleComponent() {
+    private MutableComponent headerTitleComponent() {
         return switch (viewName) {
             case "SEARCH" -> Component.translatable("gui.refugio.search_results");
             case "SELL", "SELL_CONFIRM" -> Component.translatable("gui.refugio.sell_title");
@@ -791,7 +817,7 @@ public final class RefugioShopScreen extends Screen {
     }
 
     private void drawHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, ShopLayout layout) {
-        Component title = headerTitleComponent().copy().withStyle(LIGHT_STYLE);
+        Component title = headerTitleComponent().withStyle(LIGHT_STYLE);
         Rect banner = layout.titleBanner;
         if (banner.w > 0 && banner.h > 0) {
             graphics.blit(TITLE_PLAQUE_TEXTURE, banner.x, banner.y, banner.right(), banner.bottom(),
@@ -974,7 +1000,7 @@ public final class RefugioShopScreen extends Screen {
         int crumbX = back.right() + (layout.inner.w < 340 ? 5 : 8);
         int availCrumbW = rightLimit - crumbX;
         if (availCrumbW >= 36) {
-            Component crumb = currentBreadcrumb().copy().withStyle(GOLD_STYLE);
+            Component crumb = currentBreadcrumb().withStyle(GOLD_STYLE);
             List<FormattedCharSequence> lines = font.split(crumb, availCrumbW);
             if (!lines.isEmpty()) {
                 graphics.textRenderer().accept(crumbX, back.y + (back.h - font.lineHeight) / 2, lines.getFirst());
@@ -983,7 +1009,7 @@ public final class RefugioShopScreen extends Screen {
         graphics.fill(layout.inner.x, layout.dividerY, layout.inner.right(), layout.dividerY + 1, 0xFFAC936C);
     }
 
-    private Component currentBreadcrumb() {
+    private MutableComponent currentBreadcrumb() {
         return switch (viewName) {
             case "SUBCATEGORIES" -> Component.translatable("gui.refugio.category." + categoryIndex);
             case "CATEGORY" -> selectedSubcategory == null || selectedSubcategory.isBlank()
@@ -992,7 +1018,9 @@ public final class RefugioShopScreen extends Screen {
             case "SEARCH" -> Component.translatable("gui.refugio.search_query", searchTerm.isBlank() ? "—" : searchTerm);
             case "PRODUCT_DETAIL", "SELL_CONFIRM" -> {
                 ItemStack preview = getMenuSlotItem(22);
-                yield !preview.isEmpty() ? preview.getHoverName() : createStack(detailItemId, 1).getHoverName();
+                String name = !preview.isEmpty() ? preview.getHoverName().getString()
+                        : createStack(detailItemId, 1).getHoverName().getString();
+                yield Component.literal(name);
             }
             case "SELL" -> Component.translatable("gui.refugio.sell_deposit_hint");
             default -> Component.translatable("gui.refugio.shop_title");
@@ -1036,11 +1064,11 @@ public final class RefugioShopScreen extends Screen {
             boolean isHovered = card.contains(mouseX, mouseY);
             ItemStack stack = getMenuSlotItem(offer.slotId);
             if (stack.isEmpty()) {
-                stack = createStack(offer.itemId, offer.amount);
+                stack = createEnchantedStack(offer.itemId, offer.amount, offer.enchantments);
             }
             drawOfferCard(graphics, card, stack, offer, isHovered, accent);
             if (isHovered) {
-                hovered = new HoveredSlot(stack, extractLoreLines(stack));
+                hovered = new HoveredSlot(stack, buildRichOfferTooltipLines(stack, offer.enchantments));
             }
         }
         drawPaginationBar(graphics, mouseX, mouseY, layout);
@@ -1069,19 +1097,33 @@ public final class RefugioShopScreen extends Screen {
                 ? Component.translatable("gui.refugio.category_requires", offer.requiredClaims).withStyle(DANGER_STYLE)
                 : Component.translatable("gui.refugio.sell_total_value", offer.price).withStyle(GOLD_STYLE);
 
+        Component enchSummary = formatCompactEnchantmentSummary(stack, offer.enchantments);
         List<FormattedCharSequence> nameLines = font.split(itemName, textW);
+        List<FormattedCharSequence> enchLines = enchSummary != null ? font.split(enchSummary, textW) : List.of();
         List<FormattedCharSequence> priceLines = font.split(priceLabel, textW);
-        int maxNameLines = (h >= font.lineHeight * 3 + 6 && nameLines.size() > 1) ? 2 : 1;
+
+        boolean showEnch = !enchLines.isEmpty() && h >= font.lineHeight * 3 + 4;
+        int maxNameLines = (!showEnch && h >= font.lineHeight * 3 + 6 && nameLines.size() > 1) ? 2 : 1;
         int nameCount = Math.min(maxNameLines, nameLines.size());
         boolean showPrice = h >= font.lineHeight * 2 + 2 && !priceLines.isEmpty();
-        int totalH = nameCount * font.lineHeight + (showPrice ? font.lineHeight + 1 : 0);
+        int totalH = nameCount * font.lineHeight
+                + (showEnch ? font.lineHeight + 1 : 0)
+                + (showPrice ? font.lineHeight + 1 : 0);
         int startY = y + Math.max(1, (h - totalH) / 2);
 
+        int curY = startY;
         for (int i = 0; i < nameCount; i++) {
-            graphics.textRenderer().accept(textX, startY + i * font.lineHeight, nameLines.get(i));
+            graphics.textRenderer().accept(textX, curY, nameLines.get(i));
+            curY += font.lineHeight;
+        }
+        if (showEnch) {
+            curY += 1;
+            graphics.textRenderer().accept(textX, curY, enchLines.getFirst());
+            curY += font.lineHeight;
         }
         if (showPrice) {
-            graphics.textRenderer().accept(textX, startY + nameCount * font.lineHeight + 1, priceLines.getFirst());
+            curY += 1;
+            graphics.textRenderer().accept(textX, curY, priceLines.getFirst());
         }
     }
 
@@ -1109,9 +1151,10 @@ public final class RefugioShopScreen extends Screen {
         graphics.fill(infoBox.x, infoBox.y, infoBox.right(), infoBox.bottom(), 0xD8EAD8B2);
         border(graphics, infoBox.x, infoBox.y, infoBox.w, infoBox.h, 0xFF967043);
 
+        List<ShopCatalog.EnchantmentSpec> activeSpecs = resolveDetailEnchantmentSpecs();
         ItemStack product = getMenuSlotItem(22);
         if (product.isEmpty()) {
-            product = createStack(detailItemId, Math.max(1, Math.min(64, detailQuantity)));
+            product = createEnchantedStack(detailItemId, Math.max(1, Math.min(64, detailQuantity)), activeSpecs);
         }
 
         int iconBoxX = infoBox.x + 8;
@@ -1120,7 +1163,7 @@ public final class RefugioShopScreen extends Screen {
         border(graphics, iconBoxX - 2, iconBoxY - 2, 20, 20, 0x88987348);
         drawItemWithCount(graphics, product, iconBoxX, iconBoxY, detailQuantity);
         if (mouseX >= iconBoxX - 2 && mouseX < iconBoxX + 18 && mouseY >= iconBoxY - 2 && mouseY < iconBoxY + 18) {
-            hovered = new HoveredSlot(product, extractLoreLines(product));
+            hovered = new HoveredSlot(product, buildRichOfferTooltipLines(product, activeSpecs));
         }
 
         Component itemName = product.getHoverName().copy().withStyle(INK_STYLE);
@@ -1133,6 +1176,11 @@ public final class RefugioShopScreen extends Screen {
         }
 
         List<Component> summaryLines = new ArrayList<>();
+        List<Component> enchAndEffects = extractEnchantmentAndEffectLines(product, activeSpecs);
+        if (!enchAndEffects.isEmpty()) {
+            summaryLines.add(Component.translatable("gui.refugio.offer_enchantments_header").withStyle(GOLD_STYLE));
+            summaryLines.addAll(enchAndEffects);
+        }
         summaryLines.add(Component.translatable("gui.refugio.purchase_unit_price", detailUnitPrice).withStyle(INK_STYLE));
         summaryLines.add(Component.translatable("gui.refugio.purchase_quantity", detailQuantity).withStyle(INK_STYLE));
         summaryLines.add(Component.translatable("gui.refugio.purchase_total", detailTotal).withStyle(GOLD_STYLE));
@@ -1155,17 +1203,33 @@ public final class RefugioShopScreen extends Screen {
         int listBottom = infoBox.bottom() - 4;
         if (listBottom > listTop + font.lineHeight) {
             graphics.fill(infoBox.x + 6, listTop - 2, infoBox.right() - 6, listTop - 1, 0x55987348);
+            int wrapW = Math.max(16, infoBox.w - 16);
+            List<FormattedCharSequence> allWrapped = new ArrayList<>();
+            for (Component line : summaryLines) {
+                allWrapped.addAll(font.split(line, wrapW));
+            }
+            int lineStep = font.lineHeight + 1;
+            int totalContentH = allWrapped.size() * lineStep;
+            int viewH = Math.max(1, listBottom - listTop);
+            int maxScroll = Math.max(0, totalContentH - viewH);
+            detailScrollOffset = Math.max(0, Math.min(maxScroll, detailScrollOffset));
+
             graphics.enableScissor(infoBox.x + 2, listTop, infoBox.right() - 2, listBottom);
             int lineY = listTop + 1 - detailScrollOffset;
-            for (Component line : summaryLines) {
-                for (FormattedCharSequence wrapped : font.split(line, Math.max(16, infoBox.w - 14))) {
-                    if (lineY + font.lineHeight >= listTop && lineY <= listBottom) {
-                        graphics.textRenderer().accept(infoBox.x + 7, lineY, wrapped);
-                    }
-                    lineY += font.lineHeight + 1;
+            for (FormattedCharSequence wrapped : allWrapped) {
+                if (lineY + font.lineHeight >= listTop && lineY <= listBottom) {
+                    graphics.textRenderer().accept(infoBox.x + 7, lineY, wrapped);
                 }
+                lineY += lineStep;
             }
             graphics.disableScissor();
+            if (maxScroll > 0 && viewH >= 14) {
+                int barX = infoBox.right() - 4;
+                int thumbH = Math.max(6, viewH * viewH / (viewH + maxScroll));
+                int thumbY = listTop + (viewH - thumbH) * detailScrollOffset / maxScroll;
+                graphics.fill(barX, listTop, barX + 2, listBottom, 0x44765030);
+                graphics.fill(barX, thumbY, barX + 2, thumbY + thumbH, 0xFF9B744A);
+            }
         }
 
         for (int i = 0; i < layout.detailQtyButtons.size(); i++) {
@@ -1340,6 +1404,158 @@ public final class RefugioShopScreen extends Screen {
         }
     }
 
+    private List<ShopCatalog.EnchantmentSpec> resolveDetailEnchantmentSpecs() {
+        if (detailEnchantments != null && !detailEnchantments.isEmpty()) {
+            return detailEnchantments;
+        }
+        if ("PRODUCT_DETAIL".equals(viewName)) {
+            for (ShopCatalog.Offer offer : ShopCatalog.offers(categoryIndex)) {
+                if (offer.itemId().equals(detailItemId)
+                        && offer.price() == detailUnitPrice
+                        && !offer.enchantments().isEmpty()) {
+                    return offer.enchantments();
+                }
+            }
+        }
+        return List.of();
+    }
+
+    private Component formatCompactEnchantmentSummary(ItemStack stack, List<ShopCatalog.EnchantmentSpec> fallbackSpecs) {
+        List<Component> enchLines = extractEnchantmentNamesOnly(stack, fallbackSpecs);
+        if (enchLines.isEmpty()) return null;
+        MutableComponent combined = Component.literal("✦ ").withStyle(SUCCESS_STYLE);
+        for (int i = 0; i < enchLines.size(); i++) {
+            if (i > 0) combined.append(Component.literal(", ").withStyle(SUCCESS_STYLE));
+            combined.append(enchLines.get(i).copy().withStyle(SUCCESS_STYLE));
+        }
+        return combined;
+    }
+
+    private List<Component> buildRichOfferTooltipLines(ItemStack stack, List<ShopCatalog.EnchantmentSpec> fallbackSpecs) {
+        List<Component> result = new ArrayList<>();
+        List<Component> enchAndEffects = extractEnchantmentAndEffectLines(stack, fallbackSpecs);
+        if (!enchAndEffects.isEmpty()) {
+            result.add(Component.translatable("gui.refugio.offer_enchantments_header").withStyle(GOLD_STYLE));
+            for (Component ench : enchAndEffects) {
+                result.add(ench.copy().withStyle(LIGHT_STYLE));
+            }
+        }
+        String headerText = Component.translatable("gui.refugio.offer_enchantments_header").getString();
+        for (Component loreLine : extractLoreLines(stack)) {
+            String plain = loreLine.getString();
+            if (plain.equals(headerText) || plain.startsWith("• ")) continue;
+            result.add(loreLine);
+        }
+        return result;
+    }
+
+    private List<Component> extractEnchantmentAndEffectLines(ItemStack stack,
+                                                             List<ShopCatalog.EnchantmentSpec> fallbackSpecs) {
+        List<Component> names = extractEnchantmentNamesOnly(stack, fallbackSpecs);
+        List<Component> result = new ArrayList<>(names.size() + 2);
+        for (Component name : names) {
+            result.add(Component.literal("• ").withStyle(GOLD_STYLE)
+                    .append(name.copy().withStyle(SUCCESS_STYLE)));
+        }
+        PotionContents potionContents = stack.get(DataComponents.POTION_CONTENTS);
+        if (potionContents != null) {
+            for (var effect : potionContents.getAllEffects()) {
+                MutableComponent effName = Component.translatable(effect.getDescriptionId());
+                if (effect.getAmplifier() > 0) {
+                    effName.append(" ").append(Component.translatable("potion.potency." + effect.getAmplifier()));
+                }
+                result.add(Component.literal("• ").withStyle(GOLD_STYLE)
+                        .append(effName.withStyle(SUCCESS_STYLE)));
+            }
+        }
+        ItemAttributeModifiers modifiers = stack.get(DataComponents.ATTRIBUTE_MODIFIERS);
+        if (modifiers != null && !modifiers.modifiers().isEmpty()) {
+            for (var entry : modifiers.modifiers()) {
+                double amount = entry.modifier().amount();
+                if (Math.abs(amount) < 0.0001) continue;
+                String sign = amount > 0 ? "+" : "";
+                Component attrName = Component.translatable(entry.attribute().value().getDescriptionId());
+                result.add(Component.literal("• " + sign + String.format(java.util.Locale.ROOT, "%.1f ", amount))
+                        .withStyle(MUTED_STYLE)
+                        .append(attrName.copy().withStyle(MUTED_STYLE)));
+            }
+        }
+        return result;
+    }
+
+    private List<Component> extractEnchantmentNamesOnly(ItemStack stack,
+                                                        List<ShopCatalog.EnchantmentSpec> fallbackSpecs) {
+        List<Component> names = new ArrayList<>();
+        if (minecraft != null && minecraft.level != null && fallbackSpecs != null && !fallbackSpecs.isEmpty()) {
+            try {
+                var reg = minecraft.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+                for (ShopCatalog.EnchantmentSpec spec : fallbackSpecs) {
+                    var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(spec.id()));
+                    var holderOpt = reg.get(key);
+                    if (holderOpt.isPresent()) {
+                        names.add(Enchantment.getFullname(holderOpt.get(), spec.level()));
+                    } else {
+                        names.add(fallbackEnchantmentComponent(spec.id(), spec.level()));
+                    }
+                }
+                if (!names.isEmpty()) return names;
+            } catch (RuntimeException ignored) {
+            }
+        }
+
+        ItemEnchantments direct = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        for (var entry : direct.entrySet()) {
+            names.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()));
+        }
+        ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+        for (var entry : stored.entrySet()) {
+            names.add(Enchantment.getFullname(entry.getKey(), entry.getIntValue()));
+        }
+        if (names.isEmpty() && fallbackSpecs != null) {
+            for (ShopCatalog.EnchantmentSpec spec : fallbackSpecs) {
+                names.add(fallbackEnchantmentComponent(spec.id(), spec.level()));
+            }
+        }
+        return names;
+    }
+
+    private static Component fallbackEnchantmentComponent(String id, int level) {
+        String path = id.contains(":") ? id.substring(id.indexOf(':') + 1) : id;
+        MutableComponent name = Component.translatable("enchantment.minecraft." + path);
+        if (level > 1) {
+            name.append(" ").append(Component.translatable("enchantment.level." + level));
+        }
+        return name;
+    }
+
+    private ItemStack createEnchantedStack(String itemId, int count,
+                                           List<ShopCatalog.EnchantmentSpec> enchantments) {
+        ItemStack stack = createStack(itemId, count);
+        if (stack.isEmpty() || enchantments == null || enchantments.isEmpty()) return stack;
+        stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+        if (minecraft != null && minecraft.level != null) {
+            try {
+                var reg = minecraft.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+                boolean book = stack.is(Items.ENCHANTED_BOOK);
+                ItemEnchantments.Mutable stored = book ? new ItemEnchantments.Mutable(ItemEnchantments.EMPTY) : null;
+                for (ShopCatalog.EnchantmentSpec spec : enchantments) {
+                    var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(spec.id()));
+                    var holderOpt = reg.get(key);
+                    if (holderOpt.isPresent()) {
+                        Holder<Enchantment> holder = holderOpt.get();
+                        if (book) stored.set(holder, spec.level());
+                        else stack.enchant(holder, spec.level());
+                    }
+                }
+                if (book) {
+                    stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable());
+                }
+            } catch (RuntimeException ignored) {
+            }
+        }
+        return stack;
+    }
+
     private List<Component> extractLoreLines(ItemStack stack) {
         ItemLore lore = stack.get(DataComponents.LORE);
         if (lore == null || lore.lines().isEmpty()) return List.of();
@@ -1477,7 +1693,8 @@ public final class RefugioShopScreen extends Screen {
 
     private record SlotRect(int slotId, Rect rect) { }
     private record SubcategoryEntry(int slotId, String key, int offerCount, String iconId) { }
-    private record OfferEntry(int slotId, String itemId, int amount, int price, int requiredClaims, boolean locked) { }
+    private record OfferEntry(int slotId, String itemId, int amount, int price, int requiredClaims, boolean locked,
+                              List<ShopCatalog.EnchantmentSpec> enchantments) { }
     private record SellSlotEntry(int slotId, String itemId, int count, int unitPrice) { }
     private record HoveredSlot(ItemStack stack, List<Component> extraLines) { }
 

@@ -2,6 +2,8 @@ package com.felpz.refugio.mixin;
 
 import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.ability.RefugioAbilityRules;
+import com.felpz.refugio.item.RefugioItems;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Entity;
@@ -11,9 +13,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Player.class)
@@ -24,6 +26,13 @@ public abstract class PlayerAbilityMixin {
     private int refugio$firstCutRank;
     @Unique
     private int refugio$retaliationRank;
+
+    @Inject(method = "dropEquipment", at = @At("HEAD"))
+    private void refugio$preservePortalKeyOnDeath(ServerLevel level, CallbackInfo callback) {
+        if ((Object) this instanceof ServerPlayer player) {
+            RefugioItems.captureKeysBeforeDeathDrop(player);
+        }
+    }
 
     @Inject(method = "attack", at = @At("HEAD"))
     private void refugio$resetCriticalState(Entity target, CallbackInfo callback) {

@@ -53,7 +53,7 @@ public final class RefugioQuestScreen extends Screen {
     private static final Style INK_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF4A3520);
     private static final Style MUTED_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF80684B);
     private static final Style GOLD_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF87551F);
-    private static final Style SUCCESS_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF456B3A);
+    private static final Style SUCCESS_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF2D5B22);
     private static final Style DANGER_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF9E3B2B);
     private static final Style LIGHT_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFFFF0D0);
     private static final Style DISABLED_BUTTON_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFBBAA8D);
@@ -289,7 +289,7 @@ public final class RefugioQuestScreen extends Screen {
         int marginX = width < 400 ? 6 : (width < 640 ? 12 : 18);
         int marginY = height < 240 ? 4 : (height < 360 ? 10 : 16);
         int availW = Math.max(180, width - marginX * 2);
-        int availH = Math.max(96, height - marginY * 2);
+        int availH = Math.max(136, height - marginY * 2);
 
         double targetAspect = 1.72;
         int maxW = Math.min(860, availW);
@@ -312,7 +312,7 @@ public final class RefugioQuestScreen extends Screen {
         int innerX = px + insetX;
         int innerY = py + insetY;
         int innerW = Math.max(120, pw - insetX * 2);
-        int innerH = Math.max(72, ph - insetY * 2);
+        int innerH = Math.max(90, ph - insetY * 2);
         Rect inner = new Rect(innerX, innerY, innerW, innerH);
 
         int headerH = innerH < 140 ? 16 : (innerH < 175 ? 18 : (innerH < 220 ? 22 : (innerH < 280 ? 26 : 30)));
@@ -549,49 +549,62 @@ public final class RefugioQuestScreen extends Screen {
         int w = card.w;
         int h = card.h;
 
+        // Distinct visual palette per mission state (DONE vs CLAIM_READY vs IN_PROGRESS vs LOCKED)
         int bgColor = switch (entry.state) {
-            case STATE_DONE -> hovered ? 0xFFEFE3C2 : 0xFFE5D7B3;
-            case STATE_CLAIM_READY -> hovered ? 0xFFFDF0CE : 0xFFF6E4B8;
+            case STATE_DONE -> hovered ? 0xFFD9E9CA : 0xFFCFE0BF;
+            case STATE_CLAIM_READY -> hovered ? 0xFFFFF2C6 : 0xFFFCE6A8;
             case STATE_IN_PROGRESS -> hovered ? 0xFFF5E4C0 : 0xFFEAD8B2;
-            default -> hovered ? 0xFFDED1B7 : 0xFFD4C7AD;
+            default -> hovered ? 0xFFD4C8B4 : 0xFFCBC0AA;
         };
         int borderColor = switch (entry.state) {
-            case STATE_DONE -> hovered ? 0xFFD3A34F : 0xFF5B7F46;
-            case STATE_CLAIM_READY -> hovered ? 0xFFFFD878 : 0xFFD49B35;
+            case STATE_DONE -> hovered ? 0xFF5A8F49 : 0xFF3A682E;
+            case STATE_CLAIM_READY -> hovered ? 0xFFFFDF7A : 0xFFD4921A;
             case STATE_IN_PROGRESS -> hovered ? 0xFFD3A34F : 0xFF987348;
-            default -> hovered ? 0xFFA99577 : 0xFF8E806A;
+            default -> hovered ? 0xFF948773 : 0xFF7D7262;
         };
         int accentColor = switch (entry.state) {
-            case STATE_DONE -> 0xFF456B3A;
-            case STATE_CLAIM_READY -> 0xFF24504F;
+            case STATE_DONE -> 0xFF2D5B22;
+            case STATE_CLAIM_READY -> 0xFFD4921A;
             case STATE_IN_PROGRESS -> trackAccentColor();
-            default -> 0xFF8A8274;
+            default -> 0xFF756C5E;
         };
 
         graphics.fill(x, y, x + w, y + h, bgColor);
         border(graphics, x, y, w, h, borderColor);
-        if (entry.state == STATE_CLAIM_READY) {
-            border(graphics, x + 1, y + 1, w - 2, h - 2, 0x88FFD982);
+        if (entry.state == STATE_DONE) {
+            border(graphics, x + 1, y + 1, w - 2, h - 2, 0x887BA868);
+        } else if (entry.state == STATE_CLAIM_READY) {
+            border(graphics, x + 1, y + 1, w - 2, h - 2, 0xAAFFE07D);
         }
-        graphics.fill(x + 2, y + 2, x + 5, y + h - 2, accentColor);
+        graphics.fill(x + 2, y + 2, x + 6, y + h - 2, accentColor);
 
         int iconBoxSize = h >= 48 ? 20 : 16;
-        int iconBoxX = x + 8;
+        int iconBoxX = x + 9;
         int iconBoxY = y + (h >= 54 ? 6 : Math.max(2, (h - iconBoxSize) / 2));
         if (h >= 48) {
-            graphics.fill(iconBoxX - 1, iconBoxY - 1, iconBoxX + iconBoxSize + 1, iconBoxY + iconBoxSize + 1, 0x34987348);
-            border(graphics, iconBoxX - 1, iconBoxY - 1, iconBoxSize + 2, iconBoxSize + 2, 0x80987348);
+            int medallionBg = entry.state == STATE_DONE ? 0x443A682E
+                    : entry.state == STATE_CLAIM_READY ? 0x44D4921A : 0x34987348;
+            int medallionBorder = entry.state == STATE_DONE ? 0xAA3A682E
+                    : entry.state == STATE_CLAIM_READY ? 0xCCD4921A : 0x80987348;
+            graphics.fill(iconBoxX - 1, iconBoxY - 1, iconBoxX + iconBoxSize + 1, iconBoxY + iconBoxSize + 1, medallionBg);
+            border(graphics, iconBoxX - 1, iconBoxY - 1, iconBoxSize + 2, iconBoxSize + 2, medallionBorder);
         }
         ItemStack iconStack = createStack(entry.iconId, 1);
         graphics.item(iconStack, iconBoxX + (iconBoxSize - 16) / 2, iconBoxY + (iconBoxSize - 16) / 2);
+
+        // Draw corner seal on the icon box for claimed missions
+        if (entry.state == STATE_DONE) {
+            drawCheckSeal(graphics, iconBoxX + iconBoxSize - 6, iconBoxY + iconBoxSize - 6);
+        }
 
         int textLeft = iconBoxX + iconBoxSize + 6;
         int textRight = x + w - 5;
         int availTextW = Math.max(24, textRight - textLeft);
 
-        Style titleStyle = entry.state == STATE_LOCKED ? MUTED_STYLE : INK_STYLE;
+        Style titleStyle = entry.state == STATE_DONE ? SUCCESS_STYLE
+                : entry.state == STATE_LOCKED ? MUTED_STYLE : INK_STYLE;
         MutableComponent numberedTitle = Component.literal("#" + (entry.index + 1) + " ")
-                .withStyle(GOLD_STYLE)
+                .withStyle(entry.state == STATE_DONE ? SUCCESS_STYLE : GOLD_STYLE)
                 .append(Component.translatable(entry.titleKey).withStyle(titleStyle));
 
         Component stateComp = stateBadgeComponent(entry.state);
@@ -611,7 +624,9 @@ public final class RefugioQuestScreen extends Screen {
         }
 
         int topY = y + 4;
-        List<FormattedCharSequence> titleLines = font.split(numberedTitle, availTextW);
+        int pillReservedW = drawTopRightStateSeal(graphics, x + w - 4, topY - 1, availTextW, entry.state);
+        int titleAvailW = Math.max(24, availTextW - pillReservedW);
+        List<FormattedCharSequence> titleLines = font.split(numberedTitle, titleAvailW);
         if (!titleLines.isEmpty()) {
             graphics.textRenderer().accept(textLeft, topY, titleLines.getFirst());
         }
@@ -651,8 +666,62 @@ public final class RefugioQuestScreen extends Screen {
         drawCardRewardRow(graphics, textLeft, footerY, availTextW, footerH, entry);
     }
 
+    private int drawTopRightStateSeal(GuiGraphicsExtractor graphics, int rightX, int topY,
+                                      int availTextW, int state) {
+        if (availTextW < 92) return 0;
+        Component label = switch (state) {
+            case STATE_DONE -> Component.translatable("gui.refugio.quest_badge.done");
+            case STATE_CLAIM_READY -> Component.translatable("gui.refugio.quest_badge.claim_ready");
+            case STATE_IN_PROGRESS -> Component.translatable("gui.refugio.quest_badge.in_progress");
+            default -> Component.translatable("gui.refugio.quest_badge.locked");
+        };
+        int pillFill = switch (state) {
+            case STATE_DONE -> 0xFF2D5B22;
+            case STATE_CLAIM_READY -> 0xFF24504F;
+            case STATE_IN_PROGRESS -> 0xFF6B4C2B;
+            default -> 0xFF5C5246;
+        };
+        int pillBorder = switch (state) {
+            case STATE_DONE -> 0xFFB89A52;
+            case STATE_CLAIM_READY -> 0xFFFFD878;
+            case STATE_IN_PROGRESS -> 0xFFB89455;
+            default -> 0xFF8A7E6E;
+        };
+        Style textStyle = Style.EMPTY.withFont(UI_FONT).withColor(switch (state) {
+            case STATE_DONE -> 0xFFEFFAE6;
+            case STATE_CLAIM_READY -> 0xFFFFF0B8;
+            case STATE_IN_PROGRESS -> 0xFFF5E6C8;
+            default -> 0xFFD2C5B0;
+        });
+
+        Component styled = Component.literal(label.getString()).withStyle(textStyle);
+        int maxPillW = Math.max(36, availTextW * 45 / 100);
+        List<FormattedCharSequence> lines = font.split(styled, maxPillW - 8);
+        if (lines.isEmpty()) return 0;
+        FormattedCharSequence seq = lines.getFirst();
+        int pillW = font.width(seq) + 8;
+        int pillH = font.lineHeight + 2;
+        int px = rightX - pillW;
+        graphics.fill(px, topY, px + pillW, topY + pillH, pillFill);
+        border(graphics, px, topY, pillW, pillH, pillBorder);
+        graphics.textRenderer().accept(px + 4, topY + 1, seq);
+        return pillW + 4;
+    }
+
+    private static void drawCheckSeal(GuiGraphicsExtractor graphics, int x, int y) {
+        graphics.fill(x, y, x + 7, y + 7, 0xFF2D5B22);
+        border(graphics, x, y, 7, 7, 0xFFE6C672);
+        // Pixel checkmark inside 7x7 box
+        graphics.fill(x + 1, y + 3, x + 2, y + 4, 0xFFEFFAE6);
+        graphics.fill(x + 2, y + 4, x + 3, y + 5, 0xFFEFFAE6);
+        graphics.fill(x + 3, y + 3, x + 4, y + 4, 0xFFEFFAE6);
+        graphics.fill(x + 4, y + 2, x + 5, y + 3, 0xFFEFFAE6);
+        graphics.fill(x + 5, y + 1, x + 6, y + 2, 0xFFEFFAE6);
+    }
+
     private void drawCardRewardRow(GuiGraphicsExtractor graphics, int x, int y, int w, int h, QuestEntry entry) {
-        graphics.fill(x, y - 1, x + w, y, 0x44987348);
+        int dividerColor = entry.state == STATE_DONE ? 0x553A682E : 0x44987348;
+        graphics.fill(x, y - 1, x + w, y, dividerColor);
         int textY = y + Math.max(0, (h - font.lineHeight) / 2);
         if (!entry.rewardVisible) {
             Component hidden = Component.translatable("gui.refugio.side_quest_reward_hidden").withStyle(MUTED_STYLE);
@@ -664,9 +733,15 @@ public final class RefugioQuestScreen extends Screen {
         }
 
         int curX = x;
+        if (entry.state == STATE_DONE) {
+            Component check = Component.literal("✓ ").withStyle(SUCCESS_STYLE);
+            graphics.textRenderer().accept(curX, textY, check);
+            curX += font.width(check);
+        }
         drawCoinIcon(graphics, curX, y + Math.max(0, (h - 12) / 2));
         curX += 14;
-        Component coinsText = Component.literal("+" + entry.rewardCoins).withStyle(GOLD_STYLE);
+        Style rewardStyle = entry.state == STATE_DONE ? SUCCESS_STYLE : GOLD_STYLE;
+        Component coinsText = Component.literal("+" + entry.rewardCoins).withStyle(rewardStyle);
         graphics.textRenderer().accept(curX, textY, coinsText);
         curX += font.width(coinsText) + 6;
 
@@ -679,7 +754,8 @@ public final class RefugioQuestScreen extends Screen {
         }
 
         if (curX + 24 < x + w && !entry.rewardSpecs.isEmpty()) {
-            Component names = formatRewardSummaryNames(entry.rewardSpecs).withStyle(INK_STYLE);
+            Style nameStyle = entry.state == STATE_DONE ? SUCCESS_STYLE : INK_STYLE;
+            Component names = formatRewardSummaryNames(entry.rewardSpecs).withStyle(nameStyle);
             List<FormattedCharSequence> split = font.split(names, (x + w) - curX);
             if (!split.isEmpty()) {
                 graphics.textRenderer().accept(curX, textY, split.getFirst());
@@ -760,9 +836,15 @@ public final class RefugioQuestScreen extends Screen {
 
     private Component stateBadgeComponent(int state) {
         return switch (state) {
-            case STATE_DONE -> Component.translatable("gui.refugio.quest_done").withStyle(SUCCESS_STYLE);
-            case STATE_CLAIM_READY -> Component.translatable("gui.refugio.quest_claim_ready").withStyle(GOLD_STYLE);
-            case STATE_IN_PROGRESS -> Component.translatable("gui.refugio.quest_in_progress").withStyle(INK_STYLE);
+            case STATE_DONE -> Component.literal("✓ ")
+                    .append(Component.translatable("gui.refugio.quest_done"))
+                    .withStyle(SUCCESS_STYLE);
+            case STATE_CLAIM_READY -> Component.literal("★ ")
+                    .append(Component.translatable("gui.refugio.quest_claim_ready"))
+                    .withStyle(GOLD_STYLE);
+            case STATE_IN_PROGRESS -> Component.literal("● ")
+                    .append(Component.translatable("gui.refugio.quest_in_progress"))
+                    .withStyle(INK_STYLE);
             default -> Component.translatable("gui.refugio.quest_locked").withStyle(MUTED_STYLE);
         };
     }

@@ -1,6 +1,6 @@
 package com.felpz.refugio.client;
 
-import com.felpz.refugio.ability.ActivateMovementPayload;
+import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.ui.RefugioUiPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
@@ -17,6 +17,7 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Modifier;
+import java.util.List;
 
 public class RefugioClient implements ClientModInitializer {
     private static RefugioAbilityScreen currentAbilityScreen;
@@ -31,13 +32,17 @@ public class RefugioClient implements ClientModInitializer {
     private static final KeyMapping BURST_SKILL_KEY = KeyMappingHelper.registerKeyMapping(
             new KeyMapping("key.refugio.activate_burst", InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_LEFT_CONTROL, REFUGIO_KEY_CATEGORY));
-    private static final KeyMapping MOVEMENT_SKILL_KEY = KeyMappingHelper.registerKeyMapping(
-            new KeyMapping("key.refugio.activate_movement", InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_G, REFUGIO_KEY_CATEGORY));
 
     private static boolean wasJumpKeyDown;
     private static boolean wasBurstKeyDown;
-    private static boolean wasMovementKeyDown;
+    private static int clientSuperJumpRank;
+    private static int clientDoubleJumpRank;
+    private static int clientBurstRank;
+    private static boolean clientSuperJumpCharging;
+    private static boolean clientSuperJumpWaitingAirOrLand;
+    private static boolean clientSuperJumpLeftGroundSinceLaunch;
+    private static int clientSuperJumpLaunchTicks;
+    private static String lastClientDimension = "";
 
     @Override
     public void onInitializeClient() {
@@ -53,7 +58,10 @@ public class RefugioClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(RefugioUiPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     String data = payload.data();
-                    if (data.startsWith("ABILITY\t")) {
+                    if (data.startsWith("MOVEMENT_STATE\t")) {
+                        updateMovementStateFromMask(data);
+                    } else if (data.startsWith("ABILITY\t")) {
+                        updateMovementStateFromAbilitySnapshot(data);
                         currentShopScreen = null;
                         currentQuestScreen = null;
                         if (currentAbilityScreen != null) {
@@ -122,14 +130,20 @@ public class RefugioClient implements ClientModInitializer {
                     }
                 }));
 
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (client.player == null) {
+                resetClientMovementState(false);
+                return;
+            }
+            handleMovementKeyInputs(client);
+        });
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) {
                 currentAbilityScreen = null;
                 currentShopScreen = null;
                 currentQuestScreen = null;
-                wasJumpKeyDown = false;
-                wasBurstKeyDown = false;
-                wasMovementKeyDown = false;
+                resetClientMovementState(false);
                 return;
             }
             if (currentShopScreen != null) {
@@ -138,60 +152,172 @@ public class RefugioClient implements ClientModInitializer {
             if (currentQuestScreen != null) {
                 currentQuestScreen.tickScreen(client);
             }
-            handleMovementKeyInputs(client);
         });
+    }
+
+    private static void updateMovementStateFromMask(String data) {
+        String[] parts = data.split("\\t", -1);
+        if (parts.length < 2) return;
+        try {
+            int mask = Integer.parseInt(parts[1]);
+            clientSuperJumpRank = mask & 0xF;
+            clientDoubleJumpRank = (mask >> 4) & 0xF;
+            clientBurstRank = (mask >> 8) & 0xF;
+            if (clientSuperJumpRank <= 0 && clientSuperJumpCharging) {
+                clientSuperJumpCharging = false;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static void updateMovementStateFromAbilitySnapshot(String data) {
+        String[] parts = data.split("\\t", -1);
+        if (parts.length < 5) return;
+        try {
+            String[] rankTokens = parts[3].split(",");
+            int activeMask = Integer.parseInt(parts[4]);
+            List<RefugioAbilityData.Skill> skills = RefugioAbilityData.skills();
+            int sj = 0;
+            int dj = 0;
+            int burst = 0;
+            for (int i = 0; i < Math.min(skills.size(), rankTokens.length); i++) {
+                boolean active = (activeMask & (1 << i)) != 0;
+                if (!active) continue;
+                int r = Math.max(0, Integer.parseInt(rankTokens[i]));
+                String id = skills.get(i).id();
+                if ("super_jump".equals(id)) sj = r;
+                else if ("double_jump".equals(id)) dj = r;
+                else if ("burst".equals(id)) burst = r;
+            }
+            clientSuperJumpRank = sj;
+            clientDoubleJumpRank = dj;
+            clientBurstRank = burst;
+            if (clientSuperJumpRank <= 0) {
+                clientSuperJumpCharging = false;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private static void resetClientMovementState(boolean notifyServerCancel) {
+        if (clientSuperJumpCharging && notifyServerCancel && ClientPlayNetworking.canSend(RefugioUiPayload.TYPE)) {
+            ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
+        }
+        clientSuperJumpCharging = false;
+        clientSuperJumpWaitingAirOrLand = false;
+        clientSuperJumpLeftGroundSinceLaunch = false;
+        clientSuperJumpLaunchTicks = 0;
+        wasJumpKeyDown = false;
+        wasBurstKeyDown = false;
     }
 
     private static void handleMovementKeyInputs(Minecraft client) {
         if (((com.felpz.refugio.mixin.RefugioGuiAccessor) (Object) client.gui).refugio$getScreen() != null
-                || client.player == null) {
+                || client.player == null || !client.player.isAlive()) {
             while (JUMP_SKILL_KEY.consumeClick()) { }
             while (BURST_SKILL_KEY.consumeClick()) { }
-            while (MOVEMENT_SKILL_KEY.consumeClick()) { }
-            wasJumpKeyDown = false;
-            wasBurstKeyDown = false;
-            wasMovementKeyDown = false;
+            resetClientMovementState(true);
             return;
+        }
+
+        String dim = client.level != null ? client.level.dimension().toString() : "";
+        if (!dim.equals(lastClientDimension)) {
+            lastClientDimension = dim;
+            resetClientMovementState(true);
+        }
+
+        if (clientSuperJumpWaitingAirOrLand) {
+            clientSuperJumpLaunchTicks++;
+            if (!client.player.onGround()) {
+                clientSuperJumpLeftGroundSinceLaunch = true;
+            } else if (clientSuperJumpLeftGroundSinceLaunch || clientSuperJumpLaunchTicks > 12) {
+                clientSuperJumpWaitingAirOrLand = false;
+                clientSuperJumpLeftGroundSinceLaunch = false;
+                clientSuperJumpLaunchTicks = 0;
+            }
         }
 
         InputConstants.Key jumpBound = KeyMappingHelper.getBoundKeyOf(JUMP_SKILL_KEY);
         InputConstants.Key vanillaJumpBound = KeyMappingHelper.getBoundKeyOf(client.options.keyJump);
         InputConstants.Key burstBound = KeyMappingHelper.getBoundKeyOf(BURST_SKILL_KEY);
         InputConstants.Key vanillaSprintBound = KeyMappingHelper.getBoundKeyOf(client.options.keySprint);
-        InputConstants.Key movementBound = KeyMappingHelper.getBoundKeyOf(MOVEMENT_SKILL_KEY);
 
         boolean jumpDown = isPhysicalKeyDown(jumpBound);
         boolean burstDown = isPhysicalKeyDown(burstBound);
-        boolean movementDown = isPhysicalKeyDown(movementBound);
+        boolean sameJumpAndBurstKey = !jumpBound.equals(InputConstants.UNKNOWN) && jumpBound.equals(burstBound);
 
-        // Preserve vanilla Jump and Sprint states when sharing the same key binding (Space / Left Control)
+        boolean superJumpActive = clientSuperJumpRank > 0;
+        boolean doubleJumpActive = !superJumpActive && clientDoubleJumpRank > 0;
+        boolean eligibleForSuperJumpGround = superJumpActive
+                && !client.player.isPassenger()
+                && !client.player.isInWater()
+                && !client.player.isFallFlying()
+                && !client.player.getAbilities().flying;
+
+        // Manage vanilla jump key when sharing the same binding (default Space)
         if (jumpBound.equals(vanillaJumpBound)) {
-            client.options.keyJump.setDown(jumpDown);
+            if (eligibleForSuperJumpGround && (client.player.onGround() || clientSuperJumpCharging)) {
+                // Suppress immediate vanilla jump while charging/releasing Super Jump on the ground
+                client.options.keyJump.setDown(false);
+                while (client.options.keyJump.consumeClick()) { }
+            } else {
+                client.options.keyJump.setDown(jumpDown);
+            }
         }
+        // Preserve vanilla sprint state when sharing the same binding (default Left Control)
         if (burstBound.equals(vanillaSprintBound)) {
             client.options.keySprint.setDown(burstDown);
         }
 
         while (JUMP_SKILL_KEY.consumeClick()) { }
         while (BURST_SKILL_KEY.consumeClick()) { }
-        while (MOVEMENT_SKILL_KEY.consumeClick()) { }
 
-        if (jumpDown && !wasJumpKeyDown) {
-            String mode = jumpBound.equals(vanillaJumpBound) ? "JUMP_PASSIVE" : "JUMP_EXPLICIT";
-            ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\t" + mode));
+        if (superJumpActive) {
+            if (!eligibleForSuperJumpGround || !client.player.onGround()) {
+                if (clientSuperJumpCharging) {
+                    clientSuperJumpCharging = false;
+                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
+                }
+            } else {
+                if (jumpDown && !wasJumpKeyDown && !clientSuperJumpWaitingAirOrLand) {
+                    clientSuperJumpCharging = true;
+                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_START"));
+                } else if (!jumpDown && clientSuperJumpCharging) {
+                    clientSuperJumpCharging = false;
+                    clientSuperJumpWaitingAirOrLand = true;
+                    clientSuperJumpLeftGroundSinceLaunch = false;
+                    clientSuperJumpLaunchTicks = 0;
+                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_RELEASE"));
+                }
+            }
+        } else if (doubleJumpActive) {
+            if (clientSuperJumpCharging) {
+                clientSuperJumpCharging = false;
+                ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
+            }
+            if (jumpDown && !wasJumpKeyDown && !client.player.onGround()
+                    && !client.player.isPassenger() && !client.player.isInWater()) {
+                ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tDOUBLE_JUMP"));
+            }
+        } else {
+            if (clientSuperJumpCharging) {
+                clientSuperJumpCharging = false;
+            }
+            if (jumpDown && !wasJumpKeyDown && !jumpBound.equals(vanillaJumpBound)
+                    && !(sameJumpAndBurstKey && clientBurstRank > 0)) {
+                ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tJUMP_EXPLICIT"));
+            }
         }
-        if (burstDown && !wasBurstKeyDown) {
+
+        // Prevent a single shared key from activating both Jump and Burst simultaneously
+        boolean jumpConsumedSharedKey = sameJumpAndBurstKey && (superJumpActive || doubleJumpActive);
+        if (burstDown && !wasBurstKeyDown && !jumpConsumedSharedKey) {
             String mode = burstBound.equals(vanillaSprintBound) ? "BURST_PASSIVE" : "BURST_EXPLICIT";
             ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\t" + mode));
-        }
-        if (movementDown && !wasMovementKeyDown
-                && !movementBound.equals(jumpBound) && !movementBound.equals(burstBound)) {
-            ClientPlayNetworking.send(new ActivateMovementPayload());
         }
 
         wasJumpKeyDown = jumpDown;
         wasBurstKeyDown = burstDown;
-        wasMovementKeyDown = movementDown;
     }
 
     private static boolean isPhysicalKeyDown(InputConstants.Key key) {
@@ -221,12 +347,20 @@ public class RefugioClient implements ClientModInitializer {
                     return (KeyMapping.Category) method.invoke(null, id);
                 }
             }
-            var ctor = KeyMapping.Category.class.getDeclaredConstructor(Identifier.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(id);
-        } catch (Throwable ignored) {
-            return KeyMapping.Category.MOVEMENT;
+            var constructor = KeyMapping.Category.class.getDeclaredConstructor(Identifier.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(id);
+        } catch (ReflectiveOperationException ignored) {
         }
+        return KeyMapping.Category.MOVEMENT;
+    }
+
+    public static Component jumpKeyDisplayName() {
+        return JUMP_SKILL_KEY.getTranslatedKeyMessage();
+    }
+
+    public static Component burstKeyDisplayName() {
+        return BURST_SKILL_KEY.getTranslatedKeyMessage();
     }
 
     public static boolean isLastReserveFlashing() {
