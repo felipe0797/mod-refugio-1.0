@@ -28,21 +28,21 @@
       ],
       "animations": [
         {
-          "player_head.rx": "sin(age / 24 + 3.9) * 0.032 + sin(age / 57 + 3.9) * 0.022",
-          "player_head.ry": "sin(age / 42 + 3.9) * 0.078 + cos(age / 73 + 3.9) * 0.042",
-          "player_head.rz": "sin(age / 60 + 3.9) * 0.018",
+          "player_head.rx": "sin(age / 22 + 3.9) * 0.055 + sin(age / 51 + 3.9) * 0.035",
+          "player_head.ry": "sin(age / 30 + 3.9) * 0.18 + cos(age / 58 + 3.9) * 0.09",
+          "player_head.rz": "sin(age / 42 + 3.9) * 0.04",
           "player_headwear.rx": "player_head.rx",
           "player_headwear.ry": "player_head.ry",
           "player_headwear.rz": "player_head.rz",
-          "player_body.rx": "sin(age / 18 + 3.9) * 0.018 + 0.008",
-          "player_body.ry": "sin(age / 48 + 3.9) * 0.022",
-          "player_body.rz": "cos(age / 36 + 3.9) * 0.010",
+          "player_body.rx": "sin(age / 18 + 3.9) * 0.035 + 0.015",
+          "player_body.ry": "sin(age / 40 + 3.9) * 0.05",
+          "player_body.rz": "cos(age / 34 + 3.9) * 0.025",
           "player_bodywear.rx": "player_body.rx",
           "player_bodywear.ry": "player_body.ry",
           "player_bodywear.rz": "player_body.rz",
-          "player_arms.rx": "sin(age / 18 + 3.9) * 0.032 - 0.025",
+          "player_arms.rx": "sin(age / 13 + 3.9) * 0.11 - 0.04",
           "player_arms.ry": "player_body.ry",
-          "player_arms.rz": "cos(age / 28 + 3.9) * 0.015"
+          "player_arms.rz": "cos(age / 21 + 3.9) * 0.05"
         }
       ]
     },

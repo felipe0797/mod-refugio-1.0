@@ -110,11 +110,15 @@ public final class RefugioAbilityData {
             skill("last_reserve", "Última Reserva", "Quando um golpe inimigo deixaria sua vida em 20% ou menos, reduz o golpe em 20–50% conforme o rank (evitando golpe fatal) com efeito na tela; recarga de 60–20 s.", Track.ACTIVE_DEFENSE, "minecraft:totem_of_undying"),
             skill("anchor", "Âncora", "+8 pontos percentuais de resistência a empurrão por rank, até +40%.", Track.ACTIVE_DEFENSE, "minecraft:iron_boots"),
 
+            skill("vitality_health", "Coração Robusto", "+1 coração de vida máxima por rank, até +10 corações no rank 10. Só aplica enquanto ativa; custo do próximo rank: 500 × rank.", Track.VITALITY, "minecraft:golden_apple"),
+            skill("natural_regeneration", "Regeneração Natural", "Após 10 s sem causar ou receber dano de inimigo, recupera meio coração a cada 2 s. Os limites usam somente os 20 pontos de vida base: R1 30→50%, R2 30→60%, R3 40→60%, R4 50→70%, R5 60→80%.", Track.VITALITY, "minecraft:ghast_tear"),
+            skill("vitality_on_kill", "Sede de Vida", "Ao derrotar um inimigo hostil, recupera 1% da vida máxima total por rank, até 5% no rank 5.", Track.VITALITY, "minecraft:heart_of_the_sea"),
+
             skill("light_step", "Passo Leve", "Reduz o dano de queda em 10% por rank, até 50%.", Track.REFLEXES, "minecraft:feather"),
-            skill("burst", "Arranque", "Use o atalho configurado de Arranque para avançar na direção da mira; força de 1 a 5 por rank, recarga de 60–30 s e 2 usos seguidos no rank 5.", Track.REFLEXES, "minecraft:sugar"),
+            skill("burst", "Arranque", "Impulso horizontal curto na direção da mira, sem teleporte; cresce por rank, mas usa força reduzida para encurtar a distância. Recarga: 30/20/10/10/5 s; 2 cargas a partir do rank 4.", Track.REFLEXES, "minecraft:sugar"),
             skill("momentum", "Ímpeto", "+7% de velocidade de movimento por rank, até +30% no rank 5.", Track.REFLEXES, "minecraft:rabbit_foot"),
-            skill("super_jump", "Super Pulo", "Segure o atalho de Pulo Especial no chão para carregar a barra e solte para saltar mais alto; força de 0,68 a 0,92 por rank, renovando ao tocar o chão. O dano de queda considera a altura de partida no salto.", Track.REFLEXES, "minecraft:slime_block"),
-            skill("double_jump", "Pulo Duplo", "Salte normalmente no chão e pressione o atalho de Pulo Especial uma vez no ar para um segundo impulso vertical (0,54 a 0,70 por rank). Renova ao tocar o chão; não ativa montado nem na água.", Track.REFLEXES, "minecraft:phantom_membrane"),
+            skill("super_jump", "Super Pulo", "Pressione Espaço uma vez no chão para um salto vertical alto (força de 0,53 a 0,65 por rank); não há barra de carga. O dano de queda só conta a descida abaixo do bloco de partida.", Track.REFLEXES, "minecraft:slime_block"),
+            skill("double_jump", "Pulo Duplo", "Salte normalmente e pressione Espaço uma vez no ar para um segundo impulso vertical (0,54 a 0,70 por rank). Renova ao tocar o chão; não ativa montado nem na água. A queda é medida desde o bloco do primeiro salto.", Track.REFLEXES, "minecraft:phantom_membrane"),
 
             skill("mining", "Escavação Ágil", "+6% de velocidade de mineração por rank, até +30%; sem revelar minérios.", Track.MINING, "minecraft:iron_pickaxe"),
             skill("preparation", "Preparação", "Cada alimento concede +0,5 de saturação por rank, até +2,5; não amplia poções.", Track.ALCHEMY, "minecraft:potion"),
@@ -134,7 +138,9 @@ public final class RefugioAbilityData {
                     .initializer(() -> "").copyOnDeath());
     private static final AttachmentType<Long> LAST_COMBAT_TICK = AttachmentRegistry.create(
             Refugio.id("ability_last_combat_tick"), builder -> builder.persistent(Codec.LONG)
-                    .initializer(() -> Long.MIN_VALUE));
+                    .initializer(() -> Long.MIN_VALUE).copyOnDeath());
+    private static final AttachmentType<Boolean> NATURAL_REGEN_ACTIVE = AttachmentRegistry.create(
+            Refugio.id("ability_natural_regen_active"), builder -> builder.initializer(() -> false));
     private static final AttachmentType<Long> RETALIATION_READY_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_retaliation_ready"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Long> RETALIATION_COOLDOWN_UNTIL = AttachmentRegistry.create(
@@ -147,12 +153,6 @@ public final class RefugioAbilityData {
             Refugio.id("ability_burst_cooldown"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<Integer> BURST_CHARGES_USED = AttachmentRegistry.create(
             Refugio.id("ability_burst_charges_used"), builder -> builder.initializer(() -> 0));
-    private static final AttachmentType<Boolean> SUPER_JUMP_CHARGING = AttachmentRegistry.create(
-            Refugio.id("ability_super_jump_charging"), builder -> builder.initializer(() -> false));
-    private static final AttachmentType<Long> SUPER_JUMP_CHARGE_STARTED_AT = AttachmentRegistry.create(
-            Refugio.id("ability_super_jump_charge_started_at"), builder -> builder.initializer(() -> 0L));
-    private static final AttachmentType<String> SUPER_JUMP_CHARGE_DIMENSION = AttachmentRegistry.create(
-            Refugio.id("ability_super_jump_charge_dimension"), builder -> builder.initializer(() -> ""));
     private static final AttachmentType<Boolean> SUPER_JUMP_USED = AttachmentRegistry.create(
             Refugio.id("ability_super_jump_used"), builder -> builder.initializer(() -> false));
     private static final AttachmentType<Long> SUPER_JUMP_LAUNCHED_AT = AttachmentRegistry.create(
@@ -167,6 +167,10 @@ public final class RefugioAbilityData {
             Refugio.id("ability_jump_started_at"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<String> JUMP_DIMENSION = AttachmentRegistry.create(
             Refugio.id("ability_jump_dimension"), builder -> builder.initializer(() -> ""));
+    private static final AttachmentType<Double> LAST_GROUNDED_Y = AttachmentRegistry.create(
+            Refugio.id("ability_last_grounded_y"), builder -> builder.initializer(() -> 0.0));
+    private static final AttachmentType<String> LAST_GROUNDED_DIMENSION = AttachmentRegistry.create(
+            Refugio.id("ability_last_grounded_dimension"), builder -> builder.initializer(() -> ""));
     private static final AttachmentType<Long> AREA_DEFENSE_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_area_defense_cooldown"), builder -> builder.initializer(() -> 0L));
 
@@ -186,6 +190,9 @@ public final class RefugioAbilityData {
     public static Skill skill(String id) { return SKILLS.stream().filter(s -> s.id().equals(id)).findFirst().orElse(null); }
     public static Track track(String id) { return java.util.Arrays.stream(Track.values()).filter(t -> t.id().equals(id)).findFirst().orElse(null); }
     public static int costForRank(int rank) { return RefugioAbilityRules.costForRank(rank); }
+    public static int costForRank(String id, int rank) { return RefugioAbilityRules.costForRank(id, rank); }
+    public static int maxRank() { return RefugioAbilityRules.maxRank(); }
+    public static int maxRank(String id) { return RefugioAbilityRules.maxRank(id); }
     public static String criticalChanceSkillId(ItemStack weapon) {
         String prefix = weaponSkillPrefix(weapon);
         return prefix == null ? null : prefix + "_critical_chance";
@@ -205,7 +212,7 @@ public final class RefugioAbilityData {
         return null;
     }
     public static int rank(ServerPlayer player, String id) {
-        return Math.max(0, Math.min(RefugioAbilityRules.maxRank(), player.getAttachedOrCreate(RANKS).getOrDefault(id, 0)));
+        return Math.max(0, Math.min(maxRank(id), player.getAttachedOrCreate(RANKS).getOrDefault(id, 0)));
     }
     public static boolean isActive(ServerPlayer player, String id) { return player.getAttachedOrCreate(ACTIVE).getOrDefault(id, false); }
     public static String freeChoice(ServerPlayer player) {
@@ -218,18 +225,19 @@ public final class RefugioAbilityData {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> LAST_SYNCED_MOVEMENT_MASK.clear());
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             LAST_SYNCED_MOVEMENT_MASK.remove(handler.player.getUUID());
-            clearSuperJumpCharge(handler.player, false);
         });
         ServerTickEvents.END_SERVER_TICK.register(server ->
                 server.getPlayerList().getPlayers().forEach(player -> {
                     enforceJumpExclusivity(player);
                     syncMovementStateIfNeeded(player);
                     refreshAttributeSkills(player);
+                    refreshVitalitySkills(player);
                     refreshJumpState(player);
                     refreshUtilitySkills(player);
                 }));
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (entity instanceof ServerPlayer victim) {
+                if (source.getEntity() instanceof Enemy && baseDamage > 0.0f) recordCombatActivity(victim);
                 if (blocked && source.getEntity() instanceof Enemy && isActive(victim, "retaliation")) {
                     long now = gameTime(victim);
                     if (now >= victim.getAttachedOrCreate(RETALIATION_COOLDOWN_UNTIL)) {
@@ -247,12 +255,12 @@ public final class RefugioAbilityData {
         });
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (entity instanceof ServerPlayer deadPlayer) {
-                clearSuperJumpCharge(deadPlayer, false);
                 clearJumpTracking(deadPlayer);
             }
             if (!(source.getEntity() instanceof ServerPlayer killer)) return;
             recordCombatActivity(killer);
             if (entity instanceof Enemy) {
+                healOnHostileKill(killer);
                 long now = gameTime(killer);
                 if (isActive(killer, "horde_vigor") && now >= killer.getAttachedOrCreate(HORDE_VIGOR_UNTIL)) {
                     killer.setAttached(HORDE_VIGOR_UNTIL, now + RefugioAbilityRules.hordeVigorDurationTicks());
@@ -409,9 +417,7 @@ public final class RefugioAbilityData {
     public static void activateMovement(ServerPlayer player, String mode) {
         if (player == null || !player.isAlive()) return;
         switch (mode) {
-            case "SUPER_JUMP_START" -> startSuperJumpCharge(player);
-            case "SUPER_JUMP_RELEASE" -> releaseSuperJumpCharge(player);
-            case "SUPER_JUMP_CANCEL" -> clearSuperJumpCharge(player, true);
+            case "SUPER_JUMP" -> activateSuperJump(player);
             case "DOUBLE_JUMP" -> {
                 if (isActive(player, "double_jump") && !player.onGround()) {
                     activateDoubleJump(player);
@@ -419,7 +425,7 @@ public final class RefugioAbilityData {
             }
             case "JUMP_PASSIVE" -> {
                 if (isActive(player, "super_jump") && player.onGround()) {
-                    startSuperJumpCharge(player);
+                    activateSuperJump(player);
                 } else if (isActive(player, "double_jump") && !player.onGround()) {
                     activateDoubleJump(player);
                 }
@@ -427,7 +433,7 @@ public final class RefugioAbilityData {
             case "JUMP_EXPLICIT" -> {
                 boolean activated = false;
                 if (isActive(player, "super_jump")) {
-                    activated = startSuperJumpCharge(player);
+                    activated = activateSuperJump(player);
                 } else if (isActive(player, "double_jump")) {
                     activated = activateDoubleJump(player);
                 }
@@ -451,20 +457,8 @@ public final class RefugioAbilityData {
         }
     }
 
-    private static boolean startSuperJumpCharge(ServerPlayer player) {
-        if (!canChargeSuperJump(player)) return false;
-        long now = gameTime(player);
-        player.setAttached(SUPER_JUMP_CHARGING, true);
-        player.setAttached(SUPER_JUMP_CHARGE_STARTED_AT, now);
-        player.setAttached(SUPER_JUMP_CHARGE_DIMENSION, player.level().dimension().toString());
-        sendSuperJumpChargeOverlay(player, 0L);
-        return true;
-    }
-
-    private static boolean releaseSuperJumpCharge(ServerPlayer player) {
-        boolean wasCharging = player.getAttachedOrCreate(SUPER_JUMP_CHARGING);
-        clearSuperJumpCharge(player, true);
-        if (!wasCharging || !canChargeSuperJump(player)) return false;
+    private static boolean activateSuperJump(ServerPlayer player) {
+        if (!canActivateSuperJump(player)) return false;
         int rank = rank(player, "super_jump");
         if (rank <= 0) return false;
 
@@ -478,7 +472,7 @@ public final class RefugioAbilityData {
         return true;
     }
 
-    private static boolean canChargeSuperJump(ServerPlayer player) {
+    private static boolean canActivateSuperJump(ServerPlayer player) {
         return player != null
                 && player.isAlive()
                 && !player.isPassenger()
@@ -489,41 +483,6 @@ public final class RefugioAbilityData {
                 && !player.getAttachedOrCreate(SUPER_JUMP_USED)
                 && isActive(player, "super_jump")
                 && rank(player, "super_jump") > 0;
-    }
-
-    public static void clearSuperJumpCharge(ServerPlayer player, boolean clearHud) {
-        if (player == null) return;
-        boolean wasCharging = player.getAttachedOrCreate(SUPER_JUMP_CHARGING);
-        player.setAttached(SUPER_JUMP_CHARGING, false);
-        player.setAttached(SUPER_JUMP_CHARGE_STARTED_AT, 0L);
-        player.setAttached(SUPER_JUMP_CHARGE_DIMENSION, "");
-        if (wasCharging && clearHud) {
-            player.sendSystemMessage(Component.empty(), true);
-        }
-    }
-
-    private static void sendSuperJumpChargeOverlay(ServerPlayer player, long elapsedTicks) {
-        long maxTicks = Math.max(1L, RefugioAbilityRules.superJumpChargeTicks());
-        long clamped = Math.max(0L, Math.min(maxTicks, elapsedTicks));
-        int segments = 10;
-        int filled = (int) Math.min(segments, (clamped * segments) / maxTicks);
-        int pct = (int) Math.min(100L, (clamped * 100L) / maxTicks);
-
-        MutableComponent bar = Component.literal("[")
-                .withStyle(Style.EMPTY.withColor(0xFFC39A59));
-        if (filled > 0) {
-            bar.append(Component.literal("█".repeat(filled))
-                    .withStyle(Style.EMPTY.withColor(pct >= 100 ? 0xFF66E275 : 0xFFFFD369)));
-        }
-        if (filled < segments) {
-            bar.append(Component.literal("░".repeat(segments - filled))
-                    .withStyle(Style.EMPTY.withColor(0xFF6E5C44)));
-        }
-        bar.append(Component.literal("]").withStyle(Style.EMPTY.withColor(0xFFC39A59)));
-
-        MutableComponent message = Component.translatable("message.refugio.ability.super_jump_charge", bar, pct)
-                .withStyle(Style.EMPTY.withColor(0xFFFFF0D0).withBold(true));
-        player.sendSystemMessage(message, true);
     }
 
     private static boolean activateDoubleJump(ServerPlayer player) {
@@ -555,7 +514,7 @@ public final class RefugioAbilityData {
         double yaw = Math.toRadians(player.getYRot());
         double dx = -Math.sin(yaw);
         double dz = Math.cos(yaw);
-        double strength = RefugioAbilityRules.burstVelocity(rank);
+        double strength = RefugioAbilityRules.burstImpulse(rank);
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x + dx * strength, Math.max(velocity.y, 0.12), velocity.z + dz * strength);
 
@@ -588,10 +547,15 @@ public final class RefugioAbilityData {
     }
 
     private static void beginJumpTracking(ServerPlayer player) {
+        String dimension = player.level().dimension().toString();
+        double originY = player.getY();
+        if (!player.onGround() && dimension.equals(player.getAttachedOrCreate(LAST_GROUNDED_DIMENSION))) {
+            originY = player.getAttachedOrCreate(LAST_GROUNDED_Y);
+        }
         player.setAttached(JUMP_TRACKING, true);
-        player.setAttached(JUMP_ORIGIN_Y, player.getY());
+        player.setAttached(JUMP_ORIGIN_Y, originY);
         player.setAttached(JUMP_STARTED_AT, gameTime(player));
-        player.setAttached(JUMP_DIMENSION, player.level().dimension().toString());
+        player.setAttached(JUMP_DIMENSION, dimension);
     }
 
     /** Returns vanilla fall damage adjusted to only count descent below the jump's launch height. */
@@ -608,15 +572,10 @@ public final class RefugioAbilityData {
 
     private static void refreshJumpState(ServerPlayer player) {
         long now = gameTime(player);
-        if (player.getAttachedOrCreate(SUPER_JUMP_CHARGING)) {
-            boolean chargeInvalid = !canChargeSuperJump(player)
-                    || !player.level().dimension().toString().equals(player.getAttachedOrCreate(SUPER_JUMP_CHARGE_DIMENSION));
-            if (chargeInvalid) {
-                clearSuperJumpCharge(player, true);
-            } else {
-                long elapsed = Math.max(0L, now - player.getAttachedOrCreate(SUPER_JUMP_CHARGE_STARTED_AT));
-                sendSuperJumpChargeOverlay(player, elapsed);
-            }
+        String currentDimension = player.level().dimension().toString();
+        if (player.onGround()) {
+            player.setAttached(LAST_GROUNDED_Y, player.getY());
+            player.setAttached(LAST_GROUNDED_DIMENSION, currentDimension);
         }
         if (player.getAttachedOrCreate(SUPER_JUMP_USED)) {
             long launchedAt = player.getAttachedOrCreate(SUPER_JUMP_LAUNCHED_AT);
@@ -663,8 +622,49 @@ public final class RefugioAbilityData {
         }
     }
 
-    private static void recordCombatActivity(ServerPlayer player) {
+    private static void refreshVitalitySkills(ServerPlayer player) {
+        int regenRank = rank(player, "natural_regeneration");
+        if (!player.isAlive() || player.isSpectator() || regenRank <= 0
+                || !isActive(player, "natural_regeneration")) {
+            player.setAttached(NATURAL_REGEN_ACTIVE, false);
+            return;
+        }
+
+        long now = gameTime(player);
+        long lastCombat = player.getAttachedOrCreate(LAST_COMBAT_TICK);
+        if (lastCombat != Long.MIN_VALUE && now - lastCombat < RefugioAbilityRules.naturalRegenerationOutOfCombatTicks()) {
+            player.setAttached(NATURAL_REGEN_ACTIVE, false);
+            return;
+        }
+
+        float currentHealth = player.getHealth();
+        float triggerHealth = RefugioAbilityRules.naturalRegenerationTriggerHealth(regenRank);
+        float targetHealth = RefugioAbilityRules.naturalRegenerationTargetHealth(regenRank);
+        if (targetHealth <= 0.0f || currentHealth >= targetHealth) {
+            player.setAttached(NATURAL_REGEN_ACTIVE, false);
+            return;
+        }
+
+        if (!player.getAttachedOrCreate(NATURAL_REGEN_ACTIVE)) {
+            if (currentHealth >= triggerHealth) return;
+            player.setAttached(NATURAL_REGEN_ACTIVE, true);
+        }
+        if (now % RefugioAbilityRules.naturalRegenerationIntervalTicks() == 0L) {
+            player.heal(Math.min(RefugioAbilityRules.naturalRegenerationAmount(), targetHealth - currentHealth));
+        }
+    }
+
+    private static void healOnHostileKill(ServerPlayer player) {
+        if (!isActive(player, "vitality_on_kill")) return;
+        int skillRank = rank(player, "vitality_on_kill");
+        if (skillRank <= 0) return;
+        float amount = (float) player.getMaxHealth() * RefugioAbilityRules.vitalityOnKillHealRatio(skillRank);
+        if (amount > 0.0f) player.heal(amount);
+    }
+
+    public static void recordCombatActivity(ServerPlayer player) {
         player.setAttached(LAST_COMBAT_TICK, gameTime(player));
+        player.setAttached(NATURAL_REGEN_ACTIVE, false);
     }
 
     private static long gameTime(ServerPlayer player) {
@@ -681,6 +681,11 @@ public final class RefugioAbilityData {
         updateModifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), Refugio.id("skill_anchor"),
                 isActive(player, "anchor") ? RefugioAbilityRules.anchorKnockbackBonus(rank(player, "anchor")) : 0.0,
                 AttributeModifier.Operation.ADD_VALUE);
+        updateModifier(player.getAttribute(Attributes.MAX_HEALTH), Refugio.id("skill_vitality_health"),
+                isActive(player, "vitality_health")
+                        ? RefugioAbilityRules.vitalityMaxHealthBonus(rank(player, "vitality_health")) : 0.0,
+                AttributeModifier.Operation.ADD_VALUE);
+        if (player.getHealth() > player.getMaxHealth()) player.setHealth((float) player.getMaxHealth());
     }
 
     private static void updateModifier(AttributeInstance instance, Identifier id, double amount,
@@ -716,7 +721,7 @@ public final class RefugioAbilityData {
         Skill skill = skill(id);
         if (skill == null) return PurchaseResult.INVALID;
         int currentRank = rank(player, id);
-        if (currentRank >= RefugioAbilityRules.maxRank()) return PurchaseResult.MAX_RANK;
+        if (currentRank >= maxRank(id)) return PurchaseResult.MAX_RANK;
         if (!isUnlocked(player, id)) return PurchaseResult.LOCKED;
 
         if (isFreeChoiceCandidate(player, id)) {
@@ -730,7 +735,7 @@ public final class RefugioAbilityData {
         }
         if (currentRank == 0 && !hasFreeChoice(player)) return PurchaseResult.CHOOSE_FREE_FIRST;
 
-        int price = costForRank(currentRank + 1);
+        int price = costForRank(id, currentRank + 1);
         if (!RefugioPlayerData.spendCoins(player, price)) return PurchaseResult.NO_COINS;
         Map<String, Integer> ranks = new HashMap<>(player.getAttachedOrCreate(RANKS));
         ranks.put(id, currentRank + 1);
@@ -748,9 +753,6 @@ public final class RefugioAbilityData {
         }
         states.put(id, active);
         player.setAttached(ACTIVE, states);
-        if (!states.getOrDefault("super_jump", false)) {
-            clearSuperJumpCharge(player, true);
-        }
         syncMovementState(player);
         return true;
     }

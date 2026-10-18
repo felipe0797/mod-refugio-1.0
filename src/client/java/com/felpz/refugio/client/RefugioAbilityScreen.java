@@ -21,7 +21,6 @@ import java.util.List;
 /** Custom, non-container skill tree. Server snapshots drive all ranks, balance and activation state. */
 public final class RefugioAbilityScreen extends Screen {
     private static final int[] ACCENTS = {0xFFB76545, 0xFF4C8878, 0xFFC0944B, 0xFF82934F};
-    private static final int MAX_RANK = 5;
     private static final int SKILLS_PER_PAGE = 4;
     private static final Identifier PARCHMENT_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/parchment.png");
     private static final Identifier WOOD_FRAME_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/wood_frame.png");
@@ -63,7 +62,11 @@ public final class RefugioAbilityScreen extends Screen {
             freeChoice = parts[2];
             String[] values = parts[3].split(",");
             ranks = new int[values.length];
-            for (int i = 0; i < values.length; i++) ranks[i] = Math.max(0, Math.min(MAX_RANK, Integer.parseInt(values[i])));
+            List<RefugioAbilityData.Skill> skills = RefugioAbilityData.skills();
+            for (int i = 0; i < values.length; i++) {
+                int maxRank = i < skills.size() ? RefugioAbilityData.maxRank(skills.get(i).id()) : RefugioAbilityData.maxRank();
+                ranks[i] = Math.max(0, Math.min(maxRank, Integer.parseInt(values[i])));
+            }
             activeMask = Integer.parseInt(parts[4]);
             feedbackKey = parts[5];
         } catch (NumberFormatException ignored) {
@@ -764,8 +767,9 @@ public final class RefugioAbilityScreen extends Screen {
         boolean selected = skill.id().equals(selectedSkillId);
         boolean unlocked = isUnlocked(skillIndex);
         int currentRank = rank(skill);
+        int rankLimit = RefugioAbilityData.maxRank(skill.id());
         boolean owned = currentRank > 0;
-        boolean maxRank = currentRank >= MAX_RANK;
+        boolean maxRank = currentRank >= rankLimit;
         boolean active = owned && isActive(skill);
         boolean hovered = card.contains(mouseX, mouseY);
         int accent = ACCENTS[branchIndex % ACCENTS.length];
@@ -810,10 +814,10 @@ public final class RefugioAbilityScreen extends Screen {
         MutableComponent footer;
         Style footerStyle;
         if (maxRank) {
-            footer = Component.translatable("gui.refugio.abilities.skill_card.max_rank", currentRank, MAX_RANK);
+            footer = Component.translatable("gui.refugio.abilities.skill_card.max_rank", currentRank, rankLimit);
             footerStyle = GOLD_STYLE;
         } else if (owned) {
-            footer = Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, MAX_RANK);
+            footer = Component.translatable("gui.refugio.abilities.skill_card.rank", currentRank, rankLimit);
             footerStyle = SUCCESS_STYLE;
         } else if (isFreeCandidate(skill)) {
             footer = Component.translatable("gui.refugio.abilities.skill_card.free");
@@ -822,7 +826,7 @@ public final class RefugioAbilityScreen extends Screen {
             footer = Component.translatable("gui.refugio.abilities.skill_card.locked");
             footerStyle = MUTED_STYLE;
         } else {
-            footer = Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(1));
+            footer = Component.translatable("gui.refugio.abilities.skill_card.price", RefugioAbilityData.costForRank(skill.id(), 1));
             footerStyle = GOLD_STYLE;
         }
 
@@ -867,7 +871,7 @@ public final class RefugioAbilityScreen extends Screen {
         int rankBarH = cardH >= 64 ? 4 : 3;
         int rankBarY = footerY - rankBarH - (cardH >= 74 ? 3 : 2);
         drawCardRankSegments(graphics, cardX + 9, rankBarY, Math.max(16, cardW - 16), rankBarH,
-                currentRank, maxRank ? 0xFFD4921A : (active ? 0xFF2D5B22 : accent), unlocked || owned);
+                currentRank, rankLimit, maxRank ? 0xFFD4921A : (active ? 0xFF2D5B22 : accent), unlocked || owned);
 
         boolean showMedallion = cardH >= 78 && cardW >= 68;
         int iconY = cardY + (cardH >= 96 ? 14 : (cardH >= 74 ? 11 : 6));
@@ -952,12 +956,12 @@ public final class RefugioAbilityScreen extends Screen {
     }
 
     private static void drawCardRankSegments(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
-                                             int currentRank, int fillColor, boolean unlocked) {
+                                             int currentRank, int rankLimit, int fillColor, boolean unlocked) {
         int trackBg = unlocked ? 0xFF9C7E54 : 0xFF8A7E6E;
         graphics.fill(x, y, x + w, y + h, trackBg);
-        for (int segment = 0; segment < MAX_RANK; segment++) {
-            int segLeft = x + segment * w / MAX_RANK;
-            int segRight = x + (segment + 1) * w / MAX_RANK;
+        for (int segment = 0; segment < rankLimit; segment++) {
+            int segLeft = x + segment * w / rankLimit;
+            int segRight = x + (segment + 1) * w / rankLimit;
             int innerLeft = segLeft + 1;
             int innerRight = Math.max(innerLeft + 1, segRight - 1);
             int segColor = segment < currentRank ? fillColor : 0xFFD8C5A2;
@@ -985,15 +989,16 @@ public final class RefugioAbilityScreen extends Screen {
         if (skill == null) return;
 
         int rank = rank(skill);
+        int rankLimit = RefugioAbilityData.maxRank(skill.id());
         boolean owned = rank > 0;
-        boolean maxRank = rank >= MAX_RANK;
+        boolean maxRank = rank >= rankLimit;
         boolean active = owned && isActive(skill);
         boolean unlocked = isUnlocked(currentTrackSkills().indexOf(skill));
         boolean free = isFreeCandidate(skill);
 
         Component rankLabel = maxRank
-                ? Component.translatable("gui.refugio.abilities.skill_card.max_rank", rank, MAX_RANK).withStyle(GOLD_STYLE)
-                : Component.translatable("gui.refugio.abilities.rank", rank, MAX_RANK).withStyle(owned ? SUCCESS_STYLE : GOLD_STYLE);
+                ? Component.translatable("gui.refugio.abilities.skill_card.max_rank", rank, rankLimit).withStyle(GOLD_STYLE)
+                : Component.translatable("gui.refugio.abilities.rank", rank, rankLimit).withStyle(owned ? SUCCESS_STYLE : GOLD_STYLE);
 
         Component stateComp;
         Style stateStyle;
@@ -1014,7 +1019,7 @@ public final class RefugioAbilityScreen extends Screen {
                 : !unlocked ? "gui.refugio.abilities.cost_locked_short"
                 : free ? "gui.refugio.abilities.cost_free_short" : "gui.refugio.abilities.cost_next_short";
         MutableComponent cost = costKey.equals("gui.refugio.abilities.cost_next_short")
-                ? Component.translatable(costKey, RefugioAbilityData.costForRank(rank + 1))
+                ? Component.translatable(costKey, RefugioAbilityData.costForRank(skill.id(), rank + 1))
                 : Component.translatable(costKey);
 
         Rect statusBox = layout.detailStatusBox;
@@ -1030,7 +1035,7 @@ public final class RefugioAbilityScreen extends Screen {
             List<FormattedCharSequence> stateLines = font.split(stateComp.copy().withStyle(stateStyle), columnWidth);
             Component compactCost = costKey.equals("gui.refugio.abilities.cost_next_short")
                     ? Component.translatable("gui.refugio.abilities.cost_next_compact",
-                    RefugioAbilityData.costForRank(rank + 1)).withStyle(GOLD_STYLE)
+                    RefugioAbilityData.costForRank(skill.id(), rank + 1)).withStyle(GOLD_STYLE)
                     : cost.withStyle(GOLD_STYLE);
             List<FormattedCharSequence> costLines = font.split(compactCost, columnWidth);
             if (!rankLines.isEmpty()) {
@@ -1075,9 +1080,9 @@ public final class RefugioAbilityScreen extends Screen {
 
         graphics.fill(rankBar.x, rankBar.y, rankBar.right(), rankBar.bottom(), 0xFFB89A6A);
         int fillBarColor = maxRank ? 0xFFD4921A : (active ? 0xFF2D5B22 : ACCENTS[branchIndex % ACCENTS.length]);
-        for (int segment = 0; segment < MAX_RANK; segment++) {
-            int segmentLeft = rankBar.x + segment * rankBar.w / MAX_RANK;
-            int segmentRight = rankBar.x + (segment + 1) * rankBar.w / MAX_RANK;
+        for (int segment = 0; segment < rankLimit; segment++) {
+            int segmentLeft = rankBar.x + segment * rankBar.w / rankLimit;
+            int segmentRight = rankBar.x + (segment + 1) * rankBar.w / rankLimit;
             if (segment < rank) {
                 graphics.fill(segmentLeft + 1, rankBar.y + 1,
                         Math.max(segmentLeft + 2, segmentRight - 1), rankBar.bottom() - 1,
@@ -1251,12 +1256,12 @@ public final class RefugioAbilityScreen extends Screen {
     }
 
     private boolean canPurchase(RefugioAbilityData.Skill skill) {
-        if (skill == null || rank(skill) >= MAX_RANK) return false;
+        if (skill == null || rank(skill) >= RefugioAbilityData.maxRank(skill.id())) return false;
         int index = currentTrackSkills().indexOf(skill);
         if (!isUnlocked(index)) return false;
         if (rank(skill) == 0 && freeChoice.isEmpty() && !isFreeCandidate(skill)) return false;
         if (isFreeCandidate(skill)) return true;
-        return coins >= RefugioAbilityData.costForRank(rank(skill) + 1);
+        return coins >= RefugioAbilityData.costForRank(skill.id(), rank(skill) + 1);
     }
 
     private void closeScreen() {

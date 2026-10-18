@@ -37,7 +37,6 @@ public final class RefugioUiService {
             player.sendSystemMessage(Component.translatable("message.refugio.ability.castle_only"));
             return;
         }
-        RefugioAbilityData.clearSuperJumpCharge(player, true);
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         ABILITY_SESSIONS.put(player.getUUID(), expiresAt);
         DIALOGUE_SESSIONS.remove(player.getUUID());
@@ -47,7 +46,6 @@ public final class RefugioUiService {
     public static void openDialogue(ServerPlayer player, String speakerKey, List<String> lineKeys,
                                    String action, String actionLabelKey) {
         if (lineKeys.isEmpty() || lineKeys.size() > 6) return;
-        RefugioAbilityData.clearSuperJumpCharge(player, true);
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         DIALOGUE_SESSIONS.put(player.getUUID(), new DialogueSession(action, expiresAt));
         ABILITY_SESSIONS.remove(player.getUUID());

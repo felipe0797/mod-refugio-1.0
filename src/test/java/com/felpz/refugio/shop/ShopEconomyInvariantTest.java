@@ -26,6 +26,13 @@ public final class ShopEconomyInvariantTest {
         require(RefugioAbilityRules.costForRank(0) == -1, "rank zero must not have a price");
         require(RefugioAbilityRules.costForRank(6) == -1, "rank six must not have a price");
         require(RefugioAbilityRules.maxRank() == 5, "unexpected maximum ability rank");
+        require(RefugioAbilityRules.maxRank("vitality_health") == 10, "vitality health must have ten ranks");
+        for (int rank = 1; rank <= 10; rank++) {
+            require(RefugioAbilityRules.costForRank("vitality_health", rank) == rank * 500,
+                    "vitality health price mismatch at rank " + rank);
+        }
+        require(RefugioAbilityRules.costForRank("vitality_health", 11) == -1,
+                "vitality health rank eleven must not have a price");
     }
 
     private static void abilityEffectBounds() {
@@ -62,15 +69,31 @@ public final class ShopEconomyInvariantTest {
         near(RefugioAbilityRules.miningSpeedBonus(1), 0.06, "mining rank 1");
         near(RefugioAbilityRules.miningSpeedBonus(5), 0.30, "mining cap");
         near(RefugioAbilityRules.anchorKnockbackBonus(5), 0.40, "anchor cap");
-        near(RefugioAbilityRules.superJumpVelocity(1), 0.68, "super-jump rank 1");
-        near(RefugioAbilityRules.superJumpVelocity(5), 0.92, "super-jump rank 5");
-        require(RefugioAbilityRules.superJumpChargeTicks() == 20L, "super-jump 1s charge bar ticks");
+        near(RefugioAbilityRules.superJumpVelocity(1), 0.53, "super-jump rank 1");
+        near(RefugioAbilityRules.superJumpVelocity(5), 0.65, "super-jump rank 5");
         near(RefugioAbilityRules.doubleJumpVelocity(1), 0.54, "double-jump rank 1");
         near(RefugioAbilityRules.doubleJumpVelocity(5), 0.70, "double-jump rank 5");
         near(RefugioAbilityRules.burstVelocity(1), 1.0, "burst rank 1");
         near(RefugioAbilityRules.burstVelocity(5), 5.0, "burst cap");
-        require(RefugioAbilityRules.burstMaxCharges(4) == 1, "burst charges rank 4");
+        near(RefugioAbilityRules.burstImpulse(1), 0.2, "short burst impulse rank 1");
+        near(RefugioAbilityRules.burstImpulse(5), 1.0, "short burst impulse rank 5");
+        require(RefugioAbilityRules.burstMaxCharges(4) == 2, "burst charges rank 4");
         require(RefugioAbilityRules.burstMaxCharges(5) == 2, "burst double charge rank 5");
+        require(RefugioAbilityRules.burstCooldownTicks(1) == 600L, "burst cooldown rank 1");
+        require(RefugioAbilityRules.burstCooldownTicks(2) == 400L, "burst cooldown rank 2");
+        require(RefugioAbilityRules.burstCooldownTicks(3) == 200L, "burst cooldown rank 3");
+        require(RefugioAbilityRules.burstCooldownTicks(4) == 200L, "burst cooldown rank 4");
+        require(RefugioAbilityRules.burstCooldownTicks(5) == 100L, "burst cooldown rank 5");
+        near(RefugioAbilityRules.vitalityMaxHealthBonus(1), 2.0, "one heart per vitality rank");
+        near(RefugioAbilityRules.vitalityMaxHealthBonus(10), 20.0, "ten hearts at vitality rank 10");
+        near(RefugioAbilityRules.naturalRegenerationTriggerHealth(1), 6.0, "regen trigger rank 1 (30% of base 20)");
+        near(RefugioAbilityRules.naturalRegenerationTargetHealth(1), 10.0, "regen target rank 1 (50% of base 20)");
+        near(RefugioAbilityRules.naturalRegenerationTriggerHealth(5), 12.0, "regen trigger rank 5 (60% of base 20)");
+        near(RefugioAbilityRules.naturalRegenerationTargetHealth(5), 16.0, "regen target rank 5 (80% of base 20)");
+        require(RefugioAbilityRules.naturalRegenerationOutOfCombatTicks() == 200L, "regen requires 10s outside combat");
+        require(RefugioAbilityRules.naturalRegenerationIntervalTicks() == 40L, "regen interval 2s");
+        near(RefugioAbilityRules.vitalityOnKillHealRatio(1), 0.01, "vitality kill heal rank 1");
+        near(RefugioAbilityRules.vitalityOnKillHealRatio(5), 0.05, "vitality kill heal rank 5");
         near(RefugioAbilityRules.areaRadius(1), 3.0, "area radius rank 1");
         near(RefugioAbilityRules.areaRadius(3), 3.0, "area radius rank 3");
         near(RefugioAbilityRules.areaRadius(4), 4.0, "area radius rank 4");

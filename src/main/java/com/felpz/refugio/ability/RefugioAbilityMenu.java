@@ -109,7 +109,7 @@ public final class RefugioAbilityMenu extends ChestMenu {
                     Component.literal(RefugioAbilityData.skill(selectedSkill).name()),
                     RefugioAbilityData.rank(owner, selectedSkill), RefugioPlayerData.getCoins(owner)));
             case NO_COINS -> owner.sendSystemMessage(Component.translatable("message.refugio.not_enough_coins",
-                    RefugioAbilityData.costForRank(RefugioAbilityData.rank(owner, selectedSkill) + 1),
+                    RefugioAbilityData.costForRank(selectedSkill, RefugioAbilityData.rank(owner, selectedSkill) + 1),
                     RefugioPlayerData.getCoins(owner)));
             case LOCKED -> owner.sendSystemMessage(Component.translatable("message.refugio.ability.locked"));
             case MAX_RANK -> owner.sendSystemMessage(Component.translatable("message.refugio.ability.max_rank"));
@@ -149,14 +149,15 @@ public final class RefugioAbilityMenu extends ChestMenu {
                 RefugioAbilityData.Skill skill = skills.get(index);
                 int slot = 10 + row * 9 + BRANCH_COLUMNS[b] - 1;
                 int rank = RefugioAbilityData.rank(owner, skill.id());
+                int maxRank = RefugioAbilityData.maxRank(skill.id());
                 boolean unlocked = RefugioAbilityData.isUnlocked(owner, skill.id());
                 String icon = unlocked ? skill.icon() : "minecraft:gray_stained_glass_pane";
                 List<Component> lore = new ArrayList<>();
                 lore.add(Component.literal(skill.description()));
                 lore.add(Component.literal(unlocked ? "Disponível" : "Bloqueada — compre a habilidade anterior"));
-                lore.add(Component.literal("Rank: " + rank + "/5"));
+                lore.add(Component.literal("Rank: " + rank + "/" + maxRank));
                 if (rank > 0) lore.add(Component.literal(RefugioAbilityData.isActive(owner, skill.id()) ? "Ativa" : "Desativada"));
-                else if (rank < 5) lore.add(Component.literal("Próximo rank: " + RefugioAbilityData.costForRank(rank + 1) + " moedas"));
+                else if (rank < maxRank) lore.add(Component.literal("Próximo rank: " + RefugioAbilityData.costForRank(skill.id(), rank + 1) + " moedas"));
                 setButton(slot, icon, (unlocked ? "◇ " : "□ ") + skill.name(), lore);
             }
         }
@@ -179,18 +180,19 @@ public final class RefugioAbilityMenu extends ChestMenu {
             return;
         }
         int rank = RefugioAbilityData.rank(owner, skill.id());
+        int maxRank = RefugioAbilityData.maxRank(skill.id());
         boolean unlocked = RefugioAbilityData.isUnlocked(owner, skill.id());
         boolean active = RefugioAbilityData.isActive(owner, skill.id());
         setButton(22, skill.icon(), skill.name(), List.of(
                 Component.literal(skill.description()),
                 Component.literal("Ramo: " + skill.branch().displayName()),
-                Component.literal("Rank atual: " + rank + "/5"),
+                Component.literal("Rank atual: " + rank + "/" + maxRank),
                 Component.literal(unlocked ? "Pré-requisito: liberada" : "Pré-requisito: compre o nó anterior"),
-                Component.literal(rank < 5 ? "Próximo rank custa " + RefugioAbilityData.costForRank(rank + 1) + " moedas" : "Rank máximo atingido"),
+                Component.literal(rank < maxRank ? "Próximo rank custa " + RefugioAbilityData.costForRank(skill.id(), rank + 1) + " moedas" : "Rank máximo atingido"),
                 Component.literal("Saldo: " + RefugioPlayerData.getCoins(owner))));
         String purchaseTitle;
         String purchaseIcon;
-        if (rank >= 5) {
+        if (rank >= maxRank) {
             purchaseTitle = "Rank máximo";
             purchaseIcon = "minecraft:barrier";
         } else if (RefugioAbilityData.isFreeChoiceCandidate(owner, skill.id())) {
@@ -202,7 +204,7 @@ public final class RefugioAbilityMenu extends ChestMenu {
         }
         setButton(49, purchaseIcon, purchaseTitle, List.of(Component.literal(
                 rank == 0 && RefugioAbilityData.isFreeChoiceCandidate(owner, skill.id())
-                        ? "Presente único de Kael — rank 1" : "Custo: " + RefugioAbilityData.costForRank(rank + 1) + " moedas")));
+                        ? "Presente único de Kael — rank 1" : "Custo: " + RefugioAbilityData.costForRank(skill.id(), rank + 1) + " moedas")));
         if (rank > 0) {
             setButton(51, active ? "minecraft:lime_dye" : "minecraft:gray_dye",
                     active ? "Desativar habilidade" : "Ativar habilidade",

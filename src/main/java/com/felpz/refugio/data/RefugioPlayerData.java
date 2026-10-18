@@ -16,7 +16,7 @@ public final class RefugioPlayerData {
     public static final int STARTING_COINS = 50;
 
     private static final AttachmentType<Integer> COINS = AttachmentRegistry.create(
-            Refugio.id("coins"), builder -> builder.persistent(Codec.INT).initializer(() -> 0));
+            Refugio.id("coins"), builder -> builder.persistent(Codec.INT).initializer(() -> 0).copyOnDeath());
     private static final AttachmentType<Integer> MODE = AttachmentRegistry.create(
             Refugio.id("game_mode"), builder -> builder.persistent(Codec.INT).initializer(() -> MODE_UNSET));
     private static final AttachmentType<Integer> CLAIMED_QUESTS = AttachmentRegistry.create(

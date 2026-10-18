@@ -38,7 +38,6 @@ public class RefugioClient implements ClientModInitializer {
     private static int clientSuperJumpRank;
     private static int clientDoubleJumpRank;
     private static int clientBurstRank;
-    private static boolean clientSuperJumpCharging;
     private static boolean clientSuperJumpWaitingAirOrLand;
     private static boolean clientSuperJumpLeftGroundSinceLaunch;
     private static int clientSuperJumpLaunchTicks;
@@ -132,7 +131,7 @@ public class RefugioClient implements ClientModInitializer {
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             if (client.player == null) {
-                resetClientMovementState(false);
+                resetClientMovementState();
                 return;
             }
             handleMovementKeyInputs(client);
@@ -143,7 +142,7 @@ public class RefugioClient implements ClientModInitializer {
                 currentAbilityScreen = null;
                 currentShopScreen = null;
                 currentQuestScreen = null;
-                resetClientMovementState(false);
+                resetClientMovementState();
                 return;
             }
             if (currentShopScreen != null) {
@@ -163,9 +162,6 @@ public class RefugioClient implements ClientModInitializer {
             clientSuperJumpRank = mask & 0xF;
             clientDoubleJumpRank = (mask >> 4) & 0xF;
             clientBurstRank = (mask >> 8) & 0xF;
-            if (clientSuperJumpRank <= 0 && clientSuperJumpCharging) {
-                clientSuperJumpCharging = false;
-            }
         } catch (NumberFormatException ignored) {
         }
     }
@@ -192,18 +188,11 @@ public class RefugioClient implements ClientModInitializer {
             clientSuperJumpRank = sj;
             clientDoubleJumpRank = dj;
             clientBurstRank = burst;
-            if (clientSuperJumpRank <= 0) {
-                clientSuperJumpCharging = false;
-            }
         } catch (NumberFormatException ignored) {
         }
     }
 
-    private static void resetClientMovementState(boolean notifyServerCancel) {
-        if (clientSuperJumpCharging && notifyServerCancel && ClientPlayNetworking.canSend(RefugioUiPayload.TYPE)) {
-            ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
-        }
-        clientSuperJumpCharging = false;
+    private static void resetClientMovementState() {
         clientSuperJumpWaitingAirOrLand = false;
         clientSuperJumpLeftGroundSinceLaunch = false;
         clientSuperJumpLaunchTicks = 0;
@@ -216,14 +205,14 @@ public class RefugioClient implements ClientModInitializer {
                 || client.player == null || !client.player.isAlive()) {
             while (JUMP_SKILL_KEY.consumeClick()) { }
             while (BURST_SKILL_KEY.consumeClick()) { }
-            resetClientMovementState(true);
+            resetClientMovementState();
             return;
         }
 
         String dim = client.level != null ? client.level.dimension().toString() : "";
         if (!dim.equals(lastClientDimension)) {
             lastClientDimension = dim;
-            resetClientMovementState(true);
+            resetClientMovementState();
         }
 
         if (clientSuperJumpWaitingAirOrLand) {
@@ -254,10 +243,9 @@ public class RefugioClient implements ClientModInitializer {
                 && !client.player.isFallFlying()
                 && !client.player.getAbilities().flying;
 
-        // Manage vanilla jump key when sharing the same binding (default Space)
+        // Suppress vanilla's normal jump on the ground while Super Pulo is active.
         if (jumpBound.equals(vanillaJumpBound)) {
-            if (eligibleForSuperJumpGround && (client.player.onGround() || clientSuperJumpCharging)) {
-                // Suppress immediate vanilla jump while charging/releasing Super Jump on the ground
+            if (eligibleForSuperJumpGround && client.player.onGround()) {
                 client.options.keyJump.setDown(false);
                 while (client.options.keyJump.consumeClick()) { }
             } else {
@@ -273,36 +261,19 @@ public class RefugioClient implements ClientModInitializer {
         while (BURST_SKILL_KEY.consumeClick()) { }
 
         if (superJumpActive) {
-            if (!eligibleForSuperJumpGround || !client.player.onGround()) {
-                if (clientSuperJumpCharging) {
-                    clientSuperJumpCharging = false;
-                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
-                }
-            } else {
-                if (jumpDown && !wasJumpKeyDown && !clientSuperJumpWaitingAirOrLand) {
-                    clientSuperJumpCharging = true;
-                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_START"));
-                } else if (!jumpDown && clientSuperJumpCharging) {
-                    clientSuperJumpCharging = false;
-                    clientSuperJumpWaitingAirOrLand = true;
-                    clientSuperJumpLeftGroundSinceLaunch = false;
-                    clientSuperJumpLaunchTicks = 0;
-                    ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_RELEASE"));
-                }
+            if (eligibleForSuperJumpGround && client.player.onGround()
+                    && jumpDown && !wasJumpKeyDown && !clientSuperJumpWaitingAirOrLand) {
+                clientSuperJumpWaitingAirOrLand = true;
+                clientSuperJumpLeftGroundSinceLaunch = false;
+                clientSuperJumpLaunchTicks = 0;
+                ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP"));
             }
         } else if (doubleJumpActive) {
-            if (clientSuperJumpCharging) {
-                clientSuperJumpCharging = false;
-                ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tSUPER_JUMP_CANCEL"));
-            }
             if (jumpDown && !wasJumpKeyDown && !client.player.onGround()
                     && !client.player.isPassenger() && !client.player.isInWater()) {
                 ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tDOUBLE_JUMP"));
             }
         } else {
-            if (clientSuperJumpCharging) {
-                clientSuperJumpCharging = false;
-            }
             if (jumpDown && !wasJumpKeyDown && !jumpBound.equals(vanillaJumpBound)
                     && !(sameJumpAndBurstKey && clientBurstRank > 0)) {
                 ClientPlayNetworking.send(new RefugioUiPayload("MOVEMENT_ACTIVATE\tJUMP_EXPLICIT"));

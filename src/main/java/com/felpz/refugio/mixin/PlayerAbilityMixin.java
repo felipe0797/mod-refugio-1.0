@@ -42,6 +42,7 @@ public abstract class PlayerAbilityMixin {
         if (refugio$attackTargetIsEnemy && (Object) this instanceof ServerPlayer player) {
             refugio$firstCutRank = RefugioAbilityData.beginAttack(player);
             refugio$retaliationRank = RefugioAbilityData.retaliationRankForAttack(player);
+            RefugioAbilityData.recordCombatActivity(player);
         }
     }
 
