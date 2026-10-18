@@ -1,0 +1,1586 @@
+REFÚGIO — CATÁLOGO REBALANCEADO DE COMPRA E VENDA
+Minecraft 26.2 | Preços em moedas Refúgio | Exportado do catálogo efetivo do mod
+
+COMO LER
+- Cada linha de compra corresponde a uma oferta individual, com ID estável e item identificado pelo ID vanilla minecraft:...
+- Preço unitário: valor cobrado por uma unidade; as colunas Q8/Q16/Q32/Q64 mostram o total efetivo quando a oferta aceita essa quantidade.
+- A compra aceita 1, 8, 16, 32, 64 ou quantidade personalizada; itens não empilháveis limitam a compra a 1.
+- A coluna de missões é o mínimo de missões resgatadas no modo Normal. No modo Fácil, a progressão não bloqueia as ofertas.
+- Plus: cada combinação encantada tem oferta, ID e preço próprios. Livros usam encantamentos armazenados; ofertas incompatíveis são omitidas.
+- Venda: valor final por unidade, independente do preço de compra; apenas os itens enumerados na allowlist podem ser vendidos.
+- Pacotes comuns recebem desconto pequeno por quantidade, limitado para impedir lucro ao comprar e revender o mesmo item.
+
+ITENS COMPRÁVEIS
+Total de ofertas: 957 (inclui variantes encantadas Plus e combinações distintas do mesmo item-base).
+Formato: ID da oferta | item | compra/unidade | Q8 | Q16 | Q32 | Q64 | desbloqueio Normal | encantamentos
+
+=== 1. Alimentos e sobrevivência | 177 ofertas ===
+refugio:shop/0/minecraft/acacia_leaves | minecraft:acacia_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/acacia_sapling | minecraft:acacia_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/allium | minecraft:allium | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/apple | minecraft:apple | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/arrow | minecraft:arrow | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/azalea | minecraft:azalea | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/azalea_leaves | minecraft:azalea_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/azure_bluet | minecraft:azure_bluet | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/baked_potato | minecraft:baked_potato | 3 | 24 | 48 | 96 | 192 | sem exigência | —
+refugio:shop/0/minecraft/bamboo | minecraft:bamboo | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/beef | minecraft:beef | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/beetroot | minecraft:beetroot | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/beetroot_seeds | minecraft:beetroot_seeds | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/beetroot_soup | minecraft:beetroot_soup | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/birch_leaves | minecraft:birch_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/birch_sapling | minecraft:birch_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/black_bed | minecraft:black_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/black_candle | minecraft:black_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/blue_bed | minecraft:blue_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/blue_candle | minecraft:blue_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/blue_orchid | minecraft:blue_orchid | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/bone_meal | minecraft:bone_meal | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/bread | minecraft:bread | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/brown_bed | minecraft:brown_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/brown_candle | minecraft:brown_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/brown_mushroom | minecraft:brown_mushroom | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/bucket | minecraft:bucket | 12 | 96 | 192 | 384 | 768 | sem exigência | —
+refugio:shop/0/minecraft/cactus | minecraft:cactus | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cactus_flower | minecraft:cactus_flower | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/campfire | minecraft:campfire | 12 | 96 | 192 | 384 | 768 | sem exigência | —
+refugio:shop/0/minecraft/candle | minecraft:candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/carrot | minecraft:carrot | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/charcoal | minecraft:charcoal | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/cherry_leaves | minecraft:cherry_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cherry_sapling | minecraft:cherry_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/chicken | minecraft:chicken | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/chorus_flower | minecraft:chorus_flower | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/coal | minecraft:coal | 5 | 40 | 80 | 160 | 320 | sem exigência | —
+refugio:shop/0/minecraft/cocoa_beans | minecraft:cocoa_beans | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cod | minecraft:cod | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/compass | minecraft:compass | 25 | 200 | 400 | 800 | 1600 | sem exigência | —
+refugio:shop/0/minecraft/cooked_beef | minecraft:cooked_beef | 5 | 40 | 80 | 160 | 320 | sem exigência | —
+refugio:shop/0/minecraft/cooked_chicken | minecraft:cooked_chicken | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/cooked_cod | minecraft:cooked_cod | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/cooked_mutton | minecraft:cooked_mutton | 5 | 40 | 80 | 160 | 320 | sem exigência | —
+refugio:shop/0/minecraft/cooked_porkchop | minecraft:cooked_porkchop | 5 | 40 | 80 | 160 | 320 | sem exigência | —
+refugio:shop/0/minecraft/cooked_rabbit | minecraft:cooked_rabbit | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cooked_salmon | minecraft:cooked_salmon | 5 | 40 | 80 | 160 | 320 | sem exigência | —
+refugio:shop/0/minecraft/cookie | minecraft:cookie | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/copper_lantern | minecraft:copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cornflower | minecraft:cornflower | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/crimson_fungus | minecraft:crimson_fungus | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/crimson_roots | minecraft:crimson_roots | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/cyan_bed | minecraft:cyan_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/cyan_candle | minecraft:cyan_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/dandelion | minecraft:dandelion | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/dark_oak_leaves | minecraft:dark_oak_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/dark_oak_sapling | minecraft:dark_oak_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/dead_bush | minecraft:dead_bush | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/dried_kelp | minecraft:dried_kelp | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/egg | minecraft:egg | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/enchanted_golden_apple | minecraft:enchanted_golden_apple | 1500 | 12000 | 24000 | 48000 | 96000 | 7 missões resgatadas | —
+refugio:shop/0/minecraft/exposed_copper_lantern | minecraft:exposed_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/fern | minecraft:fern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/fishing_rod | minecraft:fishing_rod | 30 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/flowering_azalea | minecraft:flowering_azalea | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/flowering_azalea_leaves | minecraft:flowering_azalea_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/glow_berries | minecraft:glow_berries | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/golden_apple | minecraft:golden_apple | 100 | 800 | 1600 | 3200 | 6400 | sem exigência | —
+refugio:shop/0/minecraft/golden_carrot | minecraft:golden_carrot | 8 | 64 | 128 | 256 | 512 | sem exigência | —
+refugio:shop/0/minecraft/gray_bed | minecraft:gray_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/gray_candle | minecraft:gray_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/green_bed | minecraft:green_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/green_candle | minecraft:green_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/hanging_roots | minecraft:hanging_roots | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/hay_block | minecraft:hay_block | 12 | 96 | 192 | 384 | 768 | sem exigência | —
+refugio:shop/0/minecraft/honey_bottle | minecraft:honey_bottle | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/honeycomb | minecraft:honeycomb | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/jack_o_lantern | minecraft:jack_o_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/jungle_leaves | minecraft:jungle_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/jungle_sapling | minecraft:jungle_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/kelp | minecraft:kelp | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/lantern | minecraft:lantern | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/lava_bucket | minecraft:lava_bucket | 2 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/lead | minecraft:lead | 8 | 64 | 128 | 256 | 512 | sem exigência | —
+refugio:shop/0/minecraft/light_blue_bed | minecraft:light_blue_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/light_blue_candle | minecraft:light_blue_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/light_gray_bed | minecraft:light_gray_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/light_gray_candle | minecraft:light_gray_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/lilac | minecraft:lilac | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/lily_of_the_valley | minecraft:lily_of_the_valley | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/lime_bed | minecraft:lime_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/lime_candle | minecraft:lime_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/lingering_potion | minecraft:lingering_potion | 80 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/magenta_bed | minecraft:magenta_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/magenta_candle | minecraft:magenta_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/mangrove_leaves | minecraft:mangrove_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/mangrove_roots | minecraft:mangrove_roots | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/melon | minecraft:melon | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/melon_seeds | minecraft:melon_seeds | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/melon_slice | minecraft:melon_slice | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/milk_bucket | minecraft:milk_bucket | 16 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/muddy_mangrove_roots | minecraft:muddy_mangrove_roots | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/mushroom_stew | minecraft:mushroom_stew | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/mutton | minecraft:mutton | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/name_tag | minecraft:name_tag | 70 | 560 | 1120 | 2240 | 4480 | sem exigência | —
+refugio:shop/0/minecraft/nether_wart | minecraft:nether_wart | 4 | 32 | 64 | 128 | 256 | sem exigência | —
+refugio:shop/0/minecraft/oak_leaves | minecraft:oak_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/oak_sapling | minecraft:oak_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/ominous_bottle | minecraft:ominous_bottle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/orange_bed | minecraft:orange_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/orange_candle | minecraft:orange_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/orange_tulip | minecraft:orange_tulip | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/oxeye_daisy | minecraft:oxeye_daisy | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/oxidized_copper_lantern | minecraft:oxidized_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pale_oak_leaves | minecraft:pale_oak_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pale_oak_sapling | minecraft:pale_oak_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/peony | minecraft:peony | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pink_bed | minecraft:pink_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/pink_candle | minecraft:pink_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pink_petals | minecraft:pink_petals | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pink_tulip | minecraft:pink_tulip | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pitcher_plant | minecraft:pitcher_plant | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/poisonous_potato | minecraft:poisonous_potato | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/poppy | minecraft:poppy | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/porkchop | minecraft:porkchop | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/potato | minecraft:potato | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/potion | minecraft:potion | 45 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/powder_snow_bucket | minecraft:powder_snow_bucket | 2 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/pufferfish | minecraft:pufferfish | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pumpkin | minecraft:pumpkin | 3 | 24 | 48 | 96 | 192 | sem exigência | —
+refugio:shop/0/minecraft/pumpkin_pie | minecraft:pumpkin_pie | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/pumpkin_seeds | minecraft:pumpkin_seeds | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/purple_bed | minecraft:purple_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/purple_candle | minecraft:purple_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/rabbit | minecraft:rabbit | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/rabbit_stew | minecraft:rabbit_stew | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/red_bed | minecraft:red_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/red_candle | minecraft:red_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/red_mushroom | minecraft:red_mushroom | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/red_tulip | minecraft:red_tulip | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/rose_bush | minecraft:rose_bush | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/saddle | minecraft:saddle | 100 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/salmon | minecraft:salmon | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/sea_lantern | minecraft:sea_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/seagrass | minecraft:seagrass | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/soul_campfire | minecraft:soul_campfire | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/soul_lantern | minecraft:soul_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/soul_torch | minecraft:soul_torch | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/splash_potion | minecraft:splash_potion | 55 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/spruce_leaves | minecraft:spruce_leaves | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/spruce_sapling | minecraft:spruce_sapling | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/spyglass | minecraft:spyglass | 60 | 480 | 960 | 1920 | 3840 | sem exigência | —
+refugio:shop/0/minecraft/sugar_cane | minecraft:sugar_cane | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/sunflower | minecraft:sunflower | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/suspicious_stew | minecraft:suspicious_stew | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/sweet_berries | minecraft:sweet_berries | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/tipped_arrow | minecraft:tipped_arrow | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/torch | minecraft:torch | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/torchflower | minecraft:torchflower | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/tropical_fish | minecraft:tropical_fish | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/vine | minecraft:vine | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/warped_fungus | minecraft:warped_fungus | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/warped_roots | minecraft:warped_roots | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/water_bucket | minecraft:water_bucket | 15 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/waxed_copper_lantern | minecraft:waxed_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/waxed_exposed_copper_lantern | minecraft:waxed_exposed_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/waxed_oxidized_copper_lantern | minecraft:waxed_oxidized_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/waxed_weathered_copper_lantern | minecraft:waxed_weathered_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/weathered_copper_lantern | minecraft:weathered_copper_lantern | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/wheat | minecraft:wheat | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/wheat_seeds | minecraft:wheat_seeds | 1 | 8 | 16 | 32 | 64 | sem exigência | —
+refugio:shop/0/minecraft/white_bed | minecraft:white_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/white_candle | minecraft:white_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/white_tulip | minecraft:white_tulip | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+refugio:shop/0/minecraft/yellow_bed | minecraft:yellow_bed | 18 | N/A | N/A | N/A | N/A | sem exigência | —
+refugio:shop/0/minecraft/yellow_candle | minecraft:yellow_candle | 2 | 16 | 32 | 64 | 128 | sem exigência | —
+
+=== 2. Blocos, construção e utilidades | 602 ofertas ===
+refugio:shop/1/minecraft/acacia_button | minecraft:acacia_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_door | minecraft:acacia_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_fence | minecraft:acacia_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_fence_gate | minecraft:acacia_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_hanging_sign | minecraft:acacia_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_log | minecraft:acacia_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_planks | minecraft:acacia_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_pressure_plate | minecraft:acacia_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_sign | minecraft:acacia_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_slab | minecraft:acacia_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_stairs | minecraft:acacia_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_trapdoor | minecraft:acacia_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/acacia_wood | minecraft:acacia_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/activator_rail | minecraft:activator_rail | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/amethyst_block | minecraft:amethyst_block | 40 | 320 | 640 | 1280 | 2560 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/andesite_slab | minecraft:andesite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/andesite_stairs | minecraft:andesite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/andesite_wall | minecraft:andesite_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/anvil | minecraft:anvil | 20 | 160 | 320 | 640 | 1280 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_block | minecraft:bamboo_block | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_button | minecraft:bamboo_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_door | minecraft:bamboo_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_fence | minecraft:bamboo_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_fence_gate | minecraft:bamboo_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_hanging_sign | minecraft:bamboo_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_mosaic_slab | minecraft:bamboo_mosaic_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_mosaic_stairs | minecraft:bamboo_mosaic_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_planks | minecraft:bamboo_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_pressure_plate | minecraft:bamboo_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_sign | minecraft:bamboo_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_slab | minecraft:bamboo_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_stairs | minecraft:bamboo_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bamboo_trapdoor | minecraft:bamboo_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/barrel | minecraft:barrel | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bee_nest | minecraft:bee_nest | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/beehive | minecraft:beehive | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_button | minecraft:birch_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_door | minecraft:birch_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_fence | minecraft:birch_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_fence_gate | minecraft:birch_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_hanging_sign | minecraft:birch_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_log | minecraft:birch_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_planks | minecraft:birch_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_pressure_plate | minecraft:birch_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_sign | minecraft:birch_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_slab | minecraft:birch_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_stairs | minecraft:birch_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_trapdoor | minecraft:birch_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/birch_wood | minecraft:birch_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_banner | minecraft:black_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_carpet | minecraft:black_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_concrete | minecraft:black_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_concrete_powder | minecraft:black_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_glazed_terracotta | minecraft:black_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_stained_glass | minecraft:black_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_stained_glass_pane | minecraft:black_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_terracotta | minecraft:black_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/black_wool | minecraft:black_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blackstone_slab | minecraft:blackstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blackstone_stairs | minecraft:blackstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blackstone_wall | minecraft:blackstone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blast_furnace | minecraft:blast_furnace | 15 | 120 | 240 | 480 | 960 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_banner | minecraft:blue_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_carpet | minecraft:blue_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_concrete | minecraft:blue_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_concrete_powder | minecraft:blue_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_glazed_terracotta | minecraft:blue_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_stained_glass | minecraft:blue_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_stained_glass_pane | minecraft:blue_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_terracotta | minecraft:blue_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/blue_wool | minecraft:blue_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bookshelf | minecraft:bookshelf | 8 | 64 | 128 | 256 | 512 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brain_coral | minecraft:brain_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brain_coral_block | minecraft:brain_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brain_coral_fan | minecraft:brain_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brick_slab | minecraft:brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brick_stairs | minecraft:brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brick_wall | minecraft:brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bricks | minecraft:bricks | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_banner | minecraft:brown_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_carpet | minecraft:brown_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_concrete | minecraft:brown_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_concrete_powder | minecraft:brown_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_glazed_terracotta | minecraft:brown_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_mushroom_block | minecraft:brown_mushroom_block | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_stained_glass | minecraft:brown_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_stained_glass_pane | minecraft:brown_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_terracotta | minecraft:brown_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/brown_wool | minecraft:brown_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bubble_coral | minecraft:bubble_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bubble_coral_block | minecraft:bubble_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/bubble_coral_fan | minecraft:bubble_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cartography_table | minecraft:cartography_table | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_button | minecraft:cherry_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_door | minecraft:cherry_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_fence | minecraft:cherry_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_fence_gate | minecraft:cherry_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_hanging_sign | minecraft:cherry_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_log | minecraft:cherry_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_planks | minecraft:cherry_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_pressure_plate | minecraft:cherry_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_sign | minecraft:cherry_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_slab | minecraft:cherry_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_stairs | minecraft:cherry_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_trapdoor | minecraft:cherry_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cherry_wood | minecraft:cherry_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/chest | minecraft:chest | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/chipped_anvil | minecraft:chipped_anvil | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/chiseled_bookshelf | minecraft:chiseled_bookshelf | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_brick_slab | minecraft:cinnabar_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_brick_stairs | minecraft:cinnabar_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_brick_wall | minecraft:cinnabar_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_slab | minecraft:cinnabar_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_stairs | minecraft:cinnabar_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cinnabar_wall | minecraft:cinnabar_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/clay | minecraft:clay | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/coal_block | minecraft:coal_block | 50 | 400 | 800 | 1600 | 3200 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/coarse_dirt | minecraft:coarse_dirt | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobbled_deepslate | minecraft:cobbled_deepslate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobbled_deepslate_slab | minecraft:cobbled_deepslate_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobbled_deepslate_stairs | minecraft:cobbled_deepslate_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobbled_deepslate_wall | minecraft:cobbled_deepslate_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobblestone | minecraft:cobblestone | 1 | 8 | 16 | 32 | 64 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobblestone_slab | minecraft:cobblestone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobblestone_stairs | minecraft:cobblestone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cobblestone_wall | minecraft:cobblestone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/comparator | minecraft:comparator | 15 | 120 | 240 | 480 | 960 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/composter | minecraft:composter | 8 | 64 | 128 | 256 | 512 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/copper_block | minecraft:copper_block | 50 | 400 | 800 | 1600 | 3200 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/copper_door | minecraft:copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/copper_trapdoor | minecraft:copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crafting_table | minecraft:crafting_table | 5 | 40 | 80 | 160 | 320 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_button | minecraft:crimson_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_door | minecraft:crimson_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_fence | minecraft:crimson_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_fence_gate | minecraft:crimson_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_hanging_sign | minecraft:crimson_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_hyphae | minecraft:crimson_hyphae | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_planks | minecraft:crimson_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_pressure_plate | minecraft:crimson_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_sign | minecraft:crimson_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_slab | minecraft:crimson_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_stairs | minecraft:crimson_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crimson_trapdoor | minecraft:crimson_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/crying_obsidian | minecraft:crying_obsidian | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cut_copper_slab | minecraft:cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cut_copper_stairs | minecraft:cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cut_red_sandstone_slab | minecraft:cut_red_sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cut_sandstone_slab | minecraft:cut_sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_banner | minecraft:cyan_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_carpet | minecraft:cyan_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_concrete | minecraft:cyan_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_concrete_powder | minecraft:cyan_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_glazed_terracotta | minecraft:cyan_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_stained_glass | minecraft:cyan_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_stained_glass_pane | minecraft:cyan_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_terracotta | minecraft:cyan_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/cyan_wool | minecraft:cyan_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/damaged_anvil | minecraft:damaged_anvil | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_button | minecraft:dark_oak_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_door | minecraft:dark_oak_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_fence | minecraft:dark_oak_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_fence_gate | minecraft:dark_oak_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_hanging_sign | minecraft:dark_oak_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_log | minecraft:dark_oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_planks | minecraft:dark_oak_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_pressure_plate | minecraft:dark_oak_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_sign | minecraft:dark_oak_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_slab | minecraft:dark_oak_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_stairs | minecraft:dark_oak_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_trapdoor | minecraft:dark_oak_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_oak_wood | minecraft:dark_oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_prismarine_slab | minecraft:dark_prismarine_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dark_prismarine_stairs | minecraft:dark_prismarine_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_brain_coral | minecraft:dead_brain_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_brain_coral_block | minecraft:dead_brain_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_brain_coral_fan | minecraft:dead_brain_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_bubble_coral | minecraft:dead_bubble_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_bubble_coral_block | minecraft:dead_bubble_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_bubble_coral_fan | minecraft:dead_bubble_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_fire_coral | minecraft:dead_fire_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_fire_coral_block | minecraft:dead_fire_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_fire_coral_fan | minecraft:dead_fire_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_horn_coral | minecraft:dead_horn_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_horn_coral_block | minecraft:dead_horn_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_horn_coral_fan | minecraft:dead_horn_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_tube_coral | minecraft:dead_tube_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_tube_coral_block | minecraft:dead_tube_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dead_tube_coral_fan | minecraft:dead_tube_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_brick_slab | minecraft:deepslate_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_brick_stairs | minecraft:deepslate_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_brick_wall | minecraft:deepslate_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_bricks | minecraft:deepslate_bricks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_tile_slab | minecraft:deepslate_tile_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_tile_stairs | minecraft:deepslate_tile_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_tile_wall | minecraft:deepslate_tile_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/deepslate_tiles | minecraft:deepslate_tiles | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/detector_rail | minecraft:detector_rail | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/diorite_slab | minecraft:diorite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/diorite_stairs | minecraft:diorite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/diorite_wall | minecraft:diorite_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dirt | minecraft:dirt | 1 | 8 | 16 | 32 | 64 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dispenser | minecraft:dispenser | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dried_kelp_block | minecraft:dried_kelp_block | 20 | 160 | 320 | 640 | 1280 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/dropper | minecraft:dropper | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/enchanting_table | minecraft:enchanting_table | 20 | 160 | 320 | 640 | 1280 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/end_stone_brick_slab | minecraft:end_stone_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/end_stone_brick_stairs | minecraft:end_stone_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/end_stone_brick_wall | minecraft:end_stone_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/exposed_copper_door | minecraft:exposed_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/exposed_copper_trapdoor | minecraft:exposed_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/exposed_cut_copper_slab | minecraft:exposed_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/exposed_cut_copper_stairs | minecraft:exposed_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/fire_coral | minecraft:fire_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/fire_coral_block | minecraft:fire_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/fire_coral_fan | minecraft:fire_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/fletching_table | minecraft:fletching_table | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/furnace | minecraft:furnace | 10 | 80 | 160 | 320 | 640 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/glass | minecraft:glass | 3 | 23 | 46 | 91 | 176 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/glass_pane | minecraft:glass_pane | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gold_block | minecraft:gold_block | 210 | 1680 | 3360 | 6720 | 13440 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/granite_slab | minecraft:granite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/granite_stairs | minecraft:granite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/granite_wall | minecraft:granite_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/grass_block | minecraft:grass_block | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gravel | minecraft:gravel | 1 | 8 | 16 | 32 | 64 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_banner | minecraft:gray_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_carpet | minecraft:gray_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_concrete | minecraft:gray_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_concrete_powder | minecraft:gray_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_glazed_terracotta | minecraft:gray_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_stained_glass | minecraft:gray_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_stained_glass_pane | minecraft:gray_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_terracotta | minecraft:gray_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/gray_wool | minecraft:gray_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_banner | minecraft:green_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_carpet | minecraft:green_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_concrete | minecraft:green_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_concrete_powder | minecraft:green_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_glazed_terracotta | minecraft:green_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_stained_glass | minecraft:green_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_stained_glass_pane | minecraft:green_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_terracotta | minecraft:green_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/green_wool | minecraft:green_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/grindstone | minecraft:grindstone | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/heavy_weighted_pressure_plate | minecraft:heavy_weighted_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/honey_block | minecraft:honey_block | 20 | 160 | 320 | 640 | 1280 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/hopper | minecraft:hopper | 30 | 240 | 480 | 960 | 1920 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/horn_coral | minecraft:horn_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/horn_coral_block | minecraft:horn_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/horn_coral_fan | minecraft:horn_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/iron_block | minecraft:iron_block | 100 | 800 | 1600 | 3200 | 6400 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/iron_door | minecraft:iron_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/iron_trapdoor | minecraft:iron_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_button | minecraft:jungle_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_door | minecraft:jungle_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_fence | minecraft:jungle_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_fence_gate | minecraft:jungle_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_hanging_sign | minecraft:jungle_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_log | minecraft:jungle_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_planks | minecraft:jungle_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_pressure_plate | minecraft:jungle_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_sign | minecraft:jungle_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_slab | minecraft:jungle_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_stairs | minecraft:jungle_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_trapdoor | minecraft:jungle_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/jungle_wood | minecraft:jungle_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/ladder | minecraft:ladder | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lapis_block | minecraft:lapis_block | 50 | 400 | 800 | 1600 | 3200 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_banner | minecraft:light_blue_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_carpet | minecraft:light_blue_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_concrete | minecraft:light_blue_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_concrete_powder | minecraft:light_blue_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_glazed_terracotta | minecraft:light_blue_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_stained_glass | minecraft:light_blue_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_stained_glass_pane | minecraft:light_blue_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_terracotta | minecraft:light_blue_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_blue_wool | minecraft:light_blue_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_banner | minecraft:light_gray_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_carpet | minecraft:light_gray_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_concrete | minecraft:light_gray_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_concrete_powder | minecraft:light_gray_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_glazed_terracotta | minecraft:light_gray_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_stained_glass | minecraft:light_gray_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_stained_glass_pane | minecraft:light_gray_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_terracotta | minecraft:light_gray_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_gray_wool | minecraft:light_gray_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/light_weighted_pressure_plate | minecraft:light_weighted_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_banner | minecraft:lime_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_carpet | minecraft:lime_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_concrete | minecraft:lime_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_concrete_powder | minecraft:lime_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_glazed_terracotta | minecraft:lime_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_stained_glass | minecraft:lime_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_stained_glass_pane | minecraft:lime_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_terracotta | minecraft:lime_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/lime_wool | minecraft:lime_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/loom | minecraft:loom | 10 | 80 | 160 | 320 | 640 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_banner | minecraft:magenta_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_carpet | minecraft:magenta_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_concrete | minecraft:magenta_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_concrete_powder | minecraft:magenta_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_glazed_terracotta | minecraft:magenta_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_stained_glass | minecraft:magenta_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_stained_glass_pane | minecraft:magenta_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_terracotta | minecraft:magenta_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/magenta_wool | minecraft:magenta_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_button | minecraft:mangrove_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_door | minecraft:mangrove_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_fence | minecraft:mangrove_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_fence_gate | minecraft:mangrove_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_hanging_sign | minecraft:mangrove_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_log | minecraft:mangrove_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_planks | minecraft:mangrove_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_pressure_plate | minecraft:mangrove_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_sign | minecraft:mangrove_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_slab | minecraft:mangrove_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_stairs | minecraft:mangrove_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_trapdoor | minecraft:mangrove_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mangrove_wood | minecraft:mangrove_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/moss_carpet | minecraft:moss_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_cobblestone | minecraft:mossy_cobblestone | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_cobblestone_slab | minecraft:mossy_cobblestone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_cobblestone_stairs | minecraft:mossy_cobblestone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_cobblestone_wall | minecraft:mossy_cobblestone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_stone_brick_slab | minecraft:mossy_stone_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_stone_brick_stairs | minecraft:mossy_stone_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_stone_brick_wall | minecraft:mossy_stone_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mossy_stone_bricks | minecraft:mossy_stone_bricks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mud | minecraft:mud | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mud_brick_slab | minecraft:mud_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mud_brick_stairs | minecraft:mud_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mud_brick_wall | minecraft:mud_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/mycelium | minecraft:mycelium | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/nether_brick_fence | minecraft:nether_brick_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/nether_brick_slab | minecraft:nether_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/nether_brick_stairs | minecraft:nether_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/nether_brick_wall | minecraft:nether_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_button | minecraft:oak_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_door | minecraft:oak_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_fence | minecraft:oak_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_fence_gate | minecraft:oak_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_hanging_sign | minecraft:oak_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_log | minecraft:oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_planks | minecraft:oak_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_pressure_plate | minecraft:oak_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_sign | minecraft:oak_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_slab | minecraft:oak_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_stairs | minecraft:oak_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_trapdoor | minecraft:oak_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oak_wood | minecraft:oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/observer | minecraft:observer | 25 | 200 | 400 | 800 | 1600 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/obsidian | minecraft:obsidian | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_banner | minecraft:orange_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_carpet | minecraft:orange_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_concrete | minecraft:orange_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_concrete_powder | minecraft:orange_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_glazed_terracotta | minecraft:orange_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_stained_glass | minecraft:orange_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_stained_glass_pane | minecraft:orange_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_terracotta | minecraft:orange_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/orange_wool | minecraft:orange_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oxidized_copper_door | minecraft:oxidized_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oxidized_copper_trapdoor | minecraft:oxidized_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oxidized_cut_copper_slab | minecraft:oxidized_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/oxidized_cut_copper_stairs | minecraft:oxidized_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/packed_mud | minecraft:packed_mud | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_moss_carpet | minecraft:pale_moss_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_button | minecraft:pale_oak_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_door | minecraft:pale_oak_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_fence | minecraft:pale_oak_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_fence_gate | minecraft:pale_oak_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_hanging_sign | minecraft:pale_oak_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_log | minecraft:pale_oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_planks | minecraft:pale_oak_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_pressure_plate | minecraft:pale_oak_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_sign | minecraft:pale_oak_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_slab | minecraft:pale_oak_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_stairs | minecraft:pale_oak_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_trapdoor | minecraft:pale_oak_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pale_oak_wood | minecraft:pale_oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/petrified_oak_slab | minecraft:petrified_oak_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_banner | minecraft:pink_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_carpet | minecraft:pink_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_concrete | minecraft:pink_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_concrete_powder | minecraft:pink_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_glazed_terracotta | minecraft:pink_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_stained_glass | minecraft:pink_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_stained_glass_pane | minecraft:pink_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_terracotta | minecraft:pink_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/pink_wool | minecraft:pink_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/piston | minecraft:piston | 18 | 144 | 288 | 576 | 1152 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/podzol | minecraft:podzol | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_andesite_slab | minecraft:polished_andesite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_andesite_stairs | minecraft:polished_andesite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_brick_slab | minecraft:polished_blackstone_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_brick_stairs | minecraft:polished_blackstone_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_brick_wall | minecraft:polished_blackstone_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_button | minecraft:polished_blackstone_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_pressure_plate | minecraft:polished_blackstone_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_slab | minecraft:polished_blackstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_stairs | minecraft:polished_blackstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_blackstone_wall | minecraft:polished_blackstone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_cinnabar_slab | minecraft:polished_cinnabar_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_cinnabar_stairs | minecraft:polished_cinnabar_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_cinnabar_wall | minecraft:polished_cinnabar_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_deepslate | minecraft:polished_deepslate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_deepslate_slab | minecraft:polished_deepslate_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_deepslate_stairs | minecraft:polished_deepslate_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_deepslate_wall | minecraft:polished_deepslate_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_diorite_slab | minecraft:polished_diorite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_diorite_stairs | minecraft:polished_diorite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_granite_slab | minecraft:polished_granite_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_granite_stairs | minecraft:polished_granite_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_sulfur_slab | minecraft:polished_sulfur_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_sulfur_stairs | minecraft:polished_sulfur_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_sulfur_wall | minecraft:polished_sulfur_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_tuff_slab | minecraft:polished_tuff_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_tuff_stairs | minecraft:polished_tuff_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/polished_tuff_wall | minecraft:polished_tuff_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/powered_rail | minecraft:powered_rail | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/prismarine_brick_slab | minecraft:prismarine_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/prismarine_brick_stairs | minecraft:prismarine_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/prismarine_slab | minecraft:prismarine_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/prismarine_stairs | minecraft:prismarine_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/prismarine_wall | minecraft:prismarine_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_banner | minecraft:purple_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_carpet | minecraft:purple_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_concrete | minecraft:purple_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_concrete_powder | minecraft:purple_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_glazed_terracotta | minecraft:purple_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_stained_glass | minecraft:purple_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_stained_glass_pane | minecraft:purple_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_terracotta | minecraft:purple_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purple_wool | minecraft:purple_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purpur_slab | minecraft:purpur_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/purpur_stairs | minecraft:purpur_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/quartz_block | minecraft:quartz_block | 30 | 240 | 480 | 960 | 1920 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/quartz_slab | minecraft:quartz_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/quartz_stairs | minecraft:quartz_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/rail | minecraft:rail | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/raw_copper_block | minecraft:raw_copper_block | 27 | 216 | 432 | 864 | 1728 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/raw_gold_block | minecraft:raw_gold_block | 162 | 1296 | 2592 | 5184 | 10368 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/raw_iron_block | minecraft:raw_iron_block | 80 | 640 | 1280 | 2560 | 5120 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_banner | minecraft:red_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_carpet | minecraft:red_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_concrete | minecraft:red_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_concrete_powder | minecraft:red_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_glazed_terracotta | minecraft:red_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_mushroom_block | minecraft:red_mushroom_block | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_nether_brick_slab | minecraft:red_nether_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_nether_brick_stairs | minecraft:red_nether_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_nether_brick_wall | minecraft:red_nether_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_sand | minecraft:red_sand | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_sandstone | minecraft:red_sandstone | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_sandstone_slab | minecraft:red_sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_sandstone_stairs | minecraft:red_sandstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_sandstone_wall | minecraft:red_sandstone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_stained_glass | minecraft:red_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_stained_glass_pane | minecraft:red_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_terracotta | minecraft:red_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/red_wool | minecraft:red_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/redstone | minecraft:redstone | 5 | 40 | 80 | 160 | 320 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/redstone_block | minecraft:redstone_block | 50 | 400 | 800 | 1600 | 3200 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/redstone_lamp | minecraft:redstone_lamp | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/redstone_torch | minecraft:redstone_torch | 5 | 40 | 80 | 160 | 320 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/repeater | minecraft:repeater | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/resin_brick_slab | minecraft:resin_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/resin_brick_stairs | minecraft:resin_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/resin_brick_wall | minecraft:resin_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/rooted_dirt | minecraft:rooted_dirt | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sand | minecraft:sand | 1 | 8 | 16 | 32 | 64 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sandstone | minecraft:sandstone | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sandstone_slab | minecraft:sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sandstone_stairs | minecraft:sandstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sandstone_wall | minecraft:sandstone_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/scaffolding | minecraft:scaffolding | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/shulker_box | minecraft:shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/1/minecraft/slime_block | minecraft:slime_block | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smithing_table | minecraft:smithing_table | 15 | 120 | 240 | 480 | 960 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smoker | minecraft:smoker | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_quartz_slab | minecraft:smooth_quartz_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_quartz_stairs | minecraft:smooth_quartz_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_red_sandstone_slab | minecraft:smooth_red_sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_red_sandstone_stairs | minecraft:smooth_red_sandstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_sandstone_slab | minecraft:smooth_sandstone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_sandstone_stairs | minecraft:smooth_sandstone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_stone | minecraft:smooth_stone | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/smooth_stone_slab | minecraft:smooth_stone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_button | minecraft:spruce_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_door | minecraft:spruce_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_fence | minecraft:spruce_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_fence_gate | minecraft:spruce_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_hanging_sign | minecraft:spruce_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_log | minecraft:spruce_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_planks | minecraft:spruce_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_pressure_plate | minecraft:spruce_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_sign | minecraft:spruce_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_slab | minecraft:spruce_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_stairs | minecraft:spruce_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_trapdoor | minecraft:spruce_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/spruce_wood | minecraft:spruce_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sticky_piston | minecraft:sticky_piston | 25 | 200 | 400 | 800 | 1600 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone | minecraft:stone | 1 | 8 | 16 | 32 | 64 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_brick_slab | minecraft:stone_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_brick_stairs | minecraft:stone_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_brick_wall | minecraft:stone_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_bricks | minecraft:stone_bricks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_button | minecraft:stone_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_pressure_plate | minecraft:stone_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_slab | minecraft:stone_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stone_stairs | minecraft:stone_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stonecutter | minecraft:stonecutter | 10 | 80 | 160 | 320 | 640 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_acacia_log | minecraft:stripped_acacia_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_acacia_wood | minecraft:stripped_acacia_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_bamboo_block | minecraft:stripped_bamboo_block | 12 | 96 | 192 | 384 | 768 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_birch_log | minecraft:stripped_birch_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_birch_wood | minecraft:stripped_birch_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_cherry_log | minecraft:stripped_cherry_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_cherry_wood | minecraft:stripped_cherry_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_crimson_hyphae | minecraft:stripped_crimson_hyphae | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_dark_oak_log | minecraft:stripped_dark_oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_dark_oak_wood | minecraft:stripped_dark_oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_jungle_log | minecraft:stripped_jungle_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_jungle_wood | minecraft:stripped_jungle_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_mangrove_log | minecraft:stripped_mangrove_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_mangrove_wood | minecraft:stripped_mangrove_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_oak_log | minecraft:stripped_oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_oak_wood | minecraft:stripped_oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_pale_oak_log | minecraft:stripped_pale_oak_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_pale_oak_wood | minecraft:stripped_pale_oak_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_spruce_log | minecraft:stripped_spruce_log | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_spruce_wood | minecraft:stripped_spruce_wood | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/stripped_warped_hyphae | minecraft:stripped_warped_hyphae | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_brick_slab | minecraft:sulfur_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_brick_stairs | minecraft:sulfur_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_brick_wall | minecraft:sulfur_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_slab | minecraft:sulfur_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_stairs | minecraft:sulfur_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/sulfur_wall | minecraft:sulfur_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/terracotta | minecraft:terracotta | 2 | 15 | 31 | 60 | 117 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tinted_glass | minecraft:tinted_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/trapped_chest | minecraft:trapped_chest | 15 | 120 | 240 | 480 | 960 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tube_coral | minecraft:tube_coral | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tube_coral_block | minecraft:tube_coral_block | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tube_coral_fan | minecraft:tube_coral_fan | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_brick_slab | minecraft:tuff_brick_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_brick_stairs | minecraft:tuff_brick_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_brick_wall | minecraft:tuff_brick_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_slab | minecraft:tuff_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_stairs | minecraft:tuff_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/tuff_wall | minecraft:tuff_wall | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_button | minecraft:warped_button | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_door | minecraft:warped_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_fence | minecraft:warped_fence | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_fence_gate | minecraft:warped_fence_gate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_hanging_sign | minecraft:warped_hanging_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_hyphae | minecraft:warped_hyphae | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_planks | minecraft:warped_planks | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_pressure_plate | minecraft:warped_pressure_plate | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_sign | minecraft:warped_sign | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_slab | minecraft:warped_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_stairs | minecraft:warped_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/warped_trapdoor | minecraft:warped_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_copper_door | minecraft:waxed_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_copper_trapdoor | minecraft:waxed_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_cut_copper_slab | minecraft:waxed_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_cut_copper_stairs | minecraft:waxed_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_exposed_copper_door | minecraft:waxed_exposed_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_exposed_copper_trapdoor | minecraft:waxed_exposed_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_exposed_cut_copper_slab | minecraft:waxed_exposed_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_exposed_cut_copper_stairs | minecraft:waxed_exposed_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_oxidized_copper_door | minecraft:waxed_oxidized_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_oxidized_copper_trapdoor | minecraft:waxed_oxidized_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_oxidized_cut_copper_slab | minecraft:waxed_oxidized_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_oxidized_cut_copper_stairs | minecraft:waxed_oxidized_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_weathered_copper_door | minecraft:waxed_weathered_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_weathered_copper_trapdoor | minecraft:waxed_weathered_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_weathered_cut_copper_slab | minecraft:waxed_weathered_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/waxed_weathered_cut_copper_stairs | minecraft:waxed_weathered_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/weathered_copper_door | minecraft:weathered_copper_door | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/weathered_copper_trapdoor | minecraft:weathered_copper_trapdoor | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/weathered_cut_copper_slab | minecraft:weathered_cut_copper_slab | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/weathered_cut_copper_stairs | minecraft:weathered_cut_copper_stairs | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_banner | minecraft:white_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_carpet | minecraft:white_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_concrete | minecraft:white_concrete | 3 | 23 | 46 | 91 | 176 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_concrete_powder | minecraft:white_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_glazed_terracotta | minecraft:white_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_stained_glass | minecraft:white_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_stained_glass_pane | minecraft:white_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_terracotta | minecraft:white_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/white_wool | minecraft:white_wool | 3 | 23 | 46 | 91 | 176 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_banner | minecraft:yellow_banner | 2 | 16 | 32 | 64 | 128 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_carpet | minecraft:yellow_carpet | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_concrete | minecraft:yellow_concrete | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_concrete_powder | minecraft:yellow_concrete_powder | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_glazed_terracotta | minecraft:yellow_glazed_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_stained_glass | minecraft:yellow_stained_glass | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_stained_glass_pane | minecraft:yellow_stained_glass_pane | 4 | 32 | 64 | 128 | 256 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_terracotta | minecraft:yellow_terracotta | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+refugio:shop/1/minecraft/yellow_wool | minecraft:yellow_wool | 3 | 24 | 48 | 96 | 192 | 1 missões resgatadas | —
+
+=== 3. Ferramentas e equipamentos | 76 ofertas ===
+refugio:shop/2/minecraft/bow | minecraft:bow | 100 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/chainmail_boots | minecraft:chainmail_boots | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/chainmail_chestplate | minecraft:chainmail_chestplate | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/chainmail_helmet | minecraft:chainmail_helmet | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/chainmail_leggings | minecraft:chainmail_leggings | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_axe | minecraft:copper_axe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_boots | minecraft:copper_boots | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_chestplate | minecraft:copper_chestplate | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_helmet | minecraft:copper_helmet | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_hoe | minecraft:copper_hoe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_horse_armor | minecraft:copper_horse_armor | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_leggings | minecraft:copper_leggings | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_pickaxe | minecraft:copper_pickaxe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_shovel | minecraft:copper_shovel | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/copper_sword | minecraft:copper_sword | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/crossbow | minecraft:crossbow | 100 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_axe | minecraft:diamond_axe | 500 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_boots | minecraft:diamond_boots | 380 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_chestplate | minecraft:diamond_chestplate | 650 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_helmet | minecraft:diamond_helmet | 420 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_hoe | minecraft:diamond_hoe | 350 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_horse_armor | minecraft:diamond_horse_armor | 350 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_leggings | minecraft:diamond_leggings | 550 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_pickaxe | minecraft:diamond_pickaxe | 600 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_shovel | minecraft:diamond_shovel | 350 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/diamond_sword | minecraft:diamond_sword | 450 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/flint_and_steel | minecraft:flint_and_steel | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_axe | minecraft:golden_axe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_boots | minecraft:golden_boots | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_chestplate | minecraft:golden_chestplate | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_helmet | minecraft:golden_helmet | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_hoe | minecraft:golden_hoe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_horse_armor | minecraft:golden_horse_armor | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_leggings | minecraft:golden_leggings | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_pickaxe | minecraft:golden_pickaxe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_shovel | minecraft:golden_shovel | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/golden_sword | minecraft:golden_sword | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_axe | minecraft:iron_axe | 110 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_boots | minecraft:iron_boots | 85 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_chestplate | minecraft:iron_chestplate | 140 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_helmet | minecraft:iron_helmet | 100 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_hoe | minecraft:iron_hoe | 80 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_horse_armor | minecraft:iron_horse_armor | 80 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_leggings | minecraft:iron_leggings | 120 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_pickaxe | minecraft:iron_pickaxe | 120 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_shovel | minecraft:iron_shovel | 80 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/iron_sword | minecraft:iron_sword | 100 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/leather_boots | minecraft:leather_boots | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/leather_chestplate | minecraft:leather_chestplate | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/leather_helmet | minecraft:leather_helmet | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/leather_horse_armor | minecraft:leather_horse_armor | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/leather_leggings | minecraft:leather_leggings | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_axe | minecraft:netherite_axe | 2200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_boots | minecraft:netherite_boots | 1900 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_chestplate | minecraft:netherite_chestplate | 2500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_helmet | minecraft:netherite_helmet | 2100 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_hoe | minecraft:netherite_hoe | 1500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_horse_armor | minecraft:netherite_horse_armor | 1500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_leggings | minecraft:netherite_leggings | 2300 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_pickaxe | minecraft:netherite_pickaxe | 2400 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_shovel | minecraft:netherite_shovel | 1500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/netherite_sword | minecraft:netherite_sword | 2000 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/2/minecraft/shears | minecraft:shears | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/shield | minecraft:shield | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/stone_axe | minecraft:stone_axe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/stone_hoe | minecraft:stone_hoe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/stone_pickaxe | minecraft:stone_pickaxe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/stone_shovel | minecraft:stone_shovel | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/stone_sword | minecraft:stone_sword | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/trident | minecraft:trident | 900 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/turtle_helmet | minecraft:turtle_helmet | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/wooden_axe | minecraft:wooden_axe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/wooden_hoe | minecraft:wooden_hoe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/wooden_pickaxe | minecraft:wooden_pickaxe | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/wooden_shovel | minecraft:wooden_shovel | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+refugio:shop/2/minecraft/wooden_sword | minecraft:wooden_sword | 40 | N/A | N/A | N/A | N/A | 2 missões resgatadas | —
+
+=== 4. Itens especiais | 78 ofertas ===
+refugio:shop/3/minecraft/amethyst_shard | minecraft:amethyst_shard | 8 | 64 | 128 | 256 | 512 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/ancient_debris | minecraft:ancient_debris | 280 | 2240 | 4480 | 8960 | 17920 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/axolotl_bucket | minecraft:axolotl_bucket | 500 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/beacon | minecraft:beacon | 5000 | 40000 | 80000 | 160000 | 320000 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/black_shulker_box | minecraft:black_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/blaze_powder | minecraft:blaze_powder | 12 | 96 | 192 | 384 | 768 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/blaze_rod | minecraft:blaze_rod | 45 | 360 | 720 | 1440 | 2880 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/blue_shulker_box | minecraft:blue_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/brown_shulker_box | minecraft:brown_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/conduit | minecraft:conduit | 600 | 4800 | 9600 | 19200 | 38400 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/copper_ingot | minecraft:copper_ingot | 5 | 40 | 80 | 160 | 320 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/cyan_shulker_box | minecraft:cyan_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/diamond | minecraft:diamond | 120 | 960 | 1920 | 3840 | 7680 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/diamond_block | minecraft:diamond_block | 1100 | 8800 | 17600 | 35200 | 70400 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/dragon_breath | minecraft:dragon_breath | 60 | 480 | 960 | 1920 | 3840 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/elytra | minecraft:elytra | 5000 | N/A | N/A | N/A | N/A | 7 missões resgatadas | —
+refugio:shop/3/minecraft/emerald | minecraft:emerald | 35 | 280 | 560 | 1120 | 2240 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/emerald_block | minecraft:emerald_block | 320 | 2560 | 5120 | 10240 | 20480 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/ender_chest | minecraft:ender_chest | 150 | 1200 | 2400 | 4800 | 9600 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/ender_eye | minecraft:ender_eye | 30 | 240 | 480 | 960 | 1920 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/ender_pearl | minecraft:ender_pearl | 12 | 96 | 192 | 384 | 768 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/experience_bottle | minecraft:experience_bottle | 20 | 160 | 320 | 640 | 1280 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/firework_rocket | minecraft:firework_rocket | 3 | 24 | 48 | 96 | 192 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/ghast_tear | minecraft:ghast_tear | 60 | 480 | 960 | 1920 | 3840 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/gold_ingot | minecraft:gold_ingot | 22 | 176 | 352 | 704 | 1408 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/gray_shulker_box | minecraft:gray_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/green_shulker_box | minecraft:green_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/heart_of_the_sea | minecraft:heart_of_the_sea | 350 | 2800 | 5600 | 11200 | 22400 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/iron_ingot | minecraft:iron_ingot | 10 | 80 | 160 | 320 | 640 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/lapis_lazuli | minecraft:lapis_lazuli | 5 | 40 | 80 | 160 | 320 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/light_blue_shulker_box | minecraft:light_blue_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/light_gray_shulker_box | minecraft:light_gray_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/lime_shulker_box | minecraft:lime_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/magenta_shulker_box | minecraft:magenta_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_11 | minecraft:music_disc_11 | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_13 | minecraft:music_disc_13 | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_5 | minecraft:music_disc_5 | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_blocks | minecraft:music_disc_blocks | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_bounce | minecraft:music_disc_bounce | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_cat | minecraft:music_disc_cat | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_chirp | minecraft:music_disc_chirp | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_creator | minecraft:music_disc_creator | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_creator_music_box | minecraft:music_disc_creator_music_box | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_far | minecraft:music_disc_far | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_lava_chicken | minecraft:music_disc_lava_chicken | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_mall | minecraft:music_disc_mall | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_mellohi | minecraft:music_disc_mellohi | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_otherside | minecraft:music_disc_otherside | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_pigstep | minecraft:music_disc_pigstep | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_precipice | minecraft:music_disc_precipice | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_relic | minecraft:music_disc_relic | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_stal | minecraft:music_disc_stal | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_strad | minecraft:music_disc_strad | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_tears | minecraft:music_disc_tears | 300 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_wait | minecraft:music_disc_wait | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/music_disc_ward | minecraft:music_disc_ward | 60 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/nautilus_shell | minecraft:nautilus_shell | 25 | 200 | 400 | 800 | 1600 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/nether_star | minecraft:nether_star | 2500 | 20000 | 40000 | 80000 | 160000 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/netherite_block | minecraft:netherite_block | 18000 | 144000 | 288000 | 576000 | 1152000 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/netherite_ingot | minecraft:netherite_ingot | 1750 | 14000 | 28000 | 56000 | 112000 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/netherite_scrap | minecraft:netherite_scrap | 420 | 3360 | 6720 | 13440 | 26880 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/netherite_upgrade_smithing_template | minecraft:netherite_upgrade_smithing_template | 1500 | 12000 | 24000 | 48000 | 96000 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/orange_shulker_box | minecraft:orange_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/pink_shulker_box | minecraft:pink_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/prismarine_crystals | minecraft:prismarine_crystals | 15 | 120 | 240 | 480 | 960 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/prismarine_shard | minecraft:prismarine_shard | 15 | 120 | 240 | 480 | 960 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/purple_shulker_box | minecraft:purple_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/quartz | minecraft:quartz | 6 | 48 | 96 | 192 | 384 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/raw_copper | minecraft:raw_copper | 3 | 24 | 48 | 96 | 192 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/raw_gold | minecraft:raw_gold | 18 | 144 | 288 | 576 | 1152 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/raw_iron | minecraft:raw_iron | 8 | 64 | 128 | 256 | 512 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/recovery_compass | minecraft:recovery_compass | 350 | 2800 | 5600 | 11200 | 22400 | 4 missões resgatadas | —
+refugio:shop/3/minecraft/red_shulker_box | minecraft:red_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/shulker_shell | minecraft:shulker_shell | 80 | 640 | 1280 | 2560 | 5120 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/tadpole_bucket | minecraft:tadpole_bucket | 30 | N/A | N/A | N/A | N/A | 4 missões resgatadas | —
+refugio:shop/3/minecraft/totem_of_undying | minecraft:totem_of_undying | 1200 | 9600 | 19200 | 38400 | 76800 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/white_shulker_box | minecraft:white_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+refugio:shop/3/minecraft/yellow_shulker_box | minecraft:yellow_shulker_box | 400 | 3200 | 6400 | 12800 | 25600 | 7 missões resgatadas | —
+
+=== 5. Itens especiais Plus | 24 ofertas ===
+refugio:shop/4/minecraft/bow/flame_1+infinity_1+power_5+unbreaking_3 | minecraft:bow | 1400 | N/A | N/A | N/A | N/A | 7 missões resgatadas | power 5, flame 1, infinity 1, unbreaking 3
+refugio:shop/4/minecraft/crossbow/piercing_4+quick_charge_3+unbreaking_3 | minecraft:crossbow | 1500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | quick_charge 3, piercing 4, unbreaking 3
+refugio:shop/4/minecraft/diamond_boots/depth_strider_3+feather_falling_4+unbreaking_3 | minecraft:diamond_boots | 1200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | feather_falling 4, depth_strider 3, unbreaking 3
+refugio:shop/4/minecraft/diamond_chestplate/protection_4+thorns_3+unbreaking_3 | minecraft:diamond_chestplate | 1800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4, thorns 3, unbreaking 3
+refugio:shop/4/minecraft/diamond_pickaxe/efficiency_5+fortune_3+unbreaking_3 | minecraft:diamond_pickaxe | 2200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | efficiency 5, fortune 3, unbreaking 3
+refugio:shop/4/minecraft/diamond_pickaxe/efficiency_5+silk_touch_1+unbreaking_3 | minecraft:diamond_pickaxe | 1800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | efficiency 5, silk_touch 1, unbreaking 3
+refugio:shop/4/minecraft/diamond_sword/looting_3+sharpness_5+unbreaking_3 | minecraft:diamond_sword | 1800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | sharpness 5, looting 3, unbreaking 3
+refugio:shop/4/minecraft/elytra/mending_1+unbreaking_3 | minecraft:elytra | 9500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | unbreaking 3, mending 1
+refugio:shop/4/minecraft/enchanted_book/efficiency_5 | minecraft:enchanted_book | 900 | N/A | N/A | N/A | N/A | 7 missões resgatadas | efficiency 5
+refugio:shop/4/minecraft/enchanted_book/fortune_3 | minecraft:enchanted_book | 900 | N/A | N/A | N/A | N/A | 7 missões resgatadas | fortune 3
+refugio:shop/4/minecraft/enchanted_book/looting_3 | minecraft:enchanted_book | 850 | N/A | N/A | N/A | N/A | 7 missões resgatadas | looting 3
+refugio:shop/4/minecraft/enchanted_book/mending_1 | minecraft:enchanted_book | 750 | N/A | N/A | N/A | N/A | 7 missões resgatadas | mending 1
+refugio:shop/4/minecraft/enchanted_book/protection_4 | minecraft:enchanted_book | 750 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4
+refugio:shop/4/minecraft/enchanted_book/sharpness_5 | minecraft:enchanted_book | 900 | N/A | N/A | N/A | N/A | 7 missões resgatadas | sharpness 5
+refugio:shop/4/minecraft/enchanted_book/silk_touch_1 | minecraft:enchanted_book | 750 | N/A | N/A | N/A | N/A | 7 missões resgatadas | silk_touch 1
+refugio:shop/4/minecraft/enchanted_book/unbreaking_3 | minecraft:enchanted_book | 650 | N/A | N/A | N/A | N/A | 7 missões resgatadas | unbreaking 3
+refugio:shop/4/minecraft/netherite_axe/efficiency_5+mending_1+sharpness_5+unbreaking_3 | minecraft:netherite_axe | 6000 | N/A | N/A | N/A | N/A | 7 missões resgatadas | efficiency 5, sharpness 5, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_boots/depth_strider_3+feather_falling_4+mending_1+protection_4+unbreaking_3 | minecraft:netherite_boots | 7200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4, feather_falling 4, depth_strider 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_chestplate/mending_1+protection_4+thorns_3+unbreaking_3 | minecraft:netherite_chestplate | 8500 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4, thorns 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_helmet/mending_1+protection_4+respiration_3+unbreaking_3 | minecraft:netherite_helmet | 6800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4, respiration 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_leggings/mending_1+protection_4+swift_sneak_3+unbreaking_3 | minecraft:netherite_leggings | 7800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | protection 4, swift_sneak 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_pickaxe/efficiency_5+fortune_3+mending_1+unbreaking_3 | minecraft:netherite_pickaxe | 7200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | efficiency 5, fortune 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/netherite_sword/looting_3+mending_1+sharpness_5+unbreaking_3 | minecraft:netherite_sword | 5200 | N/A | N/A | N/A | N/A | 7 missões resgatadas | sharpness 5, looting 3, unbreaking 3, mending 1
+refugio:shop/4/minecraft/trident/channeling_1+loyalty_3+unbreaking_3 | minecraft:trident | 2800 | N/A | N/A | N/A | N/A | 7 missões resgatadas | loyalty 3, channeling 1, unbreaking 3
+
+ITENS VENDÁVEIS — ALLOWLIST
+Total de itens vanilla autorizados: 592. Valor recebido é por unidade.
+Formato: item | vender/unidade | menor preço de compra (se houver)
+minecraft:acacia_button | 1 | 2 moeda(s)/unidade
+minecraft:acacia_door | 1 | 2 moeda(s)/unidade
+minecraft:acacia_fence | 1 | 2 moeda(s)/unidade
+minecraft:acacia_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:acacia_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:acacia_leaves | 1 | 2 moeda(s)/unidade
+minecraft:acacia_log | 1 | 4 moeda(s)/unidade
+minecraft:acacia_planks | 1 | 2 moeda(s)/unidade
+minecraft:acacia_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:acacia_sapling | 1 | 1 moeda(s)/unidade
+minecraft:acacia_sign | 1 | 2 moeda(s)/unidade
+minecraft:acacia_slab | 1 | 2 moeda(s)/unidade
+minecraft:acacia_stairs | 1 | 2 moeda(s)/unidade
+minecraft:acacia_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:acacia_wood | 1 | 4 moeda(s)/unidade
+minecraft:allium | 1 | 2 moeda(s)/unidade
+minecraft:amethyst_shard | 2 | 8 moeda(s)/unidade
+minecraft:ancient_debris | 50 | 280 moeda(s)/unidade
+minecraft:andesite_slab | 1 | 2 moeda(s)/unidade
+minecraft:andesite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:andesite_wall | 1 | 2 moeda(s)/unidade
+minecraft:apple | 1 | 2 moeda(s)/unidade
+minecraft:arrow | 1 | 2 moeda(s)/unidade
+minecraft:azalea_leaves | 1 | 2 moeda(s)/unidade
+minecraft:azure_bluet | 1 | 2 moeda(s)/unidade
+minecraft:bamboo | 1 | 1 moeda(s)/unidade
+minecraft:bamboo_button | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_door | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_fence | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_mosaic_slab | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_mosaic_stairs | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_planks | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_sign | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_slab | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_stairs | 1 | 2 moeda(s)/unidade
+minecraft:bamboo_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:beef | 1 | 2 moeda(s)/unidade
+minecraft:beetroot | 1 | 1 moeda(s)/unidade
+minecraft:beetroot_seeds | 1 | 1 moeda(s)/unidade
+minecraft:birch_button | 1 | 2 moeda(s)/unidade
+minecraft:birch_door | 1 | 2 moeda(s)/unidade
+minecraft:birch_fence | 1 | 2 moeda(s)/unidade
+minecraft:birch_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:birch_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:birch_leaves | 1 | 2 moeda(s)/unidade
+minecraft:birch_log | 1 | 4 moeda(s)/unidade
+minecraft:birch_planks | 1 | 2 moeda(s)/unidade
+minecraft:birch_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:birch_sapling | 1 | 1 moeda(s)/unidade
+minecraft:birch_sign | 1 | 2 moeda(s)/unidade
+minecraft:birch_slab | 1 | 2 moeda(s)/unidade
+minecraft:birch_stairs | 1 | 2 moeda(s)/unidade
+minecraft:birch_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:birch_wood | 1 | 4 moeda(s)/unidade
+minecraft:black_concrete | 1 | 3 moeda(s)/unidade
+minecraft:black_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:black_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:black_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:black_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:black_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:black_wool | 1 | 3 moeda(s)/unidade
+minecraft:blackstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:blackstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:blackstone_wall | 1 | 2 moeda(s)/unidade
+minecraft:blaze_rod | 8 | 45 moeda(s)/unidade
+minecraft:blue_concrete | 1 | 3 moeda(s)/unidade
+minecraft:blue_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:blue_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:blue_orchid | 1 | 2 moeda(s)/unidade
+minecraft:blue_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:blue_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:blue_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:blue_wool | 1 | 3 moeda(s)/unidade
+minecraft:bone | 1 | não comprado na loja
+minecraft:bread | 1 | 4 moeda(s)/unidade
+minecraft:brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:bricks | 1 | 3 moeda(s)/unidade
+minecraft:brown_concrete | 1 | 3 moeda(s)/unidade
+minecraft:brown_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:brown_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:brown_mushroom | 1 | 2 moeda(s)/unidade
+minecraft:brown_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:brown_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:brown_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:brown_wool | 1 | 3 moeda(s)/unidade
+minecraft:cactus | 1 | 2 moeda(s)/unidade
+minecraft:cactus_flower | 1 | 2 moeda(s)/unidade
+minecraft:carrot | 1 | 2 moeda(s)/unidade
+minecraft:charcoal | 1 | 4 moeda(s)/unidade
+minecraft:cherry_button | 1 | 2 moeda(s)/unidade
+minecraft:cherry_door | 1 | 2 moeda(s)/unidade
+minecraft:cherry_fence | 1 | 2 moeda(s)/unidade
+minecraft:cherry_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:cherry_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:cherry_leaves | 1 | 2 moeda(s)/unidade
+minecraft:cherry_log | 1 | 4 moeda(s)/unidade
+minecraft:cherry_planks | 1 | 2 moeda(s)/unidade
+minecraft:cherry_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:cherry_sapling | 1 | 1 moeda(s)/unidade
+minecraft:cherry_sign | 1 | 2 moeda(s)/unidade
+minecraft:cherry_slab | 1 | 2 moeda(s)/unidade
+minecraft:cherry_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cherry_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:cherry_wood | 1 | 4 moeda(s)/unidade
+minecraft:chicken | 1 | 2 moeda(s)/unidade
+minecraft:chorus_flower | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_slab | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cinnabar_wall | 1 | 2 moeda(s)/unidade
+minecraft:clay | 1 | 3 moeda(s)/unidade
+minecraft:coal | 2 | 5 moeda(s)/unidade
+minecraft:coarse_dirt | 1 | 2 moeda(s)/unidade
+minecraft:cobbled_deepslate | 1 | 2 moeda(s)/unidade
+minecraft:cobbled_deepslate_slab | 1 | 2 moeda(s)/unidade
+minecraft:cobbled_deepslate_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cobbled_deepslate_wall | 1 | 2 moeda(s)/unidade
+minecraft:cobblestone | 1 | 1 moeda(s)/unidade
+minecraft:cobblestone_slab | 1 | 2 moeda(s)/unidade
+minecraft:cobblestone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cobblestone_wall | 1 | 2 moeda(s)/unidade
+minecraft:cocoa_beans | 1 | 2 moeda(s)/unidade
+minecraft:cod | 1 | 2 moeda(s)/unidade
+minecraft:cooked_beef | 1 | 5 moeda(s)/unidade
+minecraft:cooked_chicken | 1 | 4 moeda(s)/unidade
+minecraft:cooked_cod | 1 | 4 moeda(s)/unidade
+minecraft:cooked_mutton | 1 | 5 moeda(s)/unidade
+minecraft:cooked_porkchop | 1 | 5 moeda(s)/unidade
+minecraft:cooked_rabbit | 1 | 2 moeda(s)/unidade
+minecraft:cooked_salmon | 1 | 5 moeda(s)/unidade
+minecraft:cookie | 1 | 2 moeda(s)/unidade
+minecraft:copper_door | 1 | 2 moeda(s)/unidade
+minecraft:copper_ingot | 3 | 5 moeda(s)/unidade
+minecraft:copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:cornflower | 1 | 2 moeda(s)/unidade
+minecraft:crimson_button | 1 | 2 moeda(s)/unidade
+minecraft:crimson_door | 1 | 2 moeda(s)/unidade
+minecraft:crimson_fence | 1 | 2 moeda(s)/unidade
+minecraft:crimson_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:crimson_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:crimson_planks | 1 | 2 moeda(s)/unidade
+minecraft:crimson_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:crimson_sign | 1 | 2 moeda(s)/unidade
+minecraft:crimson_slab | 1 | 2 moeda(s)/unidade
+minecraft:crimson_stairs | 1 | 2 moeda(s)/unidade
+minecraft:crimson_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:cut_red_sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:cut_sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:cyan_concrete | 1 | 3 moeda(s)/unidade
+minecraft:cyan_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:cyan_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:cyan_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:cyan_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:cyan_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:cyan_wool | 1 | 3 moeda(s)/unidade
+minecraft:dandelion | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_button | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_door | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_fence | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_leaves | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_log | 1 | 4 moeda(s)/unidade
+minecraft:dark_oak_planks | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_sapling | 1 | 1 moeda(s)/unidade
+minecraft:dark_oak_sign | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_slab | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_stairs | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:dark_oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:dark_prismarine_slab | 1 | 2 moeda(s)/unidade
+minecraft:dark_prismarine_stairs | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_bricks | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_tile_slab | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_tile_stairs | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_tile_wall | 1 | 2 moeda(s)/unidade
+minecraft:deepslate_tiles | 1 | 2 moeda(s)/unidade
+minecraft:diamond | 30 | 120 moeda(s)/unidade
+minecraft:diorite_slab | 1 | 2 moeda(s)/unidade
+minecraft:diorite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:diorite_wall | 1 | 2 moeda(s)/unidade
+minecraft:dirt | 1 | 1 moeda(s)/unidade
+minecraft:dried_kelp | 1 | 2 moeda(s)/unidade
+minecraft:egg | 1 | 2 moeda(s)/unidade
+minecraft:emerald | 10 | 35 moeda(s)/unidade
+minecraft:end_stone_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:end_stone_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:end_stone_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:ender_pearl | 2 | 12 moeda(s)/unidade
+minecraft:exposed_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:exposed_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:exposed_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:exposed_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:feather | 1 | não comprado na loja
+minecraft:flowering_azalea_leaves | 1 | 2 moeda(s)/unidade
+minecraft:ghast_tear | 10 | 60 moeda(s)/unidade
+minecraft:glass | 1 | 3 moeda(s)/unidade
+minecraft:glow_berries | 1 | 2 moeda(s)/unidade
+minecraft:gold_ingot | 8 | 22 moeda(s)/unidade
+minecraft:granite_slab | 1 | 2 moeda(s)/unidade
+minecraft:granite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:granite_wall | 1 | 2 moeda(s)/unidade
+minecraft:grass_block | 1 | 2 moeda(s)/unidade
+minecraft:gravel | 1 | 1 moeda(s)/unidade
+minecraft:gray_concrete | 1 | 3 moeda(s)/unidade
+minecraft:gray_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:gray_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:gray_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:gray_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:gray_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:gray_wool | 1 | 3 moeda(s)/unidade
+minecraft:green_concrete | 1 | 3 moeda(s)/unidade
+minecraft:green_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:green_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:green_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:green_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:green_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:green_wool | 1 | 3 moeda(s)/unidade
+minecraft:gunpowder | 1 | não comprado na loja
+minecraft:hay_block | 4 | 12 moeda(s)/unidade
+minecraft:heavy_weighted_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:honey_bottle | 1 | 4 moeda(s)/unidade
+minecraft:honeycomb | 1 | 2 moeda(s)/unidade
+minecraft:iron_door | 1 | 2 moeda(s)/unidade
+minecraft:iron_ingot | 5 | 10 moeda(s)/unidade
+minecraft:iron_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:jungle_button | 1 | 2 moeda(s)/unidade
+minecraft:jungle_door | 1 | 2 moeda(s)/unidade
+minecraft:jungle_fence | 1 | 2 moeda(s)/unidade
+minecraft:jungle_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:jungle_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:jungle_leaves | 1 | 2 moeda(s)/unidade
+minecraft:jungle_log | 1 | 4 moeda(s)/unidade
+minecraft:jungle_planks | 1 | 2 moeda(s)/unidade
+minecraft:jungle_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:jungle_sapling | 1 | 1 moeda(s)/unidade
+minecraft:jungle_sign | 1 | 2 moeda(s)/unidade
+minecraft:jungle_slab | 1 | 2 moeda(s)/unidade
+minecraft:jungle_stairs | 1 | 2 moeda(s)/unidade
+minecraft:jungle_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:jungle_wood | 1 | 4 moeda(s)/unidade
+minecraft:lapis_lazuli | 2 | 5 moeda(s)/unidade
+minecraft:leather | 1 | não comprado na loja
+minecraft:light_blue_concrete | 1 | 3 moeda(s)/unidade
+minecraft:light_blue_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:light_blue_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:light_blue_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:light_blue_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:light_blue_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:light_blue_wool | 1 | 3 moeda(s)/unidade
+minecraft:light_gray_concrete | 1 | 3 moeda(s)/unidade
+minecraft:light_gray_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:light_gray_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:light_gray_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:light_gray_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:light_gray_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:light_gray_wool | 1 | 3 moeda(s)/unidade
+minecraft:light_weighted_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:lilac | 1 | 2 moeda(s)/unidade
+minecraft:lily_of_the_valley | 1 | 2 moeda(s)/unidade
+minecraft:lime_concrete | 1 | 3 moeda(s)/unidade
+minecraft:lime_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:lime_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:lime_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:lime_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:lime_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:lime_wool | 1 | 3 moeda(s)/unidade
+minecraft:magenta_concrete | 1 | 3 moeda(s)/unidade
+minecraft:magenta_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:magenta_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:magenta_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:magenta_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:magenta_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:magenta_wool | 1 | 3 moeda(s)/unidade
+minecraft:magma_cream | 1 | não comprado na loja
+minecraft:mangrove_button | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_door | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_fence | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_leaves | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_log | 1 | 4 moeda(s)/unidade
+minecraft:mangrove_planks | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_sign | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_slab | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_stairs | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:mangrove_wood | 1 | 4 moeda(s)/unidade
+minecraft:melon | 1 | 4 moeda(s)/unidade
+minecraft:melon_seeds | 1 | 1 moeda(s)/unidade
+minecraft:melon_slice | 1 | 2 moeda(s)/unidade
+minecraft:mossy_cobblestone_slab | 1 | 2 moeda(s)/unidade
+minecraft:mossy_cobblestone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:mossy_cobblestone_wall | 1 | 2 moeda(s)/unidade
+minecraft:mossy_stone_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:mossy_stone_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:mossy_stone_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:mossy_stone_bricks | 1 | 2 moeda(s)/unidade
+minecraft:mud | 1 | 2 moeda(s)/unidade
+minecraft:mud_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:mud_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:mud_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:mutton | 1 | 2 moeda(s)/unidade
+minecraft:mycelium | 1 | 3 moeda(s)/unidade
+minecraft:nether_brick_fence | 1 | 2 moeda(s)/unidade
+minecraft:nether_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:nether_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:nether_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:nether_wart | 1 | 4 moeda(s)/unidade
+minecraft:netherite_ingot | 250 | 1750 moeda(s)/unidade
+minecraft:netherite_scrap | 80 | 420 moeda(s)/unidade
+minecraft:oak_button | 1 | 2 moeda(s)/unidade
+minecraft:oak_door | 1 | 2 moeda(s)/unidade
+minecraft:oak_fence | 1 | 2 moeda(s)/unidade
+minecraft:oak_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:oak_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:oak_leaves | 1 | 2 moeda(s)/unidade
+minecraft:oak_log | 1 | 4 moeda(s)/unidade
+minecraft:oak_planks | 1 | 2 moeda(s)/unidade
+minecraft:oak_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:oak_sapling | 1 | 1 moeda(s)/unidade
+minecraft:oak_sign | 1 | 2 moeda(s)/unidade
+minecraft:oak_slab | 1 | 2 moeda(s)/unidade
+minecraft:oak_stairs | 1 | 2 moeda(s)/unidade
+minecraft:oak_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:obsidian | 1 | 12 moeda(s)/unidade
+minecraft:orange_concrete | 1 | 3 moeda(s)/unidade
+minecraft:orange_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:orange_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:orange_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:orange_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:orange_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:orange_tulip | 1 | 2 moeda(s)/unidade
+minecraft:orange_wool | 1 | 3 moeda(s)/unidade
+minecraft:oxeye_daisy | 1 | 2 moeda(s)/unidade
+minecraft:oxidized_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:oxidized_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:oxidized_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:oxidized_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:packed_mud | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_button | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_door | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_fence | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_leaves | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_log | 1 | 4 moeda(s)/unidade
+minecraft:pale_oak_planks | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_sapling | 1 | 1 moeda(s)/unidade
+minecraft:pale_oak_sign | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_slab | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_stairs | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:pale_oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:peony | 1 | 2 moeda(s)/unidade
+minecraft:petrified_oak_slab | 1 | 2 moeda(s)/unidade
+minecraft:phantom_membrane | 2 | não comprado na loja
+minecraft:pink_concrete | 1 | 3 moeda(s)/unidade
+minecraft:pink_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:pink_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:pink_petals | 1 | 2 moeda(s)/unidade
+minecraft:pink_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:pink_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:pink_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:pink_tulip | 1 | 2 moeda(s)/unidade
+minecraft:pink_wool | 1 | 3 moeda(s)/unidade
+minecraft:pitcher_plant | 1 | 2 moeda(s)/unidade
+minecraft:podzol | 1 | 2 moeda(s)/unidade
+minecraft:poisonous_potato | 1 | 2 moeda(s)/unidade
+minecraft:polished_andesite_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_andesite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_button | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_blackstone_wall | 1 | 2 moeda(s)/unidade
+minecraft:polished_cinnabar_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_cinnabar_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_cinnabar_wall | 1 | 2 moeda(s)/unidade
+minecraft:polished_deepslate | 1 | 2 moeda(s)/unidade
+minecraft:polished_deepslate_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_deepslate_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_deepslate_wall | 1 | 2 moeda(s)/unidade
+minecraft:polished_diorite_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_diorite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_granite_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_granite_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_sulfur_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_sulfur_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_sulfur_wall | 1 | 2 moeda(s)/unidade
+minecraft:polished_tuff_slab | 1 | 2 moeda(s)/unidade
+minecraft:polished_tuff_stairs | 1 | 2 moeda(s)/unidade
+minecraft:polished_tuff_wall | 1 | 2 moeda(s)/unidade
+minecraft:poppy | 1 | 2 moeda(s)/unidade
+minecraft:porkchop | 1 | 2 moeda(s)/unidade
+minecraft:potato | 1 | 2 moeda(s)/unidade
+minecraft:prismarine_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:prismarine_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:prismarine_crystals | 1 | 15 moeda(s)/unidade
+minecraft:prismarine_shard | 1 | 15 moeda(s)/unidade
+minecraft:prismarine_slab | 1 | 2 moeda(s)/unidade
+minecraft:prismarine_stairs | 1 | 2 moeda(s)/unidade
+minecraft:prismarine_wall | 1 | 2 moeda(s)/unidade
+minecraft:pufferfish | 1 | 2 moeda(s)/unidade
+minecraft:pumpkin | 1 | 3 moeda(s)/unidade
+minecraft:pumpkin_pie | 1 | 2 moeda(s)/unidade
+minecraft:pumpkin_seeds | 1 | 1 moeda(s)/unidade
+minecraft:purple_concrete | 1 | 3 moeda(s)/unidade
+minecraft:purple_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:purple_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:purple_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:purple_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:purple_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:purple_wool | 1 | 3 moeda(s)/unidade
+minecraft:purpur_slab | 1 | 2 moeda(s)/unidade
+minecraft:purpur_stairs | 1 | 2 moeda(s)/unidade
+minecraft:quartz | 2 | 6 moeda(s)/unidade
+minecraft:quartz_slab | 1 | 2 moeda(s)/unidade
+minecraft:quartz_stairs | 1 | 2 moeda(s)/unidade
+minecraft:rabbit | 1 | 2 moeda(s)/unidade
+minecraft:raw_copper | 2 | 3 moeda(s)/unidade
+minecraft:raw_gold | 6 | 18 moeda(s)/unidade
+minecraft:raw_iron | 4 | 8 moeda(s)/unidade
+minecraft:red_concrete | 1 | 3 moeda(s)/unidade
+minecraft:red_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:red_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:red_mushroom | 1 | 2 moeda(s)/unidade
+minecraft:red_nether_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:red_nether_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:red_nether_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:red_sand | 1 | 2 moeda(s)/unidade
+minecraft:red_sandstone | 1 | 2 moeda(s)/unidade
+minecraft:red_sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:red_sandstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:red_sandstone_wall | 1 | 2 moeda(s)/unidade
+minecraft:red_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:red_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:red_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:red_tulip | 1 | 2 moeda(s)/unidade
+minecraft:red_wool | 1 | 3 moeda(s)/unidade
+minecraft:redstone | 2 | 5 moeda(s)/unidade
+minecraft:resin_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:resin_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:resin_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:rooted_dirt | 1 | 2 moeda(s)/unidade
+minecraft:rose_bush | 1 | 2 moeda(s)/unidade
+minecraft:rotten_flesh | 1 | não comprado na loja
+minecraft:salmon | 1 | 2 moeda(s)/unidade
+minecraft:sand | 1 | 1 moeda(s)/unidade
+minecraft:sandstone | 1 | 2 moeda(s)/unidade
+minecraft:sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:sandstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:sandstone_wall | 1 | 2 moeda(s)/unidade
+minecraft:shulker_shell | 12 | 80 moeda(s)/unidade
+minecraft:slime_ball | 1 | não comprado na loja
+minecraft:smooth_quartz_slab | 1 | 2 moeda(s)/unidade
+minecraft:smooth_quartz_stairs | 1 | 2 moeda(s)/unidade
+minecraft:smooth_red_sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:smooth_red_sandstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:smooth_sandstone_slab | 1 | 2 moeda(s)/unidade
+minecraft:smooth_sandstone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:smooth_stone_slab | 1 | 2 moeda(s)/unidade
+minecraft:spider_eye | 1 | não comprado na loja
+minecraft:spruce_button | 1 | 2 moeda(s)/unidade
+minecraft:spruce_door | 1 | 2 moeda(s)/unidade
+minecraft:spruce_fence | 1 | 2 moeda(s)/unidade
+minecraft:spruce_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:spruce_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:spruce_leaves | 1 | 2 moeda(s)/unidade
+minecraft:spruce_log | 1 | 4 moeda(s)/unidade
+minecraft:spruce_planks | 1 | 2 moeda(s)/unidade
+minecraft:spruce_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:spruce_sapling | 1 | 1 moeda(s)/unidade
+minecraft:spruce_sign | 1 | 2 moeda(s)/unidade
+minecraft:spruce_slab | 1 | 2 moeda(s)/unidade
+minecraft:spruce_stairs | 1 | 2 moeda(s)/unidade
+minecraft:spruce_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:spruce_wood | 1 | 4 moeda(s)/unidade
+minecraft:stone | 1 | 1 moeda(s)/unidade
+minecraft:stone_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:stone_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:stone_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:stone_bricks | 1 | 2 moeda(s)/unidade
+minecraft:stone_button | 1 | 2 moeda(s)/unidade
+minecraft:stone_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:stone_slab | 1 | 2 moeda(s)/unidade
+minecraft:stone_stairs | 1 | 2 moeda(s)/unidade
+minecraft:string | 1 | não comprado na loja
+minecraft:stripped_acacia_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_acacia_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_birch_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_birch_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_cherry_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_cherry_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_dark_oak_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_dark_oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_jungle_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_jungle_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_mangrove_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_mangrove_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_oak_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_pale_oak_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_pale_oak_wood | 1 | 4 moeda(s)/unidade
+minecraft:stripped_spruce_log | 1 | 4 moeda(s)/unidade
+minecraft:stripped_spruce_wood | 1 | 4 moeda(s)/unidade
+minecraft:sugar_cane | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_slab | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_stairs | 1 | 2 moeda(s)/unidade
+minecraft:sulfur_wall | 1 | 2 moeda(s)/unidade
+minecraft:sunflower | 1 | 2 moeda(s)/unidade
+minecraft:sweet_berries | 1 | 2 moeda(s)/unidade
+minecraft:terracotta | 1 | 2 moeda(s)/unidade
+minecraft:tinted_glass | 1 | 4 moeda(s)/unidade
+minecraft:torchflower | 1 | 2 moeda(s)/unidade
+minecraft:tropical_fish | 1 | 2 moeda(s)/unidade
+minecraft:tuff_brick_slab | 1 | 2 moeda(s)/unidade
+minecraft:tuff_brick_stairs | 1 | 2 moeda(s)/unidade
+minecraft:tuff_brick_wall | 1 | 2 moeda(s)/unidade
+minecraft:tuff_slab | 1 | 2 moeda(s)/unidade
+minecraft:tuff_stairs | 1 | 2 moeda(s)/unidade
+minecraft:tuff_wall | 1 | 2 moeda(s)/unidade
+minecraft:warped_button | 1 | 2 moeda(s)/unidade
+minecraft:warped_door | 1 | 2 moeda(s)/unidade
+minecraft:warped_fence | 1 | 2 moeda(s)/unidade
+minecraft:warped_fence_gate | 1 | 2 moeda(s)/unidade
+minecraft:warped_hanging_sign | 1 | 2 moeda(s)/unidade
+minecraft:warped_planks | 1 | 2 moeda(s)/unidade
+minecraft:warped_pressure_plate | 1 | 2 moeda(s)/unidade
+minecraft:warped_sign | 1 | 2 moeda(s)/unidade
+minecraft:warped_slab | 1 | 2 moeda(s)/unidade
+minecraft:warped_stairs | 1 | 2 moeda(s)/unidade
+minecraft:warped_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:waxed_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:waxed_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:waxed_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:waxed_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:waxed_exposed_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:waxed_exposed_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:waxed_exposed_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:waxed_exposed_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:waxed_oxidized_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:waxed_oxidized_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:waxed_oxidized_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:waxed_oxidized_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:waxed_weathered_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:waxed_weathered_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:waxed_weathered_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:waxed_weathered_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:weathered_copper_door | 1 | 2 moeda(s)/unidade
+minecraft:weathered_copper_trapdoor | 1 | 2 moeda(s)/unidade
+minecraft:weathered_cut_copper_slab | 1 | 2 moeda(s)/unidade
+minecraft:weathered_cut_copper_stairs | 1 | 2 moeda(s)/unidade
+minecraft:wheat | 1 | 1 moeda(s)/unidade
+minecraft:wheat_seeds | 1 | 1 moeda(s)/unidade
+minecraft:white_concrete | 1 | 3 moeda(s)/unidade
+minecraft:white_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:white_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:white_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:white_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:white_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:white_tulip | 1 | 2 moeda(s)/unidade
+minecraft:white_wool | 1 | 3 moeda(s)/unidade
+minecraft:yellow_concrete | 1 | 3 moeda(s)/unidade
+minecraft:yellow_concrete_powder | 1 | 3 moeda(s)/unidade
+minecraft:yellow_glazed_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:yellow_stained_glass | 1 | 4 moeda(s)/unidade
+minecraft:yellow_stained_glass_pane | 1 | 4 moeda(s)/unidade
+minecraft:yellow_terracotta | 1 | 3 moeda(s)/unidade
+minecraft:yellow_wool | 1 | 3 moeda(s)/unidade
+
+REGRAS E ITENS RESTRITOS
+- A loja de compra não varre todos os itens do jogo: usa preços fixos e famílias vanilla expressamente autorizadas.
+- Spawners, ovos de invocação, comandos, blocos técnicos, itens de operador, barreira, bedrock, portais e molduras de portal do End ficam excluídos.
+- Recompensas de missão recebem marca persistente e não podem ser vendidas; moeda e itens únicos também não entram na allowlist.
+- Pacotes comuns aplicam piso contra revenda direta e conversões verificadas (como compactação de minérios, tronco→tábuas, tábuas→lajes e vidro→vidraças); preços de outras receitas são definidos separadamente.
+- Venda parcial é confirmada para exatamente a quantidade escolhida; se a pilha ou seus componentes mudarem antes da confirmação, a operação é cancelada.
+- Esta lista considera somente o registro vanilla do Minecraft 26.2. Itens de outros mods não entram na loja.

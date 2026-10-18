@@ -1,0 +1,20 @@
+{
+	"required": true,
+	"package": "com.felpz.refugio.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ExampleMixin",
+		"PlayerAbilityMixin",
+		"LivingEntityAbilityMixin",
+		"BowItemAbilityMixin",
+		"AbstractArrowAbilityMixin",
+		"ConsumableAbilityMixin",
+		"ItemStackAbilityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

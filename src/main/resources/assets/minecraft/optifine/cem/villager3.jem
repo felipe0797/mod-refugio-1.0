@@ -1,0 +1,27 @@
+{
+  "texture": "refugio:textures/entity/villager/refugio_eldrin",
+  "textureSize": [64, 64],
+  "shadowSize": 0.25,
+  "models": [
+    {"part": "head", "id": "player_head", "attach": false, "boxes": [{"textureOffset": [0, 0], "coordinates": [-4, -8, -4, 8, 8, 8]}]},
+    {"part": "headwear", "id": "player_headwear", "attach": false, "boxes": [{"textureOffset": [32, 0], "coordinates": [-4.25, -8.25, -4.25, 8.5, 8.5, 8.5]}]},
+    {"part": "headwear2", "id": "hide_villager_hat_rim", "attach": false, "scale": 0.0, "boxes": []},
+    {"part": "nose", "id": "hide_villager_nose", "attach": false, "scale": 0.0, "boxes": []},
+    {"part": "body", "id": "player_body", "attach": false, "boxes": [{"textureOffset": [16, 16], "coordinates": [-4, 0, -2, 8, 12, 4]}]},
+    {"part": "bodywear", "id": "player_bodywear", "attach": false, "boxes": [{"textureOffset": [16, 32], "coordinates": [-4.25, -0.25, -2.25, 8.5, 12.5, 4.5]}]},
+    {"part": "arms", "id": "player_arms", "attach": false, "boxes": [
+      {"textureOffset": [40, 16], "coordinates": [-8, -2, -2, 4, 12, 4]},
+      {"textureOffset": [40, 32], "coordinates": [-8.25, -2.25, -2.25, 4.5, 12.5, 4.5]},
+      {"textureOffset": [32, 48], "coordinates": [4, -2, -2, 4, 12, 4]},
+      {"textureOffset": [48, 48], "coordinates": [3.75, -2.25, -2.25, 4.5, 12.5, 4.5]}
+    ]},
+    {"part": "right_leg", "id": "player_right_leg", "attach": false, "boxes": [
+      {"textureOffset": [0, 16], "coordinates": [-2, 0, -2, 4, 12, 4]},
+      {"textureOffset": [0, 32], "coordinates": [-2.25, -0.25, -2.25, 4.5, 12.5, 4.5]}
+    ]},
+    {"part": "left_leg", "id": "player_left_leg", "attach": false, "boxes": [
+      {"textureOffset": [16, 48], "coordinates": [-2, 0, -2, 4, 12, 4]},
+      {"textureOffset": [0, 48], "coordinates": [-2.25, -0.25, -2.25, 4.5, 12.5, 4.5]}
+    ]}
+  ]
+}

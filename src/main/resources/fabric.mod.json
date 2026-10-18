@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "refugio",
+	"version": "${version}",
+	"name": "Refugio",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/refugio/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.felpz.refugio.Refugio"
+		],
+		"client": [
+			"com.felpz.refugio.client.RefugioClient"
+		]
+	},
+	"mixins": [
+		"refugio.mixins.json",
+		{
+			"config": "refugio.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"entity_model_features": "*"
+	}
+}

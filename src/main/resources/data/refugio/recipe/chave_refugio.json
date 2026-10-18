@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [" IG", " BD", "I  "],
+  "key": {"I":"minecraft:iron_ingot","G":"minecraft:gold_ingot","B":"minecraft:lapis_lazuli","D":"minecraft:blue_dye"},
+  "result": {"id":"refugio:chave_refugio","count":1}
+}

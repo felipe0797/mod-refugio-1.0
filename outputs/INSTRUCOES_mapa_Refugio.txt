@@ -1,0 +1,19 @@
+﻿MAPA DO REFÚGIO — STONEHILL (recorte utilizado pelo mod)
+
+Este pacote contém exatamente os dados MCA incluídos no mod: region (terreno), entities (entidades) e poi (pontos de interesse), nove regiões por pasta. É o recorte do mapa usado na dimensão personalizada do Refúgio, não um mundo vanilla independente.
+
+COMO EDITAR NO MINECRAFT
+1. Faça uma cópia de segurança do seu mundo antes de alterar arquivos.
+2. Feche completamente o Minecraft.
+3. Extraia a pasta "stonehill_world" deste ZIP.
+4. No save que usa o mod, localize: dimensions\refugio\stonehill\
+5. Substitua as pastas region, entities e poi pelas pastas extraídas. Não apague outros arquivos da dimensão, como o marcador de instalação, antes de confirmar o backup.
+6. Abra o mundo com a mesma versão do Minecraft e do mod, edite o mapa e use /save-all; depois feche o jogo.
+
+PARA DEVOLVER A EDIÇÃO
+Copie as pastas region, entities e poi do caminho dimensions\refugio\stonehill\ do seu save editado para uma nova cópia deste ZIP, preservando a estrutura das pastas. Envie essa cópia editada. Não envie o save inteiro, a menos que seja necessário.
+
+IMPORTANTE
+- O mod usa estes arquivos como dados de chunks e os instala no caminho da dimensão personalizada acima.
+- Não tente abrir diretamente os arquivos .mca como se fossem um mapa; use o save com o mod carregado.
+- Não edite nem copie os arquivos enquanto o mundo estiver aberto, pois o Minecraft pode sobrescrever as mudanças ao salvar.
