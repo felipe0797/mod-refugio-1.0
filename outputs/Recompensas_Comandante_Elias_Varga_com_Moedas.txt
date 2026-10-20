@@ -1,0 +1,655 @@
+REFÚGIO — SISTEMA DE RECOMPENSAS DO COMANDANTE ELIAS VARGA
+Documento de especificação para implementação
+Versão: proposta inicial
+Objetivo: definir as 60 recompensas por abates acumulados de zumbis e o funcionamento do sistema.
+
+============================================================
+1. VISÃO GERAL
+============================================================
+
+O Comandante Elias Varga é um NPC da facção "Última Linha". Ele reconhece os jogadores que enfrentam zumbis perigosos e concede recompensas conforme o total acumulado de zumbis mortos pelo jogador.
+
+A progressão foi pensada para um modpack em que os zumbis são muito perigosos. Por isso, as primeiras recompensas já são valiosas. Os prêmios não devem parecer insignificantes depois de uma luta difícil.
+
+Marcos de recompensa:
+- De 10 a 200 abates: a cada 10 abates.
+- De 220 a 1000 abates: a cada 20 abates.
+- Total: 60 marcos únicos.
+
+Importante: os itens e encantamentos abaixo são uma proposta de balanceamento. O responsável pela implementação deve verificar quais itens, encantamentos e efeitos existem na versão do Minecraft e nos mods instalados. Se um item opcional não existir, deve ser substituído por uma alternativa configurável, sem quebrar o sistema.
+
+============================================================
+2. LISTA DETALHADA DAS RECOMPENSAS
+============================================================
+
+POLÍTICA DE MOEDAS ADICIONAL
+- Cada marco concede moedas do Refúgio além dos itens listados.
+- Proposta de balanceamento: o marco n concede 50 + 15 × (n − 1) moedas, em que n é o número do marco (01 a 60).
+- Exemplos: Marco 01 = 50; Marco 20 = 335; Marco 21 = 350; Marco 60 = 935 moedas.
+- Total máximo da trilha: 29.550 moedas, caso os 60 marcos sejam resgatados.
+- As moedas são creditadas somente junto com o resgate confirmado, uma única vez e pelo servidor; inventário cheio mantém o resgate pendente e não paga as moedas antes da entrega completa.
+
+MARCO 01 — 10 ZUMBIS
+Nome: Kit de Caçador
+Recompensas:
+- 50 moedas do Refúgio.
+- 32 bifes assados.
+- 16 maçãs douradas.
+- 1 espada de ferro com Afiação II.
+- 32 tochas.
+Objetivo: dar comida, iluminação e uma arma inicial útil para continuar enfrentando as hordas.
+
+MARCO 02 — 20 ZUMBIS
+Nome: Equipamento de Combate
+Recompensas:
+- 65 moedas do Refúgio.
+- 1 conjunto completo de armadura de ferro (capacete, peitoral, calças e botas).
+- 1 escudo.
+- 16 lingotes de ferro.
+- 4 maçãs douradas.
+Objetivo: aumentar a sobrevivência e oferecer materiais para reparos e fabricação.
+
+MARCO 03 — 30 ZUMBIS
+Nome: Bolsa de Recursos Raros
+Recompensas:
+- 80 moedas do Refúgio.
+- 8 diamantes.
+- 16 lingotes de ouro.
+- 16 esmeraldas.
+- 8 maçãs douradas.
+Objetivo: fornecer recursos de valor para fabricação, trocas e progressão.
+
+MARCO 04 — 40 ZUMBIS
+Nome: Arsenal do Soldado
+Recompensas:
+- 95 moedas do Refúgio.
+- 1 espada de diamante com Afiação II.
+- 1 arco com Força II.
+- 64 flechas.
+- 16 pérolas do Ender.
+Objetivo: introduzir armas mais fortes e uma opção de combate à distância.
+
+MARCO 05 — 50 ZUMBIS
+Nome: Armadura de Elite
+Recompensas:
+- 110 moedas do Refúgio.
+- 1 armadura de diamante completa: capacete, peitoral, calças e botas.
+- Cada peça com Proteção I.
+- 16 diamantes.
+Objetivo: marcar a primeira grande conquista defensiva do jogador.
+
+MARCO 06 — 60 ZUMBIS
+Nome: Suprimentos de Campanha
+Recompensas:
+- 125 moedas do Refúgio.
+- 32 maçãs douradas.
+- 32 bifes assados.
+Objetivo: garantir suprimentos para novas expedições.
+
+MARCO 07 — 70 ZUMBIS
+Nome: Ferramenta de Minerador Veterano
+Recompensas:
+- 140 moedas do Refúgio.
+- 1 picareta de diamante com Eficiência III e Fortuna II.
+Objetivo: acelerar a coleta de recursos.
+
+MARCO 08 — 80 ZUMBIS
+Nome: Cofre de Recursos
+Recompensas:
+- 155 moedas do Refúgio.
+- 24 diamantes.
+- 16 esmeraldas.
+Objetivo: apoiar a fabricação de equipamentos e trocas.
+
+MARCO 09 — 90 ZUMBIS
+Nome: Arqueiro de Elite
+Recompensas:
+- 170 moedas do Refúgio.
+- 1 arco com Força III e Chama.
+- 64 flechas.
+Objetivo: melhorar o combate à distância.
+
+MARCO 10 — 100 ZUMBIS
+Nome: Veterano da Última Linha
+Recompensas:
+- 185 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção II.
+- 1 espada de diamante com Afiação III.
+Objetivo: oferecer um conjunto de combate sólido para a próxima fase.
+
+MARCO 11 — 110 ZUMBIS
+Nome: Sobrevivente Implacável
+Recompensas:
+- 200 moedas do Refúgio.
+- 2 totens da imortalidade.
+Objetivo: oferecer uma chance extra de sobrevivência em situações extremas.
+Nota: se totens forem raros demais para essa fase, reduzir para 1 ou trocar por item de sobrevivência configurável.
+
+MARCO 12 — 120 ZUMBIS
+Nome: Reserva de Guerra
+Recompensas:
+- 215 moedas do Refúgio.
+- 32 diamantes.
+- 16 maçãs douradas.
+Objetivo: fornecer recursos e cura para combates prolongados.
+
+MARCO 13 — 130 ZUMBIS
+Nome: Besta do Combatente
+Recompensas:
+- 230 moedas do Refúgio.
+- 1 besta com Perfuração III e Recarga Rápida II.
+Objetivo: oferecer uma arma de longo alcance diferente do arco.
+
+MARCO 14 — 140 ZUMBIS
+Nome: Bolsa do Explorador
+Recompensas:
+- 245 moedas do Refúgio.
+- 32 pérolas do Ender.
+- 16 maçãs douradas.
+Objetivo: facilitar deslocamentos e recuperação entre combates.
+
+MARCO 15 — 150 ZUMBIS
+Nome: Lâmina Incendiária
+Recompensas:
+- 260 moedas do Refúgio.
+- 1 espada de diamante com Afiação IV e Aspecto Flamejante II.
+Objetivo: oferecer dano elevado e um efeito ofensivo especial.
+
+MARCO 16 — 160 ZUMBIS
+Nome: Equipamento de Mobilidade
+Recompensas:
+- 275 moedas do Refúgio.
+- 1 elytra.
+- 64 fogos de artifício.
+Objetivo: liberar mobilidade avançada.
+Nota: elytra e fogos podem ser substituídos por uma recompensa de mobilidade compatível com a progressão do modpack.
+
+MARCO 17 — 170 ZUMBIS
+Nome: Ferramentas do Veterano
+Recompensas:
+- 290 moedas do Refúgio.
+- 1 picareta de diamante com Eficiência IV e Fortuna III.
+- 1 machado de diamante com Eficiência III.
+- 1 pá de diamante com Eficiência III.
+Objetivo: reduzir o tempo de coleta de materiais.
+
+MARCO 18 — 180 ZUMBIS
+Nome: Conhecimento de Encantamento
+Recompensas:
+- 305 moedas do Refúgio.
+- 1 livro encantado com Remendo.
+- 1 livro encantado com Proteção IV.
+Objetivo: permitir melhorias escolhidas pelo jogador.
+Nota: confirmar compatibilidade dos encantamentos com a versão e os mods.
+
+MARCO 19 — 190 ZUMBIS
+Nome: Último Recurso
+Recompensas:
+- 320 moedas do Refúgio.
+- 1 maçã dourada encantada.
+- 1 totem da imortalidade.
+Objetivo: recompensar o jogador com itens de emergência raros.
+
+MARCO 20 — 200 ZUMBIS
+Nome: Campeão da Primeira Campanha
+Recompensas:
+- 335 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção IV.
+- 1 espada de diamante com Afiação V.
+Objetivo: concluir a primeira etapa com um conjunto de alto nível.
+
+MARCO 21 — 220 ZUMBIS
+Nome: Arsenal de Diamante
+Recompensas:
+- 350 moedas do Refúgio.
+- 32 diamantes.
+- 16 lingotes de ouro.
+- 16 esmeraldas.
+Objetivo: financiar novas melhorias de equipamentos.
+
+MARCO 22 — 240 ZUMBIS
+Nome: Espadachim Veterano
+Recompensas:
+- 365 moedas do Refúgio.
+- 1 espada de diamante com Afiação IV.
+- 1 espada de diamante reserva sem encantamentos.
+Objetivo: melhorar o combate corpo a corpo e fornecer uma arma reserva.
+
+MARCO 23 — 260 ZUMBIS
+Nome: Mestre do Arco
+Recompensas:
+- 380 moedas do Refúgio.
+- 1 arco com Força IV e Chama.
+- 1 pilha de 64 flechas.
+Objetivo: aumentar a eficiência contra inimigos perigosos à distância.
+
+MARCO 24 — 280 ZUMBIS
+Nome: Minerador de Elite
+Recompensas:
+- 395 moedas do Refúgio.
+- 1 picareta de diamante com Eficiência IV e Fortuna III.
+- 16 diamantes.
+Objetivo: melhorar a extração de recursos raros.
+
+MARCO 25 — 300 ZUMBIS
+Nome: Guardião de Diamante
+Recompensas:
+- 410 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção III.
+- 1 escudo.
+Objetivo: reforçar a defesa contra grupos de inimigos.
+
+MARCO 26 — 320 ZUMBIS
+Nome: Reserva de Suprimentos
+Recompensas:
+- 425 moedas do Refúgio.
+- 32 maçãs douradas.
+- 64 bifes assados.
+Objetivo: preparar o jogador para expedições longas.
+
+MARCO 27 — 340 ZUMBIS
+Nome: Combatente do Tridente
+Recompensas:
+- 440 moedas do Refúgio.
+- 1 tridente com Lealdade II, se disponível na versão/modpack.
+Objetivo: adicionar uma arma versátil.
+Alternativa: se o tridente não estiver disponível ou for incompatível, entregar uma arma especial configurada.
+
+MARCO 28 — 360 ZUMBIS
+Nome: Bolsa de Teleporte
+Recompensas:
+- 455 moedas do Refúgio.
+- 32 pérolas do Ender.
+- 1 bússola.
+- 1 relógio.
+Objetivo: facilitar exploração e deslocamento.
+
+MARCO 29 — 380 ZUMBIS
+Nome: Mestre da Besta
+Recompensas:
+- 470 moedas do Refúgio.
+- 1 besta com Perfuração IV e Recarga Rápida III.
+- 64 flechas.
+Objetivo: entregar uma arma de longo alcance avançada.
+
+MARCO 30 — 400 ZUMBIS
+Nome: Guardião Veterano
+Recompensas:
+- 485 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção IV e Durabilidade III.
+Objetivo: fornecer proteção consistente para a etapa avançada.
+
+MARCO 31 — 420 ZUMBIS
+Nome: Cofre do Caçador
+Recompensas:
+- 500 moedas do Refúgio.
+- 32 diamantes.
+- 32 esmeraldas.
+Objetivo: fornecer recursos para fabricação e comércio.
+
+MARCO 32 — 440 ZUMBIS
+Nome: Lâmina de Guerra
+Recompensas:
+- 515 moedas do Refúgio.
+- 1 espada de diamante com Afiação IV e Saque III.
+Objetivo: aumentar dano e recompensas de criaturas, conforme a mecânica normal do jogo.
+
+MARCO 33 — 460 ZUMBIS
+Nome: Arqueiro de Guerra
+Recompensas:
+- 530 moedas do Refúgio.
+- 1 arco com Força IV, Chama e Impacto II.
+- 64 flechas.
+Objetivo: ampliar dano e controle de distância.
+
+MARCO 34 — 480 ZUMBIS
+Nome: Ferramenta de Fortuna
+Recompensas:
+- 545 moedas do Refúgio.
+- 1 picareta de diamante com Eficiência V e Fortuna III.
+Objetivo: ferramenta de mineração de alto desempenho.
+
+MARCO 35 — 500 ZUMBIS
+Nome: Arsenal Completo
+Recompensas:
+- 560 moedas do Refúgio.
+- 1 espada de diamante com Afiação V.
+- 1 arco com Força IV.
+- 1 conjunto completo de ferramentas de diamante com encantamentos moderados.
+Objetivo: celebrar metade do caminho até 1.000 abates com um arsenal completo.
+
+MARCO 36 — 520 ZUMBIS
+Nome: Reserva de Ouro
+Recompensas:
+- 575 moedas do Refúgio.
+- 32 maçãs douradas.
+- 32 lingotes de ouro.
+- 32 bifes assados.
+Objetivo: oferecer cura, comida e recursos valiosos.
+
+MARCO 37 — 540 ZUMBIS
+Nome: Armadura de Diamante Suprema
+Recompensas:
+- 590 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção IV e Durabilidade III.
+Objetivo: fornecer uma defesa confiável antes da etapa de netherita.
+
+MARCO 38 — 560 ZUMBIS
+Nome: Explorador dos Céus
+Recompensas:
+- 605 moedas do Refúgio.
+- 1 elytra, caso ainda não tenha sido entregue ou caso o jogador precise de uma reserva.
+- 64 fogos de artifício.
+Objetivo: recompensar exploração e mobilidade.
+Nota: para evitar duplicação indesejada, a elytra pode ser substituída por outra recompensa configurada.
+
+MARCO 39 — 580 ZUMBIS
+Nome: Mestre dos Encantamentos
+Recompensas:
+- 620 moedas do Refúgio.
+- 2 livros encantados com Remendo.
+- 2 livros encantados com Proteção IV.
+Objetivo: permitir aprimorar várias peças de equipamento.
+
+MARCO 40 — 600 ZUMBIS
+Nome: Primeira Lâmina de Netherita
+Recompensas:
+- 635 moedas do Refúgio.
+- 1 espada de netherita sem encantamentos.
+- 16 lingotes de ouro.
+Objetivo: introduzir a netherita como marco de alto prestígio.
+
+MARCO 41 — 620 ZUMBIS
+Nome: Fragmentos de Guerra
+Recompensas:
+- 650 moedas do Refúgio.
+- 1 lingote de netherita.
+- 16 diamantes.
+Objetivo: contribuir para melhorias de netherita sem entregar um conjunto inteiro de uma vez.
+
+MARCO 42 — 640 ZUMBIS
+Nome: Arco do Executor
+Recompensas:
+- 665 moedas do Refúgio.
+- 1 arco com Força V, Chama e Impacto II.
+- 64 flechas.
+Objetivo: oferecer um arco de nível máximo.
+
+MARCO 43 — 660 ZUMBIS
+Nome: Armadura Reforçada
+Recompensas:
+- 680 moedas do Refúgio.
+- 1 armadura de diamante completa com Proteção IV, Durabilidade III e espinhos moderados, se desejado.
+Objetivo: oferecer uma alternativa defensiva forte.
+Nota: verificar se os encantamentos são compatíveis e se não excedem os limites desejados do modpack.
+
+MARCO 44 — 680 ZUMBIS
+Nome: Núcleo de Energia
+Recompensas:
+- 695 moedas do Refúgio.
+- 1 farol.
+Objetivo: conceder um item de construção avançado.
+Nota: por ser muito poderoso, considerar substituir por materiais para construir um farol se isso for mais adequado.
+
+MARCO 45 — 700 ZUMBIS
+Nome: Armadura do Comandante
+Recompensas:
+- 710 moedas do Refúgio.
+- 1 armadura de netherita completa sem encantamentos.
+Objetivo: marcar a entrada na fase de equipamento máximo.
+
+MARCO 46 — 720 ZUMBIS
+Nome: Espada do Executor
+Recompensas:
+- 725 moedas do Refúgio.
+- 1 espada de netherita com Afiação V.
+- 1 livro encantado com Saque III.
+Objetivo: oferecer uma arma de alto nível.
+
+MARCO 47 — 740 ZUMBIS
+Nome: Picareta do Comandante
+Recompensas:
+- 740 moedas do Refúgio.
+- 1 picareta de netherita com Eficiência V e Fortuna III.
+Objetivo: fornecer uma ferramenta de mineração avançada.
+
+MARCO 48 — 760 ZUMBIS
+Nome: Última Chance
+Recompensas:
+- 755 moedas do Refúgio.
+- 1 totem da imortalidade.
+- 16 maçãs douradas.
+Objetivo: reforçar a sobrevivência em combates extremos.
+
+MARCO 49 — 780 ZUMBIS
+Nome: Tesouro Proibido
+Recompensas:
+- 770 moedas do Refúgio.
+- 2 maçãs douradas encantadas.
+- 16 diamantes.
+Objetivo: conceder itens muito raros antes da etapa final.
+
+MARCO 50 — 800 ZUMBIS
+Nome: Conjunto do Executor
+Recompensas:
+- 785 moedas do Refúgio.
+- 1 armadura de netherita completa com Proteção IV e Durabilidade III.
+- 1 espada de netherita com Afiação V.
+Objetivo: fornecer um conjunto de combate de elite.
+
+MARCO 51 — 820 ZUMBIS
+Nome: Guardião Imortal
+Recompensas:
+- 800 moedas do Refúgio.
+- 2 totens da imortalidade.
+- 32 maçãs douradas.
+Objetivo: aumentar as chances de sobrevivência em situações extremas.
+
+MARCO 52 — 840 ZUMBIS
+Nome: Lâmina Incandescente
+Recompensas:
+- 815 moedas do Refúgio.
+- 1 espada de netherita com Afiação V e Aspecto Flamejante II.
+Objetivo: arma corpo a corpo de grande poder.
+
+MARCO 53 — 860 ZUMBIS
+Nome: Arco da Última Linha
+Recompensas:
+- 830 moedas do Refúgio.
+- 1 arco com Força V, Chama, Impacto II e Infinidade.
+Objetivo: arma de longo alcance de alto nível.
+Nota: verificar compatibilidade entre encantamentos na versão do Minecraft utilizada.
+
+MARCO 54 — 880 ZUMBIS
+Nome: Muralha de Netherita
+Recompensas:
+- 845 moedas do Refúgio.
+- 1 armadura de netherita completa com Proteção IV e Durabilidade III.
+- 1 escudo.
+Objetivo: reforçar defesa para o trecho final.
+
+MARCO 55 — 900 ZUMBIS
+Nome: Estrela do Comandante
+Recompensas:
+- 860 moedas do Refúgio.
+- 1 estrela do Nether.
+- 32 diamantes.
+Objetivo: entregar um item raro e valioso como reconhecimento.
+
+MARCO 56 — 920 ZUMBIS
+Nome: Ferramenta Perfeita
+Recompensas:
+- 875 moedas do Refúgio.
+- 1 picareta de netherita com Eficiência V, Fortuna III e Remendo.
+Objetivo: entregar uma ferramenta de mineração de nível máximo.
+
+MARCO 57 — 940 ZUMBIS
+Nome: Reserva Lendária
+Recompensas:
+- 890 moedas do Refúgio.
+- 4 maçãs douradas encantadas.
+- 2 totens da imortalidade.
+Objetivo: fornecer consumíveis raros para a fase final.
+
+MARCO 58 — 960 ZUMBIS
+Nome: Tridente da Tempestade
+Recompensas:
+- 905 moedas do Refúgio.
+- 1 tridente com Lealdade III e Canalização, se disponível e compatível.
+Objetivo: oferecer uma arma especial de alto nível.
+Alternativa: se o tridente não estiver disponível, usar uma arma lendária configurável.
+
+MARCO 59 — 980 ZUMBIS
+Nome: Arsenal Lendário
+Recompensas:
+- 920 moedas do Refúgio.
+- 1 conjunto completo de armadura de netherita com Proteção IV e Durabilidade III.
+- 1 espada de netherita com Afiação V.
+- 1 arco com Força V.
+Objetivo: preparar o jogador para o prêmio final.
+
+MARCO 60 — 1000 ZUMBIS
+Nome: Baú Lendário da Última Linha
+Recompensas:
+- 935 moedas do Refúgio.
+- 1 espada de netherita especial, com Afiação V, Saque III e Aspecto Flamejante II, se compatível.
+- 1 totem da imortalidade.
+- 4 maçãs douradas encantadas.
+- 32 diamantes.
+- Título exclusivo: "Lenda da Última Linha".
+- Mensagem global opcional anunciando que o jogador alcançou 1.000 abates.
+Objetivo: marcar a conclusão da campanha de recompensas do comandante.
+Nota: a mensagem global deve ser configurável e não deve expor informações privadas do jogador.
+
+============================================================
+3. TÍTULOS E PATENTES
+============================================================
+
+Os títulos são marcos de prestígio separados dos itens. Cada título é desbloqueado automaticamente ao atingir o total indicado. O sistema não deve conceder o mesmo título repetidamente.
+
+10 abates: Recruta
+50 abates: Soldado
+100 abates: Defensor
+200 abates: Veterano
+300 abates: Caçador de Mortos
+400 abates: Executor
+500 abates: Guardião
+600 abates: Matador de Hordas
+700 abates: Campeão
+800 abates: Comandante de Campo
+900 abates: Herói da Última Linha
+1000 abates: Lenda da Última Linha
+
+Se o projeto não tiver um sistema de títulos, implementar uma forma simples de exibição no menu do NPC ou na interface de estatísticas. Não alterar o nome de usuário do jogador nem depender de um sistema externo.
+
+============================================================
+4. COMO O SISTEMA DEVE FUNCIONAR
+============================================================
+
+4.1 Contagem individual
+- Registrar os zumbis mortos por cada jogador.
+- A contagem deve ser individual em multiplayer.
+- A morte deve ser atribuída ao jogador responsável pelo abate, inclusive quando o último dano for causado por uma arma, projétil ou mecânica reconhecida pelo jogo.
+- Não contar mortes de outros jogadores.
+- Não contar a mesma morte mais de uma vez.
+- Usar a identificação correta da entidade de zumbi para a versão do Minecraft e decidir explicitamente quais variantes contam. Por padrão, contar a entidade vanilla de zumbi; variantes de mods só devem contar se estiverem incluídas na configuração.
+
+4.2 Abates acumulados
+- A contagem é cumulativa: morrer, sair do servidor ou trocar de dimensão não deve zerar o total.
+- Guardar os dados de maneira persistente no mundo/servidor, vinculados ao UUID do jogador, não apenas ao nome.
+- Reentrar no servidor deve restaurar a contagem e o progresso de recompensas.
+- Não contar abates de criaturas que não estejam na lista configurada.
+
+4.3 Desbloqueio dos marcos
+- Ao alcançar um marco, desbloquear a recompensa correspondente.
+- Um jogador que passar de 49 para 51 abates deve desbloquear os marcos de 50 abates sem perder progresso.
+- A recompensa deve ficar disponível no NPC até ser resgatada.
+- Desbloqueios pendentes devem continuar disponíveis após logout, reinício do servidor ou mudança de dimensão.
+- O jogador pode consultar o total de abates, os próximos marcos e as recompensas já resgatadas.
+
+4.4 Resgate único
+- Cada um dos 60 marcos pode ser resgatado uma única vez por jogador.
+- Armazenar separadamente: abates totais, marcos desbloqueados e marcos resgatados.
+- Creditar moedas do marco como parte da mesma operação de resgate, de forma idempotente; nunca pagar moedas duplicadas nem antes de confirmar a entrega de todos os itens.
+- Clique repetido, lag, reabrir a interface ou reiniciar o servidor não pode duplicar itens.
+- Fazer a validação no servidor. A interface do cliente não deve decidir sozinha se uma recompensa pode ser entregue.
+- A operação de resgate deve ser segura contra cliques simultâneos e chamadas duplicadas.
+
+4.5 Inventário cheio
+- Antes de entregar itens, verificar se todos cabem no inventário.
+- Preferência: entregar tudo de uma vez se houver espaço.
+- Se não houver espaço suficiente, manter a recompensa pendente e explicar ao jogador que precisa liberar espaço.
+- Não descartar itens no chão como comportamento padrão.
+- Não marcar a recompensa como resgatada antes de confirmar a entrega.
+- Se a entrega parcial for tecnicamente inevitável, registrar exatamente os itens já entregues para evitar duplicação e perda.
+
+4.6 Interface do NPC
+O NPC Comandante Elias Varga deve ter uma interface integrada ao estilo visual do Refúgio.
+Sugestão de abas:
+- Recompensas: marcos desbloqueados, itens recebidos como prévia e botão para resgatar.
+- Estatísticas: total de zumbis mortos, próximo marco e progresso até ele.
+- Patentes: títulos desbloqueados e próximos títulos.
+Cada marco deve mostrar:
+- número de abates necessários;
+- nome da recompensa;
+- lista dos itens e quantidades;
+- encantamentos;
+- estado: bloqueada, disponível para resgate ou já resgatada.
+Usar a fonte e os componentes nativos do Minecraft e manter os elementos como interface funcional, não como imagem achatada.
+A interface deve seguir a estética medieval do Refúgio: pergaminho, moldura de madeira escura e detalhes da facção Última Linha, respeitando o estilo visual já existente no projeto.
+
+4.7 Mensagens ao jogador
+Exemplos:
+- Ao desbloquear: "A Última Linha reconhece sua vitória. Nova recompensa disponível!"
+- Ao resgatar: "Recompensa recebida. Continue lutando pela Última Linha."
+- Sem espaço: "Seu inventário está cheio. Libere espaço para receber esta recompensa."
+- Ao atingir 1.000: "Lenda da Última Linha: você derrotou 1.000 zumbis e entrou para a história."
+
+As mensagens devem ser configuráveis e não devem aparecer repetidamente a cada tick. Anunciar somente quando o evento ocorrer.
+
+4.8 Multiplayer e persistência
+- Cada jogador tem seu próprio contador, títulos e estado de recompensas.
+- Um jogador não pode resgatar recompensas de outro.
+- Os dados precisam sobreviver a reinicializações.
+- Evitar depender somente de variáveis em memória.
+- Garantir que as alterações de dados sejam sincronizadas corretamente entre servidor e cliente.
+- Se o NPC estiver disponível apenas em um mundo ou dimensão, ainda assim a contagem deve continuar em todas as dimensões configuradas.
+
+4.9 Configuração e compatibilidade
+- Manter a tabela de recompensas em uma estrutura configurável, em vez de espalhar os valores pelo código.
+- Permitir ajustar itens, quantidades, encantamentos, títulos e quais variantes de zumbis contam.
+- Validar itens e encantamentos ao carregar a configuração.
+- Se uma recompensa contiver um item ou encantamento inexistente, emitir um aviso claro e usar uma alternativa definida, sem travar o mundo.
+- Evitar entregar duas vezes uma recompensa devido a erros de carregamento ou migração de dados.
+- Não remover nem quebrar sistemas existentes do Refúgio.
+
+============================================================
+5. CRITÉRIOS DE ACEITAÇÃO
+============================================================
+
+Considerar o sistema pronto apenas quando:
+1. Existirem exatamente 60 marcos, nos valores de 10 a 200 em intervalos de 10 e de 220 a 1000 em intervalos de 20.
+2. Cada marco tiver uma recompensa identificável e editável.
+3. A contagem for individual por UUID e persistente.
+4. A morte de um zumbi só for contada uma vez e atribuída ao jogador correto.
+5. Todas as recompensas puderem ser desbloqueadas e resgatadas uma única vez.
+6. O jogador não perder recompensas por estar com inventário cheio.
+7. Os marcos já desbloqueados continuarem disponíveis após reiniciar o servidor.
+8. A interface mostrar progresso, estado e conteúdo de cada recompensa.
+9. Os títulos forem desbloqueados uma única vez nos marcos definidos.
+10. A implementação não substituir nem danificar funcionalidades existentes.
+11. O projeto compilar usando o Gradle Wrapper existente e os testes aplicáveis forem executados. Relatar honestamente qualquer teste que não puder ser executado.
+12. Cada marco conceder a quantidade de moedas definida pela fórmula deste documento, totalizando no máximo 29.550 moedas na trilha completa, sem duplicação.
+
+============================================================
+6. OBSERVAÇÕES IMPORTANTES PARA IMPLEMENTAÇÃO
+============================================================
+
+- Esta lista define o comportamento desejado, mas não garante que todos os itens, encantamentos ou APIs existam na versão específica do Minecraft e do Fabric usada pelo projeto.
+- Não inventar nomes de classes, métodos ou APIs. Inspecionar o código existente e consultar os mapeamentos/dependências reais do projeto.
+- Antes de alterar arquivos, identificar a estrutura do projeto e os sistemas já implementados.
+- Integrar o NPC e a interface às convenções existentes.
+- Fazer alterações pequenas e verificáveis, preservando sistemas já funcionais.
+- Não começar o projeto do zero.
+- Não declarar que testes passaram sem executá-los.
+- Ao concluir, resumir os arquivos alterados, a lógica implementada, os testes executados e quaisquer limitações restantes.

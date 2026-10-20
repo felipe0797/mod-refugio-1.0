@@ -167,10 +167,20 @@ public final class RefugioAbilityData {
             Refugio.id("ability_jump_started_at"), builder -> builder.initializer(() -> 0L));
     private static final AttachmentType<String> JUMP_DIMENSION = AttachmentRegistry.create(
             Refugio.id("ability_jump_dimension"), builder -> builder.initializer(() -> ""));
+    private static final AttachmentType<Boolean> JUMP_LEFT_GROUND = AttachmentRegistry.create(
+            Refugio.id("ability_jump_left_ground"), builder -> builder.initializer(() -> false));
     private static final AttachmentType<Double> LAST_GROUNDED_Y = AttachmentRegistry.create(
             Refugio.id("ability_last_grounded_y"), builder -> builder.initializer(() -> 0.0));
     private static final AttachmentType<String> LAST_GROUNDED_DIMENSION = AttachmentRegistry.create(
             Refugio.id("ability_last_grounded_dimension"), builder -> builder.initializer(() -> ""));
+    private static final AttachmentType<Double> LAST_TICK_X = AttachmentRegistry.create(
+            Refugio.id("ability_last_tick_x"), builder -> builder.initializer(() -> 0.0));
+    private static final AttachmentType<Double> LAST_TICK_Y = AttachmentRegistry.create(
+            Refugio.id("ability_last_tick_y"), builder -> builder.initializer(() -> 0.0));
+    private static final AttachmentType<Double> LAST_TICK_Z = AttachmentRegistry.create(
+            Refugio.id("ability_last_tick_z"), builder -> builder.initializer(() -> 0.0));
+    private static final AttachmentType<String> LAST_TICK_DIMENSION = AttachmentRegistry.create(
+            Refugio.id("ability_last_tick_dimension"), builder -> builder.initializer(() -> ""));
     private static final AttachmentType<Long> AREA_DEFENSE_COOLDOWN_UNTIL = AttachmentRegistry.create(
             Refugio.id("ability_area_defense_cooldown"), builder -> builder.initializer(() -> 0L));
 
@@ -223,9 +233,25 @@ public final class RefugioAbilityData {
 
     public static void registerEvents() {
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> LAST_SYNCED_MOVEMENT_MASK.clear());
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ServerPlayer player = handler.player;
+            if (player.onGround()) {
+                player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
+                player.setAttached(LAST_GROUNDED_DIMENSION, player.level().dimension().toString());
+            }
+            recordTickPosition(player);
+        });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             LAST_SYNCED_MOVEMENT_MASK.remove(handler.player.getUUID());
+            clearJumpTracking(handler.player);
         });
+        ServerTickEvents.START_SERVER_TICK.register(server ->
+                server.getPlayerList().getPlayers().forEach(player -> {
+                    if (player.onGround() && !player.getAttachedOrCreate(JUMP_TRACKING)) {
+                        player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
+                        player.setAttached(LAST_GROUNDED_DIMENSION, player.level().dimension().toString());
+                    }
+                }));
         ServerTickEvents.END_SERVER_TICK.register(server ->
                 server.getPlayerList().getPlayers().forEach(player -> {
                     enforceJumpExclusivity(player);
@@ -486,7 +512,8 @@ public final class RefugioAbilityData {
     }
 
     private static boolean activateDoubleJump(ServerPlayer player) {
-        if (player.isPassenger() || player.isInWater() || player.onGround()
+        if (player.isPassenger() || player.isInWater() || player.isFallFlying()
+                || player.getAbilities().flying || player.onGround()
                 || player.getAttachedOrCreate(DOUBLE_JUMP_USED)) return false;
         int rank = rank(player, "double_jump");
         if (rank <= 0) return false;
@@ -548,35 +575,58 @@ public final class RefugioAbilityData {
 
     private static void beginJumpTracking(ServerPlayer player) {
         String dimension = player.level().dimension().toString();
-        double originY = player.getY();
-        if (!player.onGround() && dimension.equals(player.getAttachedOrCreate(LAST_GROUNDED_DIMENSION))) {
-            originY = player.getAttachedOrCreate(LAST_GROUNDED_Y);
+        boolean onGround = player.onGround();
+        boolean alreadyTrackingInDim = player.getAttachedOrCreate(JUMP_TRACKING)
+                && dimension.equals(player.getAttachedOrCreate(JUMP_DIMENSION));
+        boolean hasLastGroundedInDim = dimension.equals(player.getAttachedOrCreate(LAST_GROUNDED_DIMENSION));
+        double originY = RefugioAbilityRules.resolveJumpOriginY(
+                onGround,
+                alreadyTrackingInDim,
+                player.getAttachedOrCreate(JUMP_ORIGIN_Y),
+                hasLastGroundedInDim,
+                player.getAttachedOrCreate(LAST_GROUNDED_Y),
+                player.getY()
+        );
+        if (onGround) {
+            player.setAttached(LAST_GROUNDED_Y, originY);
+            player.setAttached(LAST_GROUNDED_DIMENSION, dimension);
         }
         player.setAttached(JUMP_TRACKING, true);
         player.setAttached(JUMP_ORIGIN_Y, originY);
         player.setAttached(JUMP_STARTED_AT, gameTime(player));
         player.setAttached(JUMP_DIMENSION, dimension);
+        player.setAttached(JUMP_LEFT_GROUND, !onGround);
+        recordTickPosition(player);
     }
 
-    /** Returns vanilla fall damage adjusted to only count descent below the jump's launch height. */
+    /**
+     * Returns vanilla fall damage adjusted to only count vertical descent below the jump's launch surface.
+     * Untracked falls are returned completely unchanged.
+     */
     public static float adjustTrackedJumpFallDamage(ServerPlayer player, float vanillaDamage) {
-        if (!player.getAttachedOrCreate(JUMP_TRACKING)) return vanillaDamage;
-        double belowOrigin = player.getAttachedOrCreate(JUMP_ORIGIN_Y) - player.getY();
-        double actualDamageDistance = Math.max(0.0, player.fallDistance - 3.0);
-        double intendedDamageDistance = Math.max(0.0, belowOrigin - 3.0);
+        boolean tracking = player.getAttachedOrCreate(JUMP_TRACKING);
+        if (!tracking) {
+            return vanillaDamage;
+        }
+        String currentDim = player.level().dimension().toString();
+        if (!currentDim.equals(player.getAttachedOrCreate(JUMP_DIMENSION))) {
+            clearJumpTracking(player);
+            return vanillaDamage;
+        }
+        double originY = player.getAttachedOrCreate(JUMP_ORIGIN_Y);
+        double landingY = player.getY();
+        float adjusted = RefugioAbilityRules.adjustTrackedJumpFallDamage(
+                true, originY, landingY, player.fallDistance, vanillaDamage);
         clearJumpTracking(player);
-        if (intendedDamageDistance <= 0.0) return 0.0f;
-        if (actualDamageDistance <= 0.0) return vanillaDamage;
-        return vanillaDamage * (float) Math.min(1.0, intendedDamageDistance / actualDamageDistance);
+        return adjusted;
     }
 
     private static void refreshJumpState(ServerPlayer player) {
         long now = gameTime(player);
         String currentDimension = player.level().dimension().toString();
-        if (player.onGround()) {
-            player.setAttached(LAST_GROUNDED_Y, player.getY());
-            player.setAttached(LAST_GROUNDED_DIMENSION, currentDimension);
-        }
+        boolean teleported = hasSuddenTeleportJump(player, currentDimension);
+        recordTickPosition(player);
+
         if (player.getAttachedOrCreate(SUPER_JUMP_USED)) {
             long launchedAt = player.getAttachedOrCreate(SUPER_JUMP_LAUNCHED_AT);
             if (!player.onGround()) {
@@ -588,22 +638,59 @@ public final class RefugioAbilityData {
         if (player.getAttachedOrCreate(DOUBLE_JUMP_USED) && player.onGround()) {
             player.setAttached(DOUBLE_JUMP_USED, false);
         }
-        if (!player.getAttachedOrCreate(JUMP_TRACKING)) return;
-        long startedAt = player.getAttachedOrCreate(JUMP_STARTED_AT);
-        boolean invalid = !player.isAlive() || player.isPassenger() || player.isInWater()
-                || player.isFallFlying() || player.getAbilities().flying
-                || !player.level().dimension().toString().equals(player.getAttachedOrCreate(JUMP_DIMENSION))
-                || now - startedAt > 1200L;
-        if (invalid || (player.onGround() && now - startedAt > 10L)) {
-            clearJumpTracking(player);
+
+        if (player.getAttachedOrCreate(JUMP_TRACKING)) {
+            long startedAt = player.getAttachedOrCreate(JUMP_STARTED_AT);
+            if (!player.onGround()) {
+                player.setAttached(JUMP_LEFT_GROUND, true);
+            }
+            boolean invalid = teleported
+                    || !player.isAlive()
+                    || player.isPassenger()
+                    || player.isInWater()
+                    || player.isInLava()
+                    || player.onClimbable()
+                    || player.isFallFlying()
+                    || player.getAbilities().flying
+                    || !currentDimension.equals(player.getAttachedOrCreate(JUMP_DIMENSION))
+                    || now - startedAt > 1200L;
+            boolean landedAfterAirborne = player.onGround()
+                    && (player.getAttachedOrCreate(JUMP_LEFT_GROUND) || now - startedAt > 6L);
+            if (invalid || landedAfterAirborne) {
+                clearJumpTracking(player);
+            }
+        }
+
+        if (player.onGround() && !player.getAttachedOrCreate(JUMP_TRACKING)) {
+            player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
+            player.setAttached(LAST_GROUNDED_DIMENSION, currentDimension);
         }
     }
 
-    private static void clearJumpTracking(ServerPlayer player) {
+    private static boolean hasSuddenTeleportJump(ServerPlayer player, String currentDimension) {
+        String lastDim = player.getAttachedOrCreate(LAST_TICK_DIMENSION);
+        if (lastDim == null || lastDim.isEmpty() || !lastDim.equals(currentDimension)) {
+            return true;
+        }
+        double dx = player.getX() - player.getAttachedOrCreate(LAST_TICK_X);
+        double dy = player.getY() - player.getAttachedOrCreate(LAST_TICK_Y);
+        double dz = player.getZ() - player.getAttachedOrCreate(LAST_TICK_Z);
+        return (dx * dx + dz * dz) > 64.0 || Math.abs(dy) > 16.0;
+    }
+
+    private static void recordTickPosition(ServerPlayer player) {
+        player.setAttached(LAST_TICK_X, player.getX());
+        player.setAttached(LAST_TICK_Y, player.getY());
+        player.setAttached(LAST_TICK_Z, player.getZ());
+        player.setAttached(LAST_TICK_DIMENSION, player.level().dimension().toString());
+    }
+
+    public static void clearJumpTracking(ServerPlayer player) {
         player.setAttached(JUMP_TRACKING, false);
         player.setAttached(JUMP_ORIGIN_Y, 0.0);
         player.setAttached(JUMP_STARTED_AT, 0L);
         player.setAttached(JUMP_DIMENSION, "");
+        player.setAttached(JUMP_LEFT_GROUND, false);
     }
 
     private static void refreshUtilitySkills(ServerPlayer player) {

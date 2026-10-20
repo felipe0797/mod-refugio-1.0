@@ -4,6 +4,7 @@ import com.felpz.refugio.ability.RefugioAbilityData;
 import com.felpz.refugio.data.RefugioPlayerData;
 import com.felpz.refugio.menu.RefugioMenu;
 import com.felpz.refugio.npc.RefugioNPCs;
+import com.felpz.refugio.quest.RefugioCommanderData;
 import com.felpz.refugio.quest.RefugioSideQuests;
 import com.felpz.refugio.story.RefugioStory;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public final class RefugioUiService {
     private static final long SESSION_MILLIS = 10 * 60 * 1000L;
     private static final Map<UUID, Long> ABILITY_SESSIONS = new HashMap<>();
+    private static final Map<UUID, Long> COMMANDER_SESSIONS = new HashMap<>();
     private static final Map<UUID, DialogueSession> DIALOGUE_SESSIONS = new HashMap<>();
 
     private RefugioUiService() { }
@@ -39,8 +41,18 @@ public final class RefugioUiService {
         }
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         ABILITY_SESSIONS.put(player.getUUID(), expiresAt);
+        COMMANDER_SESSIONS.remove(player.getUUID());
         DIALOGUE_SESSIONS.remove(player.getUUID());
         sendAbilityState(player, "");
+    }
+
+    public static void openCommander(ServerPlayer player) {
+        RefugioCommanderData.reconcileUnlocks(player, false);
+        long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
+        COMMANDER_SESSIONS.put(player.getUUID(), expiresAt);
+        ABILITY_SESSIONS.remove(player.getUUID());
+        DIALOGUE_SESSIONS.remove(player.getUUID());
+        sendCommanderState(player, "");
     }
 
     public static void openDialogue(ServerPlayer player, String speakerKey, List<String> lineKeys,
@@ -49,6 +61,7 @@ public final class RefugioUiService {
         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
         DIALOGUE_SESSIONS.put(player.getUUID(), new DialogueSession(action, expiresAt));
         ABILITY_SESSIONS.remove(player.getUUID());
+        COMMANDER_SESSIONS.remove(player.getUUID());
         String encoded = "DIALOGUE\t" + speakerKey + "\t" + String.join("|", lineKeys)
                 + "\t" + action + "\t" + actionLabelKey;
         ServerPlayNetworking.send(player, new RefugioUiPayload(encoded));
@@ -85,6 +98,16 @@ public final class RefugioUiService {
                 sendAbilityState(player, feedback);
             }
             case "ABILITY_CLOSE" -> ABILITY_SESSIONS.remove(player.getUUID());
+            case "COMMANDER_CLAIM" -> {
+                if (parts.length < 2 || !hasLiveCommanderSession(player)) return;
+                try {
+                    int milestoneNumber = Integer.parseInt(parts[1]);
+                    RefugioCommanderData.ClaimResult result = RefugioCommanderData.claimMilestone(player, milestoneNumber);
+                    sendCommanderState(player, commanderFeedbackKey(result));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            case "COMMANDER_CLOSE" -> COMMANDER_SESSIONS.remove(player.getUUID());
             case "DIALOGUE_ACTION" -> handleDialogueAction(player, parts);
             case "DIALOGUE_CLOSE" -> DIALOGUE_SESSIONS.remove(player.getUUID());
             case "SHOP_CLICK" -> handleShopClick(player, parts);
@@ -168,6 +191,16 @@ public final class RefugioUiService {
         return player.isAlive();
     }
 
+    private static boolean hasLiveCommanderSession(ServerPlayer player) {
+        Long expiry = COMMANDER_SESSIONS.get(player.getUUID());
+        if (expiry == null) return false;
+        if (System.currentTimeMillis() > expiry) {
+            COMMANDER_SESSIONS.remove(player.getUUID());
+            return false;
+        }
+        return player.isAlive();
+    }
+
     private static void handleDialogueAction(ServerPlayer player, String[] parts) {
         if (parts.length < 2) return;
         DialogueSession session = DIALOGUE_SESSIONS.remove(player.getUUID());
@@ -186,6 +219,7 @@ public final class RefugioUiService {
             case "OPEN_QUESTS" -> RefugioMenu.openQuests(player);
             case "OPEN_GARDEN_QUESTS" -> RefugioMenu.openSideQuests(player, RefugioSideQuests.Track.GARDEN);
             case "OPEN_EXPEDITION_QUESTS" -> RefugioMenu.openSideQuests(player, RefugioSideQuests.Track.EXPEDITION);
+            case "OPEN_COMMANDER" -> openCommander(player);
             case "DISMISS" -> { }
             default -> { }
         }
@@ -205,6 +239,20 @@ public final class RefugioUiService {
         RefugioAbilityData.syncMovementState(player);
     }
 
+    public static void sendCommanderState(ServerPlayer player, String feedbackKey) {
+        int coins = RefugioPlayerData.getCoins(player);
+        int kills = RefugioCommanderData.getZombieKills(player);
+        String unlockedCsv = RefugioCommanderData.getUnlockedMilestones(player).stream()
+                .map(Object::toString).collect(Collectors.joining(","));
+        String claimedCsv = RefugioCommanderData.getClaimedMilestones(player).stream()
+                .map(Object::toString).collect(Collectors.joining(","));
+        String titlesCsv = RefugioCommanderData.getUnlockedTitleIndices(player).stream()
+                .map(Object::toString).collect(Collectors.joining(","));
+        String payload = "COMMANDER\t" + coins + "\t" + kills + "\t"
+                + unlockedCsv + "\t" + claimedCsv + "\t" + titlesCsv + "\t" + feedbackKey;
+        ServerPlayNetworking.send(player, new RefugioUiPayload(payload));
+    }
+
     private static String feedbackKey(RefugioAbilityData.PurchaseResult result) {
         return switch (result) {
             case FREE -> "gui.refugio.abilities.feedback.free";
@@ -213,6 +261,16 @@ public final class RefugioUiService {
             case LOCKED -> "gui.refugio.abilities.feedback.locked";
             case MAX_RANK -> "gui.refugio.abilities.feedback.max_rank";
             case CHOOSE_FREE_FIRST -> "gui.refugio.abilities.feedback.choose_free";
+            case INVALID -> "gui.refugio.abilities.feedback.invalid";
+        };
+    }
+
+    private static String commanderFeedbackKey(RefugioCommanderData.ClaimResult result) {
+        return switch (result) {
+            case CLAIMED -> "gui.refugio.commander.feedback.claimed";
+            case INVENTORY_FULL -> "message.refugio.commander.inventory_full";
+            case ALREADY_CLAIMED -> "gui.refugio.commander.feedback.already_claimed";
+            case LOCKED -> "gui.refugio.commander.feedback.locked";
             case INVALID -> "gui.refugio.abilities.feedback.invalid";
         };
     }

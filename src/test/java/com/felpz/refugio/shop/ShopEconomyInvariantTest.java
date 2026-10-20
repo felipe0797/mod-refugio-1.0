@@ -1,6 +1,9 @@
 package com.felpz.refugio.shop;
 
 import com.felpz.refugio.ability.RefugioAbilityRules;
+import com.felpz.refugio.quest.RefugioCommanderRewards;
+
+import java.util.List;
 
 public final class ShopEconomyInvariantTest {
     private ShopEconomyInvariantTest() { }
@@ -14,7 +17,120 @@ public final class ShopEconomyInvariantTest {
         technicalItemsStayExcluded();
         abilityRankCostChecks();
         abilityEffectBounds();
-        System.out.println("Shop economy invariants: PASS");
+        specialJumpFallDamageChecks();
+        commanderEliasRewardsChecks();
+        System.out.println("Shop economy, special jump fall damage, and Commander Elias invariants: PASS");
+    }
+
+    private static void specialJumpFallDamageChecks() {
+        // Case 1: Super Jump initiated at Y=100 and landing at Y=100 -> 0 fall damage
+        double superJumpOrigin = RefugioAbilityRules.resolveJumpOriginY(
+                true, false, 0.0, true, 100.0, 100.0);
+        near(superJumpOrigin, 100.0, "Super Jump launch origin at Y=100");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, superJumpOrigin, 100.0, 3.8, 1.0f),
+                0.0, "Case 1: Super Jump 100 -> 100 must deal 0 fall damage");
+
+        // Case 2: Super Jump initiated at Y=100 and landing at Y=95 -> same as vanilla 5-block fall, with & without Light Step
+        float vanillaFiveBlock = RefugioAbilityRules.vanillaBaseFallDamageForDistance(5.0);
+        near(vanillaFiveBlock, 2.0, "Vanilla 5-block fall base damage");
+        float superJump100To95 = RefugioAbilityRules.adjustTrackedJumpFallDamage(
+                true, superJumpOrigin, 95.0, 8.8, 6.0f);
+        near(superJump100To95, vanillaFiveBlock,
+                "Case 2a: Super Jump 100 -> 95 (peak 103.8) must deal exact 5-block vanilla fall damage (2.0)");
+        for (int rank = 1; rank <= 5; rank++) {
+            float expectedWithLightStep = vanillaFiveBlock * (1.0f - RefugioAbilityRules.lightStepReduction(rank));
+            float actualWithLightStep = RefugioAbilityRules.trackedJumpFallDamageWithLightStep(100.0, 95.0, rank);
+            near(actualWithLightStep, expectedWithLightStep,
+                    "Case 2b: Super Jump 100 -> 95 with Light Step rank " + rank);
+        }
+
+        // Case 3: Double Jump initiated at Y=100, second jump used in mid-air (Y=101.2), landing at Y=100 -> 0 fall damage
+        double doubleJumpOrigin = RefugioAbilityRules.resolveJumpOriginY(
+                false, false, 0.0, true, 100.0, 101.2);
+        near(doubleJumpOrigin, 100.0, "Double Jump must use first jump's ground surface (100.0), not mid-air Y (101.2)");
+        double preservedSecondImpulse = RefugioAbilityRules.resolveJumpOriginY(
+                false, true, doubleJumpOrigin, true, 100.0, 102.4);
+        near(preservedSecondImpulse, 100.0, "Double Jump must preserve origin if already tracking");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, doubleJumpOrigin, 100.0, 4.5, 2.0f),
+                0.0, "Case 3: Double Jump 100 -> 100 must deal 0 fall damage");
+
+        // Case 4: Double Jump initiated at Y=100, second jump used in mid-air, landing at Y=95 -> same as 5-block vanilla fall
+        float doubleJump100To95 = RefugioAbilityRules.adjustTrackedJumpFallDamage(
+                true, doubleJumpOrigin, 95.0, 9.5, 7.0f);
+        near(doubleJump100To95, vanillaFiveBlock,
+                "Case 4: Double Jump 100 -> 95 (peak 104.5) must deal exact 5-block fall damage (2.0), not peak damage");
+
+        // Case 5: Landing above origin (e.g. Y=100 -> Y=102) -> 0 fall damage
+        near(RefugioAbilityRules.effectiveTrackedFallDistance(100.0, 102.0), 0.0,
+                "Case 5a: Landing above origin effective distance must be 0");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 102.0, 3.6, 1.0f), 0.0,
+                "Case 5b: Landing above origin must deal 0 fall damage");
+
+        // Case 6: Normal fall without ability tracking -> vanilla behavior unchanged
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(false, 100.0, 100.0, 7.2, 5.0f), 5.0,
+                "Case 6: Untracked normal fall must preserve vanilla damage");
+
+        // Case 7: Rounding boundaries at 3, 4, and 5 blocks (including floating-point surface drift)
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 97.0, 6.4, 4.0f), 0.0,
+                "Case 7a: Exact 3-block drop (100 -> 97) must deal 0 damage");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 96.9996, 6.4, 4.0f), 0.0,
+                "Case 7b: 3-block drop with surface float drift must not off-by-one into 1 damage");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 96.0, 7.4, 5.0f), 1.0,
+                "Case 7c: Exact 4-block drop (100 -> 96) must deal 1 damage");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 95.9996, 7.4, 5.0f), 1.0,
+                "Case 7d: 4-block drop with surface float drift must deal 1 damage, not 2");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 95.0, 8.4, 6.0f), 2.0,
+                "Case 7e: Exact 5-block drop (100 -> 95) must deal 2 damage");
+        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 94.9996, 8.4, 6.0f), 2.0,
+                "Case 7f: 5-block drop with surface float drift must deal 2 damage, not 3");
+    }
+
+    private static void commanderEliasRewardsChecks() {
+        List<RefugioCommanderRewards.MilestoneSpec> milestones = RefugioCommanderRewards.defaultMilestones();
+        require(milestones.size() == 60, "Commander Elias must have exactly 60 milestones");
+        require(RefugioCommanderRewards.countedEntityIds().equals(java.util.Set.of("minecraft:zombie")),
+                "Default counted entity must be strictly minecraft:zombie");
+
+        int totalCoins = 0;
+        for (int n = 1; n <= 60; n++) {
+            RefugioCommanderRewards.MilestoneSpec m = milestones.get(n - 1);
+            require(m.number() == n, "Milestone number mismatch at index " + (n - 1));
+            int expectedKills = (n <= 20) ? (n * 10) : (200 + (n - 20) * 20);
+            require(m.requiredKills() == expectedKills,
+                    "Milestone " + n + " kills mismatch: expected " + expectedKills + " got " + m.requiredKills());
+            int expectedCoins = 50 + 15 * (n - 1);
+            require(m.coins() == expectedCoins,
+                    "Milestone " + n + " coins mismatch: expected " + expectedCoins + " got " + m.coins());
+            require(!m.name().isBlank(), "Milestone " + n + " must have a name");
+            require(!m.items().isEmpty(), "Milestone " + n + " must have reward items");
+            for (RefugioCommanderRewards.RewardItemSpec item : m.items()) {
+                require(item.itemId().startsWith("minecraft:"), "Invalid item ID in milestone " + n + ": " + item.itemId());
+                require(item.count() > 0, "Invalid item count in milestone " + n);
+            }
+            totalCoins += m.coins();
+        }
+
+        require(RefugioCommanderRewards.coinsForMilestone(1) == 50, "Milestone 01 must give 50 coins");
+        require(RefugioCommanderRewards.coinsForMilestone(20) == 335, "Milestone 20 must give 335 coins");
+        require(RefugioCommanderRewards.coinsForMilestone(21) == 350, "Milestone 21 must give 350 coins");
+        require(RefugioCommanderRewards.coinsForMilestone(60) == 935, "Milestone 60 must give 935 coins");
+        require(totalCoins == 29_550, "Total coins across all 60 milestones must be 29,550, got " + totalCoins);
+        require(RefugioCommanderRewards.totalTrackCoins() == 29_550, "totalTrackCoins() must be 29,550");
+        require("Lenda da Última Linha".equals(milestones.get(59).exclusiveTitle()),
+                "Milestone 60 must grant exclusive title 'Lenda da Última Linha'");
+
+        List<RefugioCommanderRewards.TitleSpec> titles = RefugioCommanderRewards.defaultTitles();
+        int[] expectedTitleKills = {10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+        require(titles.size() == expectedTitleKills.length, "Commander Elias must have 12 titles/ranks");
+        for (int i = 0; i < expectedTitleKills.length; i++) {
+            require(titles.get(i).requiredKills() == expectedTitleKills[i],
+                    "Title kill threshold mismatch at index " + i);
+            require(!titles.get(i).title().isBlank(), "Blank title at index " + i);
+        }
+        require("Recruta".equals(RefugioCommanderRewards.highestUnlockedTitle(10)), "10 kills title must be Recruta");
+        require("Soldado".equals(RefugioCommanderRewards.highestUnlockedTitle(51)), "51 kills title must be Soldado");
+        require("Lenda da Última Linha".equals(RefugioCommanderRewards.highestUnlockedTitle(1000)),
+                "1000 kills title must be Lenda da Última Linha");
     }
 
     private static void abilityRankCostChecks() {

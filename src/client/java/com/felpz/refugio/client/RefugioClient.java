@@ -23,6 +23,7 @@ public class RefugioClient implements ClientModInitializer {
     private static RefugioAbilityScreen currentAbilityScreen;
     private static RefugioShopScreen currentShopScreen;
     private static RefugioQuestScreen currentQuestScreen;
+    private static RefugioCommanderScreen currentCommanderScreen;
     private static long lastReserveFlashUntilMs;
 
     private static final KeyMapping.Category REFUGIO_KEY_CATEGORY = resolveRefugioKeyCategory();
@@ -63,20 +64,33 @@ public class RefugioClient implements ClientModInitializer {
                         updateMovementStateFromAbilitySnapshot(data);
                         currentShopScreen = null;
                         currentQuestScreen = null;
+                        currentCommanderScreen = null;
                         if (currentAbilityScreen != null) {
                             currentAbilityScreen.updateState(data);
                         } else {
                             currentAbilityScreen = new RefugioAbilityScreen(data);
                             context.client().setScreenAndShow(currentAbilityScreen);
                         }
+                    } else if (data.startsWith("COMMANDER\t")) {
+                        currentAbilityScreen = null;
+                        currentShopScreen = null;
+                        currentQuestScreen = null;
+                        if (currentCommanderScreen != null) {
+                            currentCommanderScreen.updateState(data);
+                        } else {
+                            currentCommanderScreen = new RefugioCommanderScreen(data);
+                            context.client().setScreenAndShow(currentCommanderScreen);
+                        }
                     } else if (data.startsWith("DIALOGUE\t")) {
                         currentAbilityScreen = null;
                         currentShopScreen = null;
                         currentQuestScreen = null;
+                        currentCommanderScreen = null;
                         context.client().setScreenAndShow(new RefugioDialogueScreen(data));
                     } else if (data.startsWith("SHOP\t")) {
                         currentAbilityScreen = null;
                         currentQuestScreen = null;
+                        currentCommanderScreen = null;
                         if (currentShopScreen != null) {
                             currentShopScreen.updateState(data);
                             if (!currentShopScreen.isDisplayed()) {
@@ -91,6 +105,7 @@ public class RefugioClient implements ClientModInitializer {
                     } else if (data.startsWith("QUEST\t")) {
                         currentAbilityScreen = null;
                         currentShopScreen = null;
+                        currentCommanderScreen = null;
                         if (currentQuestScreen != null) {
                             currentQuestScreen.updateState(data);
                             if (!currentQuestScreen.isDisplayed()) {
@@ -142,6 +157,7 @@ public class RefugioClient implements ClientModInitializer {
                 currentAbilityScreen = null;
                 currentShopScreen = null;
                 currentQuestScreen = null;
+                currentCommanderScreen = null;
                 resetClientMovementState();
                 return;
             }
@@ -348,5 +364,9 @@ public class RefugioClient implements ClientModInitializer {
 
     public static void clearQuestScreen(RefugioQuestScreen screen) {
         if (currentQuestScreen == screen) currentQuestScreen = null;
+    }
+
+    public static void clearCommanderScreen(RefugioCommanderScreen screen) {
+        if (currentCommanderScreen == screen) currentCommanderScreen = null;
     }
 }

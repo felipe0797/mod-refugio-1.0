@@ -27,6 +27,7 @@ public final class RefugioDialogueScreen extends Screen {
     private static final Identifier MARTA_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/marta.png");
     private static final Identifier DARIO_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/dario.png");
     private static final Identifier KAEL_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/kael.png");
+    private static final Identifier ELIAS_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/elias.png");
 
     private static final FontDescription UI_FONT = new FontDescription.Resource(Identifier.parse("minecraft:uniform"));
     private static final Style INK_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0x4A3520);
@@ -287,6 +288,7 @@ public final class RefugioDialogueScreen extends Screen {
             case "entity.refugio.garden_quest_giver" -> MARTA_PORTRAIT;
             case "entity.refugio.expedition_quest_giver" -> DARIO_PORTRAIT;
             case "entity.refugio.kael" -> KAEL_PORTRAIT;
+            case "entity.refugio.commander_elias" -> ELIAS_PORTRAIT;
             default -> null;
         };
     }

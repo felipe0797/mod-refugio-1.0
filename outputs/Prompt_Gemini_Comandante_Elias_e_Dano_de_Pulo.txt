@@ -1,0 +1,113 @@
+PROMPT PARA O GEMINI — COMANDANTE ELIAS VARGA E DANO DE QUEDA DOS PULOS ESPECIAIS
+
+Quero que você implemente as mudanças descritas abaixo no projeto existente do mod Refúgio. Estou enviando junto deste prompt o arquivo:
+
+Recompensas_Comandante_Elias_Varga_com_Moedas.txt
+
+Esse TXT é a especificação autoritativa dos 60 marcos, dos itens, dos encantamentos, dos títulos e das moedas do Comandante. Leia-o integralmente antes de programar. Não substitua a lista, não altere silenciosamente valores e não invente recompensas diferentes.
+
+============================================================
+1. CONTEXTO TÉCNICO E REGRAS DE TRABALHO
+============================================================
+
+- Projeto existente: mod Refúgio para Minecraft Java 26.2, Fabric, Java 25.
+- Confirme as versões reais em gradle.properties, build.gradle e fabric.mod.json antes de escolher APIs.
+- Trabalhe sobre o código que receber. Não recomece o projeto, não substitua arquivos inteiros por versões antigas do Gemini e não remova funcionalidades atuais.
+- Antes de editar, localize as implementações reais de NPCs, moedas, persistência, telas, habilidades e dano de queda.
+- Preserve as telas personalizadas em pergaminho, o idioma PT-BR como primário, as skins/modelos atuais dos NPCs, suas animações, posições, imunidade e os fluxos de loja/missões existentes.
+- Use APIs compatíveis com as dependências efetivamente instaladas. Não invente nomes de métodos ou classes.
+- O servidor deve ser a autoridade para abates, desbloqueios, resgates, saldo e dano. O cliente pode exibir estado, mas não conceder recompensas nem decidir dano.
+- Faça mudanças pequenas, integradas e verificáveis. Não copie indiscriminadamente versões antigas de arquivos do projeto.
+
+Arquivos e sistemas que provavelmente precisam ser inspecionados (confirme os caminhos no projeto recebido):
+- src/main/java/com/felpz/refugio/npc/RefugioNPCs.java
+- src/main/java/com/felpz/refugio/npc/RefugioTrainingDummy.java
+- src/main/java/com/felpz/refugio/data/RefugioPlayerData.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+- src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
+- src/main/java/com/felpz/refugio/mixin/LivingEntityAbilityMixin.java
+- src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+- src/client/java/com/felpz/refugio/client/RefugioQuestScreen.java
+- src/main/resources/resourcepacks/npc_skins/ e os recursos de idioma em assets/refugio/lang/
+
+============================================================
+2. NOVO NPC: COMANDANTE ELIAS VARGA
+============================================================
+
+Implemente o Comandante Elias Varga, da facção “Última Linha”, como um NPC real integrado ao Refúgio. Ele entrega recompensas por marcos de zumbis mortos pelo jogador. Use a lista completa e os valores do TXT anexado.
+
+2.1 Contagem e progresso
+- Existem exatamente 60 marcos: de 10 a 200 abates em intervalos de 10; depois, de 220 a 1.000 em intervalos de 20.
+- Por padrão, conte somente a entidade vanilla minecraft:zombie. Outras variantes vanilla ou de mods só devem contar se forem explicitamente configuráveis, conforme a especificação anexada.
+- Exclua o Miojo/boneco de treino, NPCs do Refúgio e entidades protegidas; ele não pode ser usado para farmar abates ou recompensas.
+- Conte a morte uma única vez e atribua-a ao jogador que efetivamente causou o abate, inclusive projéteis/armas quando reconhecidos pelo jogo. Não atribua mortes de outros jogadores.
+- O progresso é individual por UUID, cumulativo, persistente após logout, morte, troca de dimensão ou reinício do servidor. Não guardar somente em memória nem depender do nome do jogador.
+- Se um jogador ultrapassar vários marcos entre duas atualizações, todos os marcos alcançados devem ficar disponíveis, sem pular nenhum.
+- Manter separados o total de abates, os marcos alcançados e os marcos resgatados.
+
+2.2 Moedas — valores autoritativos do TXT
+- Cada marco dá moedas além dos itens listados.
+- A fórmula é 50 + 15 × (n − 1), em que n é o número do marco de 1 a 60. Exemplos: Marco 01 = 50 moedas; Marco 20 = 335; Marco 21 = 350; Marco 60 = 935.
+- O total máximo dos 60 marcos é 29.550 moedas.
+- Use o sistema existente de moedas do Refúgio; não crie uma segunda carteira. Preserve o saldo existente, inclusive sua persistência e comportamento ao morrer.
+- Credite as moedas somente uma vez, como parte do resgate confirmado no servidor. Um clique repetido, lag, reabrir a tela, reconectar ou reiniciar o servidor não pode duplicar moedas ou itens.
+- Se os itens não puderem ser entregues integralmente por falta de espaço, mantenha o marco pendente e não credite moedas antecipadamente. O resgate deve ser atômico/idempotente de acordo com as regras do TXT.
+
+2.3 Interface e integração do NPC
+- Integrar o NPC e sua interface à arquitetura atual do Refúgio, sem usar um baú/inventário vanilla como tela principal. A interface deve seguir o pergaminho e a moldura de madeira das telas personalizadas já existentes.
+- Mostrar total de zumbis, progresso até o próximo marco, títulos/patentes, os 60 marcos e o estado de cada um: bloqueado, pronto para resgate ou já resgatado.
+- Cada recompensa deve exibir nome, itens, quantidades, encantamentos e moedas definidas no TXT.
+- Resgate somente por ação explícita do jogador; cumprir o marco não entrega automaticamente os itens.
+- Validar e executar o resgate exclusivamente no servidor, com proteção contra chamadas simultâneas e duplicadas.
+- Mensagens globais são opcionais/configuráveis e só podem ocorrer no evento indicado, não repetidamente.
+- O TXT não fornece coordenada nem skin do Elias. Inspecione o mapa e as posições atuais e escolha um lugar seguro e coerente, sem sobrepor NPCs ou alterar localizações já definidas. Centralize a posição em constantes/configuração e informe as coordenadas escolhidas no relatório final. Se não houver local seguro ou se faltar um recurso indispensável, não invente uma solução destrutiva: documente a limitação.
+- Se for necessário criar aparência própria, siga o sistema de skins/modelos já instalado e não sobrescreva os modelos dos outros NPCs. Se não houver textura aprovada, crie uma variante compatível com os recursos existentes e descreva o que foi criado.
+- Siga o padrão já existente de proteção contra dano/morte e recuperação de NPCs. Não modifique o funcionamento dos NPCs existentes.
+
+2.4 Itens e compatibilidade
+- Use os itens, quantidades e encantamentos do TXT. Confirme que os IDs e APIs de encantamento são válidos na versão real do projeto.
+- Itens/encantamentos opcionais inexistentes devem usar uma alternativa configurável e emitir aviso claro, sem travar o mundo.
+- Não remover nem alterar o marcador que impede revenda indevida de recompensas, se houver um sistema atual equivalente.
+- Não alterar as recompensas dos NPCs já existentes; este novo conjunto pertence somente ao Comandante.
+
+============================================================
+3. CORREÇÃO PRECISA DO DANO DE QUEDA — SUPER PULO E PULO DUPLO
+============================================================
+
+O cálculo precisa usar o nível do chão em que o jogador iniciou o ciclo do salto, e não a altura máxima que alcançou. Corrija e teste especificamente as habilidades Super Pulo (ID super_jump) e Pulo Duplo (ID double_jump).
+
+Regra funcional obrigatória:
+- Registre no servidor a altura/camada da superfície de apoio no momento em que o jogador inicia o Super Pulo.
+- No Pulo Duplo, registre a superfície do primeiro salto normal e preserve essa origem quando o segundo salto for ativado no ar. Não redefina a origem no segundo impulso.
+- Compare essa origem com a superfície em que o jogador realmente aterrissa. Use uma referência vertical consistente baseada na superfície/nível dos pés, evitando erro de um bloco por confundir o Y do bloco de apoio com o Y da superfície acima dele.
+- Dano efetivo causado por esse ciclo especial = queda vertical para baixo a partir da origem. Se o jogador aterrissar no mesmo nível da origem ou acima dele, a queda efetiva é zero e o ciclo especial não pode causar dano de queda, mesmo que o jogador tenha subido muito antes de descer.
+- Se aterrissar abaixo da origem, calcule a diferença vertical entre os dois níveis e aplique o dano que o Minecraft aplicaria se o jogador tivesse caído essa distância a partir do repouso. Exemplo obrigatório: saída no nível 100 e aterrissagem no nível 95 = dano equivalente a uma queda de 5 blocos, não à queda desde o pico do salto. Saída no nível 100 e aterrissagem no nível 100 = zero dano de queda do salto especial.
+- Preserve a fórmula vanilla e seus limiares, armadura, encantamentos, efeitos e integração com outros modificadores. Preserve também a redução da habilidade Passo Leve sem aplicá-la duas vezes.
+- Não basta multiplicar o dano por uma proporção aproximada se arredondamento ou proteção produzir resultado diferente. Inspecione o hook existente e implemente a forma compatível mais exata: fornecer a distância efetiva correta ao fluxo vanilla de dano ou reproduzir fielmente o dano equivalente, sem duplicar dano.
+- A correção vale somente para um ciclo de Super Pulo/Pulo Duplo efetivamente rastreado. Quedas normais, quedas ao sair de uma borda sem ativar um salto especial e todo o dano não relacionado devem continuar funcionando normalmente.
+- Limpe o rastreamento após aterrissar ou invalidá-lo por morte, troca de dimensão, teleporte, voo, água, montaria ou expiração. Evite deixar estado velho afetar uma queda posterior.
+- Não mude as forças, ranks, exclusividade, recarga, atalho, ativação ou demais efeitos das habilidades neste escopo; altere somente o cálculo de origem/distância/dano de queda, a menos que uma correção indispensável seja comprovada e explicada.
+
+O código recebido pode já conter `JUMP_ORIGIN_Y`, `LAST_GROUNDED_Y`, `beginJumpTracking()` e `adjustTrackedJumpFallDamage()` em RefugioAbilityData, com o hook de dano em LivingEntityAbilityMixin. Inspecione o comportamento real antes de editar. Não presuma que o ajuste proporcional existente reproduz exatamente uma queda vanilla de 5 blocos: valide a fórmula e corrija-a caso haja erro de limiar, arredondamento, referência Y ou diferença entre o pico do salto e a origem.
+
+Casos de teste obrigatórios para o dano:
+1. Super Pulo iniciado no nível 100 e aterrissagem no nível 100: 0 de dano de queda do salto especial.
+2. Super Pulo iniciado no nível 100 e aterrissagem no nível 95: mesmo dano de uma queda vanilla de 5 blocos, com e sem Passo Leve.
+3. Pulo Duplo iniciado no nível 100, segundo salto usado no ar, aterrissagem no nível 100: 0 de dano de queda do ciclo especial.
+4. Pulo Duplo iniciado no nível 100, segundo salto usado, aterrissagem no nível 95: mesmo dano de uma queda vanilla de 5 blocos, não do pico do salto.
+5. Aterrissar acima da origem: 0 de dano de queda do ciclo especial.
+6. Queda normal sem rastreamento de habilidade: comportamento vanilla anterior, sem alteração.
+7. Testar limites de arredondamento em 3, 4 e 5 blocos para evitar off-by-one.
+
+============================================================
+4. PRESERVAÇÃO DO MOD E VALIDAÇÃO
+============================================================
+
+- Não sobrescreva telas, protocolos, regras de habilidades, traduções, mapa ou mecânicas sem relação com estes dois objetivos.
+- Preserve o tratamento de super pulo sem barra de carga e o pulo duplo atuais; não recrie a antiga barra.
+- Não altere a dimensão/mapa Stonehill ou os dados binários das regiões sem necessidade explícita.
+- Adicione testes para a fórmula de moedas, os 60 marcos e os casos de queda acima. Se não for possível automatizar uma parte por depender do cliente, descreva um roteiro manual claro.
+- Execute `gradlew.bat build --console=plain` e a tarefa de verificação de economia existente (por exemplo `shopEconomyChecks`, se estiver presente). Corrija erros introduzidos.
+- Valide que há exatamente 60 marcos, que a soma monetária da trilha é 29.550, que cada marco só pode ser resgatado uma vez e que nenhum arquivo/função fora do escopo foi removido.
+- Gere o JAR atualizado somente após o build passar.
+- Ao final, relate: arquivos alterados; localização escolhida para Elias; comportamento de progresso/resgate e moedas; método usado para calcular dano equivalente; testes executados e resultados; limitações ou testes visuais não realizados. Não declare teste aprovado sem executá-lo.

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class RefugioNPCs {
+    public static final String COMMANDER_TAG = "refugio:commander_elias";
     private static final String SHOP_TAG = "refugio:merchant";
     private static final String QUEST_TAG = "refugio:quest_giver";
     private static final String GARDEN_TAG = "refugio:garden_quest_giver";
@@ -63,6 +64,9 @@ public final class RefugioNPCs {
 
     private static final double KAEL_CASTLE_X = -323.750, KAEL_CASTLE_Y = 129.0, KAEL_CASTLE_Z = 211.976;
     private static final float KAEL_CASTLE_YAW = -113.9f, KAEL_CASTLE_PITCH = 10.7f;
+
+    public static final double COMMANDER_X = -327.500, COMMANDER_Y = 129.0, COMMANDER_Z = 209.500;
+    public static final float COMMANDER_YAW = -55.0f, COMMANDER_PITCH = 0.0f;
 
     private static final double LEGACY_KAEL_CASTLE_X = -252.561, LEGACY_KAEL_CASTLE_Y = 131.0, LEGACY_KAEL_CASTLE_Z = 232.750;
     private static final int RECOVERY_DELAY_TICKS = 40;
@@ -101,6 +105,12 @@ public final class RefugioNPCs {
                 RefugioUiService.openDialogue(serverPlayer, "entity.refugio.expedition_quest_giver",
                         List.of("dialogue.refugio.dario.1", "dialogue.refugio.dario.2"),
                         "OPEN_EXPEDITION_QUESTS", "gui.refugio.dialogue.action.expedition");
+                return InteractionResult.SUCCESS;
+            }
+            if (villager.entityTags().contains(COMMANDER_TAG)) {
+                RefugioUiService.openDialogue(serverPlayer, "entity.refugio.commander_elias",
+                        List.of("dialogue.refugio.elias.1", "dialogue.refugio.elias.2"),
+                        "OPEN_COMMANDER", "gui.refugio.dialogue.action.commander");
                 return InteractionResult.SUCCESS;
             }
             if (villager.entityTags().contains(KAEL_ENTRANCE_TAG)) {
@@ -156,6 +166,7 @@ public final class RefugioNPCs {
                 || tags.contains(QUEST_TAG)
                 || tags.contains(GARDEN_TAG)
                 || tags.contains(EXPEDITION_TAG)
+                || tags.contains(COMMANDER_TAG)
                 || tags.contains(KAEL_ENTRANCE_TAG)
                 || tags.contains(KAEL_CASTLE_TAG);
     }
@@ -174,6 +185,9 @@ public final class RefugioNPCs {
         } else if (tags.contains(EXPEDITION_TAG)) {
             configureVillager(villager, EXPEDITION_X, EXPEDITION_Y, EXPEDITION_Z, EXPEDITION_TAG,
                     "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, EXPEDITION_YAW, EXPEDITION_PITCH);
+        } else if (tags.contains(COMMANDER_TAG)) {
+            configureVillager(villager, COMMANDER_X, COMMANDER_Y, COMMANDER_Z, COMMANDER_TAG,
+                    "entity.refugio.commander_elias", VillagerProfession.WEAPONSMITH, COMMANDER_YAW, COMMANDER_PITCH);
         } else if (tags.contains(KAEL_CASTLE_TAG) || tags.contains(KAEL_MOVED_TAG)) {
             world.setAttached(KAEL_AT_CASTLE_STATE, true);
             configureKael(villager, KAEL_CASTLE_X, KAEL_CASTLE_Y, KAEL_CASTLE_Z,
@@ -213,7 +227,7 @@ public final class RefugioNPCs {
         }
 
         ensureAllNpcs(world);
-        Refugio.LOGGER.info("NPCs do Refúgio: Baldur, Eldrin, Marta, Dário e Kael (um único local por vez).");
+        Refugio.LOGGER.info("NPCs do Refúgio: Baldur, Eldrin, Marta, Dário, Comandante Elias Varga e Kael.");
     }
 
     private static void ensureAllNpcs(ServerLevel world) {
@@ -221,6 +235,7 @@ public final class RefugioNPCs {
         BlockPos questChunk = new BlockPos((int) Math.floor(QUEST_X), (int) Math.floor(QUEST_Y), (int) Math.floor(QUEST_Z));
         BlockPos gardenChunk = new BlockPos((int) Math.floor(GARDEN_X), (int) Math.floor(GARDEN_Y), (int) Math.floor(GARDEN_Z));
         BlockPos expeditionChunk = new BlockPos((int) Math.floor(EXPEDITION_X), (int) Math.floor(EXPEDITION_Y), (int) Math.floor(EXPEDITION_Z));
+        BlockPos commanderChunk = new BlockPos((int) Math.floor(COMMANDER_X), (int) Math.floor(COMMANDER_Y), (int) Math.floor(COMMANDER_Z));
         BlockPos kaelEntranceChunk = new BlockPos((int) Math.floor(KAEL_ENTRANCE_X), (int) Math.floor(KAEL_ENTRANCE_Y), (int) Math.floor(KAEL_ENTRANCE_Z));
         BlockPos kaelCastleChunk = new BlockPos((int) Math.floor(KAEL_CASTLE_X), (int) Math.floor(KAEL_CASTLE_Y), (int) Math.floor(KAEL_CASTLE_Z));
         BlockPos legacyKaelCastleChunk = new BlockPos((int) Math.floor(LEGACY_KAEL_CASTLE_X), (int) Math.floor(LEGACY_KAEL_CASTLE_Y), (int) Math.floor(LEGACY_KAEL_CASTLE_Z));
@@ -228,6 +243,7 @@ public final class RefugioNPCs {
         world.getChunkAt(questChunk);
         world.getChunkAt(gardenChunk);
         world.getChunkAt(expeditionChunk);
+        world.getChunkAt(commanderChunk);
         world.getChunkAt(kaelEntranceChunk);
         world.getChunkAt(kaelCastleChunk);
         world.getChunkAt(legacyKaelCastleChunk);
@@ -240,6 +256,8 @@ public final class RefugioNPCs {
                 "entity.refugio.garden_quest_giver", VillagerProfession.FARMER, GARDEN_YAW, GARDEN_PITCH);
         spawnOrUpdate(world, EXPEDITION_TAG, EXPEDITION_X, EXPEDITION_Y, EXPEDITION_Z,
                 "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, EXPEDITION_YAW, EXPEDITION_PITCH);
+        spawnOrUpdate(world, COMMANDER_TAG, COMMANDER_X, COMMANDER_Y, COMMANDER_Z,
+                "entity.refugio.commander_elias", VillagerProfession.WEAPONSMITH, COMMANDER_YAW, COMMANDER_PITCH);
         spawnOrUpdateKael(world);
     }
 

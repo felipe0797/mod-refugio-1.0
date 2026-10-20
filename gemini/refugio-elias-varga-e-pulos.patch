@@ -1,0 +1,3532 @@
+--- a/src/main/java/com/felpz/refugio/Refugio.java
++++ b/src/main/java/com/felpz/refugio/Refugio.java
+@@ -6,6 +6,7 @@
+ import com.felpz.refugio.item.RefugioItems;
+ import com.felpz.refugio.npc.RefugioNPCs;
+ import com.felpz.refugio.npc.RefugioTrainingDummy;
++import com.felpz.refugio.quest.RefugioCommanderData;
+ import com.felpz.refugio.world.StonehillMap;
+ import com.felpz.refugio.world.RefugioSustainability;
+ import com.felpz.refugio.world.VillageStructure;
+@@ -54,6 +55,7 @@
+         RefugioUiService.initialize();
+         RefugioStory.initialize();
+         RefugioSideQuests.initialize();
++        RefugioCommanderData.initialize();
+         RefugioCommands.initialize();
+         RefugioNPCs.initialize();
+         RefugioTrainingDummy.initialize();
+--- a/src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
++++ b/src/main/java/com/felpz/refugio/ability/RefugioAbilityRules.java
+@@ -3,6 +3,10 @@
+ /** Pure skill-tree balance rules, intentionally independent from the Minecraft runtime. */
+ public final class RefugioAbilityRules {
+     private static final int[] RANK_COSTS = {500, 1000, 2000, 3000, 4000};
++    private static final double SURFACE_EPSILON = 1.0e-3;
++    private static final double DAMAGE_EPSILON = 1.0e-5;
++    public static final double DEFAULT_SAFE_FALL_DISTANCE = 3.0;
++    public static final double DEFAULT_FALL_DAMAGE_MULTIPLIER = 1.0;
+ 
+     private RefugioAbilityRules() { }
+ 
+@@ -113,5 +117,139 @@
+         return !freeChoiceAlreadyUsed && currentRank == 0 && firstInTrack;
+     }
+ 
++    /**
++     * Normalizes a foot/surface Y coordinate to the nearest 1/16th of a block when within
++     * floating-point surface tolerance, avoiding off-by-one ceil() errors on block surfaces.
++     */
++    public static double normalizeSurfaceCoordinate(double y) {
++        double snapped16 = Math.round(y * 16.0) / 16.0;
++        return Math.abs(y - snapped16) <= SURFACE_EPSILON ? snapped16 : y;
++    }
++
++    /**
++     * Resolves the launch surface Y for a special jump cycle:
++     * - On the ground (Super Pulo): uses the current foot/surface Y.
++     * - In mid-air (Pulo Duplo): preserves the existing tracked origin if already tracking in the same dimension,
++     *   otherwise uses the ground surface Y recorded at the start of the first normal jump.
++     */
++    public static double resolveJumpOriginY(boolean onGroundAtActivation,
++                                            boolean alreadyTrackingInDimension,
++                                            double currentTrackedOriginY,
++                                            boolean hasLastGroundedInDimension,
++                                            double lastGroundedY,
++                                            double currentFootY) {
++        if (onGroundAtActivation) {
++            return normalizeSurfaceCoordinate(currentFootY);
++        }
++        if (alreadyTrackingInDimension) {
++            return normalizeSurfaceCoordinate(currentTrackedOriginY);
++        }
++        if (hasLastGroundedInDimension) {
++            return normalizeSurfaceCoordinate(lastGroundedY);
++        }
++        return normalizeSurfaceCoordinate(currentFootY);
++    }
++
++    /**
++     * Computes the effective downward vertical distance between the launch surface (originY)
++     * and the landing surface (landingY). Landing at or above originY yields 0.0.
++     */
++    public static double effectiveTrackedFallDistance(double originY, double landingY) {
++        double normOrigin = normalizeSurfaceCoordinate(originY);
++        double normLanding = normalizeSurfaceCoordinate(landingY);
++        double drop = normOrigin - normLanding;
++        if (drop <= SURFACE_EPSILON) {
++            return 0.0;
++        }
++        double snapped16 = Math.round(drop * 16.0) / 16.0;
++        if (Math.abs(drop - snapped16) <= SURFACE_EPSILON) {
++            drop = snapped16;
++        }
++        return Math.max(0.0, drop);
++    }
++
++    /**
++     * Reproduces vanilla Minecraft's integer fall damage calculation from rest for a given vertical drop
++     * between originY and landingY: ceil((effectiveDistance - safeFallDistance) * fallDamageMultiplier).
++     */
++    public static float trackedJumpVanillaFallDamage(double originY, double landingY,
++                                                     double safeFallDistance, double fallDamageMultiplier) {
++        double effectiveDistance = effectiveTrackedFallDistance(originY, landingY);
++        double excess = effectiveDistance - safeFallDistance;
++        if (excess <= DAMAGE_EPSILON || fallDamageMultiplier <= 0.0) {
++            return 0.0f;
++        }
++        double rawDamage = excess * fallDamageMultiplier;
++        long nearestInt = Math.round(rawDamage);
++        if (Math.abs(rawDamage - nearestInt) <= DAMAGE_EPSILON) {
++            return (float) Math.max(0L, nearestInt);
++        }
++        return (float) Math.ceil(rawDamage);
++    }
++
++    public static float trackedJumpVanillaFallDamage(double originY, double landingY) {
++        return trackedJumpVanillaFallDamage(originY, landingY,
++                DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
++    }
++
++    public static float vanillaBaseFallDamageForDistance(double fallDistance) {
++        return trackedJumpVanillaFallDamage(fallDistance, 0.0,
++                DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
++    }
++
++    /**
++     * Adjusts fall damage when a tracked Super Pulo / Pulo Duplo cycle lands.
++     * Untracked falls return vanillaDamage untouched. Tracked falls compute the exact vanilla
++     * damage for the vertical drop below originY (ignoring the upward jump peak).
++     */
++    public static float adjustTrackedJumpFallDamage(boolean trackingActive,
++                                                    double originY,
++                                                    double landingY,
++                                                    double peakFallDistance,
++                                                    float vanillaDamage) {
++        if (!trackingActive) {
++            return vanillaDamage;
++        }
++        if (vanillaDamage <= 0.0f) {
++            return 0.0f;
++        }
++        double effectiveDrop = effectiveTrackedFallDistance(originY, landingY);
++        if (effectiveDrop <= DEFAULT_SAFE_FALL_DISTANCE + DAMAGE_EPSILON) {
++            return 0.0f;
++        }
++
++        float standardPeakDamage = vanillaBaseFallDamageForDistance(peakFallDistance);
++        if (peakFallDistance <= DEFAULT_SAFE_FALL_DISTANCE
++                || Math.abs(vanillaDamage - standardPeakDamage) < 0.01f) {
++            return trackedJumpVanillaFallDamage(originY, landingY,
++                    DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
++        }
++
++        for (int safeDist = 4; safeDist <= 16; safeDist++) {
++            float candidatePeak = trackedJumpVanillaFallDamage(peakFallDistance, 0.0,
++                    safeDist, DEFAULT_FALL_DAMAGE_MULTIPLIER);
++            if (peakFallDistance > safeDist && Math.abs(vanillaDamage - candidatePeak) < 0.01f) {
++                return trackedJumpVanillaFallDamage(originY, landingY,
++                        safeDist, DEFAULT_FALL_DAMAGE_MULTIPLIER);
++            }
++        }
++
++        double peakExcess = Math.max(1.0, peakFallDistance - DEFAULT_SAFE_FALL_DISTANCE);
++        double inferredMultiplier = vanillaDamage / peakExcess;
++        return trackedJumpVanillaFallDamage(originY, landingY,
++                DEFAULT_SAFE_FALL_DISTANCE, inferredMultiplier);
++    }
++
++    /**
++     * Returns the fall damage after applying Passo Leve (light_step) once to a tracked jump fall.
++     */
++    public static float trackedJumpFallDamageWithLightStep(double originY, double landingY, int lightStepRank) {
++        float base = trackedJumpVanillaFallDamage(originY, landingY);
++        if (base <= 0.0f || lightStepRank <= 0) {
++            return base;
++        }
++        return base * (1.0f - lightStepReduction(lightStepRank));
++    }
++
+     private static int boundedRank(int rank) { return Math.max(0, Math.min(maxRank(), rank)); }
+ }
+--- a/src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
++++ b/src/main/java/com/felpz/refugio/ability/RefugioAbilityData.java
+@@ -167,10 +167,20 @@
+             Refugio.id("ability_jump_started_at"), builder -> builder.initializer(() -> 0L));
+     private static final AttachmentType<String> JUMP_DIMENSION = AttachmentRegistry.create(
+             Refugio.id("ability_jump_dimension"), builder -> builder.initializer(() -> ""));
++    private static final AttachmentType<Boolean> JUMP_LEFT_GROUND = AttachmentRegistry.create(
++            Refugio.id("ability_jump_left_ground"), builder -> builder.initializer(() -> false));
+     private static final AttachmentType<Double> LAST_GROUNDED_Y = AttachmentRegistry.create(
+             Refugio.id("ability_last_grounded_y"), builder -> builder.initializer(() -> 0.0));
+     private static final AttachmentType<String> LAST_GROUNDED_DIMENSION = AttachmentRegistry.create(
+             Refugio.id("ability_last_grounded_dimension"), builder -> builder.initializer(() -> ""));
++    private static final AttachmentType<Double> LAST_TICK_X = AttachmentRegistry.create(
++            Refugio.id("ability_last_tick_x"), builder -> builder.initializer(() -> 0.0));
++    private static final AttachmentType<Double> LAST_TICK_Y = AttachmentRegistry.create(
++            Refugio.id("ability_last_tick_y"), builder -> builder.initializer(() -> 0.0));
++    private static final AttachmentType<Double> LAST_TICK_Z = AttachmentRegistry.create(
++            Refugio.id("ability_last_tick_z"), builder -> builder.initializer(() -> 0.0));
++    private static final AttachmentType<String> LAST_TICK_DIMENSION = AttachmentRegistry.create(
++            Refugio.id("ability_last_tick_dimension"), builder -> builder.initializer(() -> ""));
+     private static final AttachmentType<Long> AREA_DEFENSE_COOLDOWN_UNTIL = AttachmentRegistry.create(
+             Refugio.id("ability_area_defense_cooldown"), builder -> builder.initializer(() -> 0L));
+ 
+@@ -223,9 +233,25 @@
+ 
+     public static void registerEvents() {
+         ServerLifecycleEvents.SERVER_STOPPED.register(server -> LAST_SYNCED_MOVEMENT_MASK.clear());
++        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
++            ServerPlayer player = handler.player;
++            if (player.onGround()) {
++                player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
++                player.setAttached(LAST_GROUNDED_DIMENSION, player.level().dimension().toString());
++            }
++            recordTickPosition(player);
++        });
+         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+             LAST_SYNCED_MOVEMENT_MASK.remove(handler.player.getUUID());
++            clearJumpTracking(handler.player);
+         });
++        ServerTickEvents.START_SERVER_TICK.register(server ->
++                server.getPlayerList().getPlayers().forEach(player -> {
++                    if (player.onGround() && !player.getAttachedOrCreate(JUMP_TRACKING)) {
++                        player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
++                        player.setAttached(LAST_GROUNDED_DIMENSION, player.level().dimension().toString());
++                    }
++                }));
+         ServerTickEvents.END_SERVER_TICK.register(server ->
+                 server.getPlayerList().getPlayers().forEach(player -> {
+                     enforceJumpExclusivity(player);
+@@ -486,7 +512,8 @@
+     }
+ 
+     private static boolean activateDoubleJump(ServerPlayer player) {
+-        if (player.isPassenger() || player.isInWater() || player.onGround()
++        if (player.isPassenger() || player.isInWater() || player.isFallFlying()
++                || player.getAbilities().flying || player.onGround()
+                 || player.getAttachedOrCreate(DOUBLE_JUMP_USED)) return false;
+         int rank = rank(player, "double_jump");
+         if (rank <= 0) return false;
+@@ -548,35 +575,58 @@
+ 
+     private static void beginJumpTracking(ServerPlayer player) {
+         String dimension = player.level().dimension().toString();
+-        double originY = player.getY();
+-        if (!player.onGround() && dimension.equals(player.getAttachedOrCreate(LAST_GROUNDED_DIMENSION))) {
+-            originY = player.getAttachedOrCreate(LAST_GROUNDED_Y);
++        boolean onGround = player.onGround();
++        boolean alreadyTrackingInDim = player.getAttachedOrCreate(JUMP_TRACKING)
++                && dimension.equals(player.getAttachedOrCreate(JUMP_DIMENSION));
++        boolean hasLastGroundedInDim = dimension.equals(player.getAttachedOrCreate(LAST_GROUNDED_DIMENSION));
++        double originY = RefugioAbilityRules.resolveJumpOriginY(
++                onGround,
++                alreadyTrackingInDim,
++                player.getAttachedOrCreate(JUMP_ORIGIN_Y),
++                hasLastGroundedInDim,
++                player.getAttachedOrCreate(LAST_GROUNDED_Y),
++                player.getY()
++        );
++        if (onGround) {
++            player.setAttached(LAST_GROUNDED_Y, originY);
++            player.setAttached(LAST_GROUNDED_DIMENSION, dimension);
+         }
+         player.setAttached(JUMP_TRACKING, true);
+         player.setAttached(JUMP_ORIGIN_Y, originY);
+         player.setAttached(JUMP_STARTED_AT, gameTime(player));
+         player.setAttached(JUMP_DIMENSION, dimension);
+-    }
+-
+-    /** Returns vanilla fall damage adjusted to only count descent below the jump's launch height. */
++        player.setAttached(JUMP_LEFT_GROUND, !onGround);
++        recordTickPosition(player);
++    }
++
++    /**
++     * Returns vanilla fall damage adjusted to only count vertical descent below the jump's launch surface.
++     * Untracked falls are returned completely unchanged.
++     */
+     public static float adjustTrackedJumpFallDamage(ServerPlayer player, float vanillaDamage) {
+-        if (!player.getAttachedOrCreate(JUMP_TRACKING)) return vanillaDamage;
+-        double belowOrigin = player.getAttachedOrCreate(JUMP_ORIGIN_Y) - player.getY();
+-        double actualDamageDistance = Math.max(0.0, player.fallDistance - 3.0);
+-        double intendedDamageDistance = Math.max(0.0, belowOrigin - 3.0);
++        boolean tracking = player.getAttachedOrCreate(JUMP_TRACKING);
++        if (!tracking) {
++            return vanillaDamage;
++        }
++        String currentDim = player.level().dimension().toString();
++        if (!currentDim.equals(player.getAttachedOrCreate(JUMP_DIMENSION))) {
++            clearJumpTracking(player);
++            return vanillaDamage;
++        }
++        double originY = player.getAttachedOrCreate(JUMP_ORIGIN_Y);
++        double landingY = player.getY();
++        float adjusted = RefugioAbilityRules.adjustTrackedJumpFallDamage(
++                true, originY, landingY, player.fallDistance, vanillaDamage);
+         clearJumpTracking(player);
+-        if (intendedDamageDistance <= 0.0) return 0.0f;
+-        if (actualDamageDistance <= 0.0) return vanillaDamage;
+-        return vanillaDamage * (float) Math.min(1.0, intendedDamageDistance / actualDamageDistance);
++        return adjusted;
+     }
+ 
+     private static void refreshJumpState(ServerPlayer player) {
+         long now = gameTime(player);
+         String currentDimension = player.level().dimension().toString();
+-        if (player.onGround()) {
+-            player.setAttached(LAST_GROUNDED_Y, player.getY());
+-            player.setAttached(LAST_GROUNDED_DIMENSION, currentDimension);
+-        }
++        boolean teleported = hasSuddenTeleportJump(player, currentDimension);
++        recordTickPosition(player);
++
+         if (player.getAttachedOrCreate(SUPER_JUMP_USED)) {
+             long launchedAt = player.getAttachedOrCreate(SUPER_JUMP_LAUNCHED_AT);
+             if (!player.onGround()) {
+@@ -588,22 +638,59 @@
+         if (player.getAttachedOrCreate(DOUBLE_JUMP_USED) && player.onGround()) {
+             player.setAttached(DOUBLE_JUMP_USED, false);
+         }
+-        if (!player.getAttachedOrCreate(JUMP_TRACKING)) return;
+-        long startedAt = player.getAttachedOrCreate(JUMP_STARTED_AT);
+-        boolean invalid = !player.isAlive() || player.isPassenger() || player.isInWater()
+-                || player.isFallFlying() || player.getAbilities().flying
+-                || !player.level().dimension().toString().equals(player.getAttachedOrCreate(JUMP_DIMENSION))
+-                || now - startedAt > 1200L;
+-        if (invalid || (player.onGround() && now - startedAt > 10L)) {
+-            clearJumpTracking(player);
+-        }
+-    }
+-
+-    private static void clearJumpTracking(ServerPlayer player) {
++
++        if (player.getAttachedOrCreate(JUMP_TRACKING)) {
++            long startedAt = player.getAttachedOrCreate(JUMP_STARTED_AT);
++            if (!player.onGround()) {
++                player.setAttached(JUMP_LEFT_GROUND, true);
++            }
++            boolean invalid = teleported
++                    || !player.isAlive()
++                    || player.isPassenger()
++                    || player.isInWater()
++                    || player.isInLava()
++                    || player.onClimbable()
++                    || player.isFallFlying()
++                    || player.getAbilities().flying
++                    || !currentDimension.equals(player.getAttachedOrCreate(JUMP_DIMENSION))
++                    || now - startedAt > 1200L;
++            boolean landedAfterAirborne = player.onGround()
++                    && (player.getAttachedOrCreate(JUMP_LEFT_GROUND) || now - startedAt > 6L);
++            if (invalid || landedAfterAirborne) {
++                clearJumpTracking(player);
++            }
++        }
++
++        if (player.onGround() && !player.getAttachedOrCreate(JUMP_TRACKING)) {
++            player.setAttached(LAST_GROUNDED_Y, RefugioAbilityRules.normalizeSurfaceCoordinate(player.getY()));
++            player.setAttached(LAST_GROUNDED_DIMENSION, currentDimension);
++        }
++    }
++
++    private static boolean hasSuddenTeleportJump(ServerPlayer player, String currentDimension) {
++        String lastDim = player.getAttachedOrCreate(LAST_TICK_DIMENSION);
++        if (lastDim == null || lastDim.isEmpty() || !lastDim.equals(currentDimension)) {
++            return true;
++        }
++        double dx = player.getX() - player.getAttachedOrCreate(LAST_TICK_X);
++        double dy = player.getY() - player.getAttachedOrCreate(LAST_TICK_Y);
++        double dz = player.getZ() - player.getAttachedOrCreate(LAST_TICK_Z);
++        return (dx * dx + dz * dz) > 64.0 || Math.abs(dy) > 16.0;
++    }
++
++    private static void recordTickPosition(ServerPlayer player) {
++        player.setAttached(LAST_TICK_X, player.getX());
++        player.setAttached(LAST_TICK_Y, player.getY());
++        player.setAttached(LAST_TICK_Z, player.getZ());
++        player.setAttached(LAST_TICK_DIMENSION, player.level().dimension().toString());
++    }
++
++    public static void clearJumpTracking(ServerPlayer player) {
+         player.setAttached(JUMP_TRACKING, false);
+         player.setAttached(JUMP_ORIGIN_Y, 0.0);
+         player.setAttached(JUMP_STARTED_AT, 0L);
+         player.setAttached(JUMP_DIMENSION, "");
++        player.setAttached(JUMP_LEFT_GROUND, false);
+     }
+ 
+     private static void refreshUtilitySkills(ServerPlayer player) {
+--- /dev/null
++++ b/src/main/java/com/felpz/refugio/quest/RefugioCommanderRewards.java
+@@ -0,0 +1,619 @@
++package com.felpz.refugio.quest;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.LinkedHashSet;
++import java.util.List;
++import java.util.Set;
++
++/**
++ * Authoritative, runtime-independent specification of Commander Elias Varga's
++ * 60 zombie-kill milestones, coin formula, items, enchantments, and 12 titles ("Última Linha").
++ */
++public final class RefugioCommanderRewards {
++    public static final int TOTAL_MILESTONES = 60;
++    public static final int TOTAL_TRACK_COINS = 29_550;
++    public static final String DEFAULT_ZOMBIE_ENTITY_ID = "minecraft:zombie";
++
++    public record EnchantSpec(String enchantmentId, int level) { }
++
++    public record RewardItemSpec(String itemId, int count, List<EnchantSpec> enchantments, String fallbackItemId) {
++        public RewardItemSpec {
++            enchantments = enchantments == null ? List.of() : List.copyOf(enchantments);
++            fallbackItemId = (fallbackItemId == null || fallbackItemId.isBlank()) ? "minecraft:diamond" : fallbackItemId;
++        }
++    }
++
++    public record MilestoneSpec(int number, int requiredKills, String name, String objective,
++                                int coins, String iconItemId, List<RewardItemSpec> items,
++                                String exclusiveTitle) {
++        public MilestoneSpec {
++            items = items == null ? List.of() : List.copyOf(items);
++            exclusiveTitle = exclusiveTitle == null ? "" : exclusiveTitle;
++        }
++    }
++
++    public record TitleSpec(int index, int requiredKills, String title) { }
++
++    private static final List<TitleSpec> DEFAULT_TITLES = List.of(
++            new TitleSpec(0, 10, "Recruta"),
++            new TitleSpec(1, 50, "Soldado"),
++            new TitleSpec(2, 100, "Defensor"),
++            new TitleSpec(3, 200, "Veterano"),
++            new TitleSpec(4, 300, "Caçador de Mortos"),
++            new TitleSpec(5, 400, "Executor"),
++            new TitleSpec(6, 500, "Guardião"),
++            new TitleSpec(7, 600, "Matador de Hordas"),
++            new TitleSpec(8, 700, "Campeão"),
++            new TitleSpec(9, 800, "Comandante de Campo"),
++            new TitleSpec(10, 900, "Herói da Última Linha"),
++            new TitleSpec(11, 1000, "Lenda da Última Linha")
++    );
++
++    private static final List<MilestoneSpec> DEFAULT_MILESTONES = buildDefaultMilestones();
++
++    private static volatile List<MilestoneSpec> activeMilestones = DEFAULT_MILESTONES;
++    private static volatile List<TitleSpec> activeTitles = DEFAULT_TITLES;
++    private static volatile Set<String> countedEntityIds = Set.of(DEFAULT_ZOMBIE_ENTITY_ID);
++    private static volatile boolean announceLegendGlobally = true;
++    private static volatile boolean notifyMilestoneUnlock = true;
++
++    private RefugioCommanderRewards() { }
++
++    /**
++     * Authoritative coin formula from specification: 50 + 15 * (n - 1) for n in 1..60.
++     */
++    public static int coinsForMilestone(int milestoneNumber) {
++        if (milestoneNumber < 1 || milestoneNumber > TOTAL_MILESTONES) {
++            return 0;
++        }
++        return 50 + 15 * (milestoneNumber - 1);
++    }
++
++    /**
++     * Authoritative kill threshold for milestone n (1..60):
++     * - n in 1..20: 10 to 200 in intervals of 10
++     * - n in 21..60: 220 to 1000 in intervals of 20
++     */
++    public static int requiredKillsForMilestone(int milestoneNumber) {
++        if (milestoneNumber < 1 || milestoneNumber > TOTAL_MILESTONES) {
++            return -1;
++        }
++        if (milestoneNumber <= 20) {
++            return milestoneNumber * 10;
++        }
++        return 200 + (milestoneNumber - 20) * 20;
++    }
++
++    public static int totalTrackCoins() {
++        int sum = 0;
++        for (MilestoneSpec m : activeMilestones) {
++            sum += m.coins();
++        }
++        return sum;
++    }
++
++    public static List<MilestoneSpec> defaultMilestones() {
++        return DEFAULT_MILESTONES;
++    }
++
++    public static List<TitleSpec> defaultTitles() {
++        return DEFAULT_TITLES;
++    }
++
++    public static List<MilestoneSpec> activeMilestones() {
++        return activeMilestones;
++    }
++
++    public static MilestoneSpec milestone(int milestoneNumber) {
++        List<MilestoneSpec> list = activeMilestones;
++        if (milestoneNumber < 1 || milestoneNumber > list.size()) {
++            return null;
++        }
++        return list.get(milestoneNumber - 1);
++    }
++
++    public static List<TitleSpec> activeTitles() {
++        return activeTitles;
++    }
++
++    public static Set<String> countedEntityIds() {
++        return countedEntityIds;
++    }
++
++    public static boolean isGlobalLegendAnnouncementEnabled() {
++        return announceLegendGlobally;
++    }
++
++    public static boolean isMilestoneUnlockMessageEnabled() {
++        return notifyMilestoneUnlock;
++    }
++
++    public static String highestUnlockedTitle(int totalKills) {
++        String current = "";
++        for (TitleSpec t : activeTitles) {
++            if (totalKills >= t.requiredKills()) {
++                current = t.title();
++            }
++        }
++        return current;
++    }
++
++    public static TitleSpec nextTitle(int totalKills) {
++        for (TitleSpec t : activeTitles) {
++            if (totalKills < t.requiredKills()) {
++                return t;
++            }
++        }
++        return null;
++    }
++
++    public static MilestoneSpec nextUnreachedMilestone(int totalKills) {
++        for (MilestoneSpec m : activeMilestones) {
++            if (totalKills < m.requiredKills()) {
++                return m;
++            }
++        }
++        return null;
++    }
++
++    public static void applyConfiguration(List<MilestoneSpec> customMilestones,
++                                          List<TitleSpec> customTitles,
++                                          Set<String> customEntityIds,
++                                          boolean legendGlobalAnnouncement,
++                                          boolean milestoneUnlockMessages) {
++        if (customMilestones != null && customMilestones.size() == TOTAL_MILESTONES) {
++            activeMilestones = List.copyOf(customMilestones);
++        } else {
++            activeMilestones = DEFAULT_MILESTONES;
++        }
++        if (customTitles != null && !customTitles.isEmpty()) {
++            activeTitles = List.copyOf(customTitles);
++        } else {
++            activeTitles = DEFAULT_TITLES;
++        }
++        if (customEntityIds != null && !customEntityIds.isEmpty()) {
++            Set<String> cleaned = new LinkedHashSet<>();
++            for (String id : customEntityIds) {
++                if (id != null && !id.isBlank()) {
++                    cleaned.add(id.trim());
++                }
++            }
++            countedEntityIds = cleaned.isEmpty()
++                    ? Set.of(DEFAULT_ZOMBIE_ENTITY_ID)
++                    : Collections.unmodifiableSet(cleaned);
++        } else {
++            countedEntityIds = Set.of(DEFAULT_ZOMBIE_ENTITY_ID);
++        }
++        announceLegendGlobally = legendGlobalAnnouncement;
++        notifyMilestoneUnlock = milestoneUnlockMessages;
++    }
++
++    private static List<MilestoneSpec> buildDefaultMilestones() {
++        List<MilestoneSpec> list = new ArrayList<>(TOTAL_MILESTONES);
++
++        list.add(ms(1, "Kit de Caçador",
++                "Dar comida, iluminação e uma arma inicial útil para continuar enfrentando as hordas.",
++                item("minecraft:cooked_beef", 32),
++                item("minecraft:golden_apple", 16),
++                enchanted("minecraft:iron_sword", 1, "minecraft:iron_sword", ench("minecraft:sharpness", 2)),
++                item("minecraft:torch", 32)));
++
++        list.add(ms(2, "Equipamento de Combate",
++                "Aumentar a sobrevivência e oferecer materiais para reparos e fabricação.",
++                item("minecraft:iron_helmet", 1),
++                item("minecraft:iron_chestplate", 1),
++                item("minecraft:iron_leggings", 1),
++                item("minecraft:iron_boots", 1),
++                item("minecraft:shield", 1),
++                item("minecraft:iron_ingot", 16),
++                item("minecraft:golden_apple", 4)));
++
++        list.add(ms(3, "Bolsa de Recursos Raros",
++                "Fornecer recursos de valor para fabricação, trocas e progressão.",
++                item("minecraft:diamond", 8),
++                item("minecraft:gold_ingot", 16),
++                item("minecraft:emerald", 16),
++                item("minecraft:golden_apple", 8)));
++
++        list.add(ms(4, "Arsenal do Soldado",
++                "Introduzir armas mais fortes e uma opção de combate à distância.",
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword", ench("minecraft:sharpness", 2)),
++                enchanted("minecraft:bow", 1, "minecraft:bow", ench("minecraft:power", 2)),
++                item("minecraft:arrow", 64),
++                item("minecraft:ender_pearl", 16)));
++
++        list.add(ms(5, "Armadura de Elite",
++                "Marcar a primeira grande conquista defensiva do jogador.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet", ench("minecraft:protection", 1)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate", ench("minecraft:protection", 1)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings", ench("minecraft:protection", 1)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots", ench("minecraft:protection", 1)),
++                item("minecraft:diamond", 16)));
++
++        list.add(ms(6, "Suprimentos de Campanha",
++                "Garantir suprimentos para novas expedições.",
++                item("minecraft:golden_apple", 32),
++                item("minecraft:cooked_beef", 32)));
++
++        list.add(ms(7, "Ferramenta de Minerador Veterano",
++                "Acelerar a coleta de recursos.",
++                enchanted("minecraft:diamond_pickaxe", 1, "minecraft:diamond_pickaxe",
++                        ench("minecraft:efficiency", 3), ench("minecraft:fortune", 2))));
++
++        list.add(ms(8, "Cofre de Recursos",
++                "Apoiar a fabricação de equipamentos e trocas.",
++                item("minecraft:diamond", 24),
++                item("minecraft:emerald", 16)));
++
++        list.add(ms(9, "Arqueiro de Elite",
++                "Melhorar o combate à distância.",
++                enchanted("minecraft:bow", 1, "minecraft:bow",
++                        ench("minecraft:power", 3), ench("minecraft:flame", 1)),
++                item("minecraft:arrow", 64)));
++
++        list.add(ms(10, "Veterano da Última Linha",
++                "Oferecer um conjunto de combate sólido para a próxima fase.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet", ench("minecraft:protection", 2)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate", ench("minecraft:protection", 2)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings", ench("minecraft:protection", 2)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots", ench("minecraft:protection", 2)),
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword", ench("minecraft:sharpness", 3))));
++
++        list.add(ms(11, "Sobrevivente Implacável",
++                "Oferecer uma chance extra de sobrevivência em situações extremas.",
++                itemWithFallback("minecraft:totem_of_undying", 2, "minecraft:golden_apple")));
++
++        list.add(ms(12, "Reserva de Guerra",
++                "Fornecer recursos e cura para combates prolongados.",
++                item("minecraft:diamond", 32),
++                item("minecraft:golden_apple", 16)));
++
++        list.add(ms(13, "Besta do Combatente",
++                "Oferecer uma arma de longo alcance diferente do arco.",
++                enchanted("minecraft:crossbow", 1, "minecraft:bow",
++                        ench("minecraft:piercing", 3), ench("minecraft:quick_charge", 2))));
++
++        list.add(ms(14, "Bolsa do Explorador",
++                "Facilitar deslocamentos e recuperação entre combates.",
++                item("minecraft:ender_pearl", 32),
++                item("minecraft:golden_apple", 16)));
++
++        list.add(ms(15, "Lâmina Incendiária",
++                "Oferecer dano elevado e um efeito ofensivo especial.",
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword",
++                        ench("minecraft:sharpness", 4), ench("minecraft:fire_aspect", 2))));
++
++        list.add(ms(16, "Equipamento de Mobilidade",
++                "Liberar mobilidade avançada.",
++                itemWithFallback("minecraft:elytra", 1, "minecraft:ender_pearl"),
++                item("minecraft:firework_rocket", 64)));
++
++        list.add(ms(17, "Ferramentas do Veterano",
++                "Reduzir o tempo de coleta de materiais.",
++                enchanted("minecraft:diamond_pickaxe", 1, "minecraft:diamond_pickaxe",
++                        ench("minecraft:efficiency", 4), ench("minecraft:fortune", 3)),
++                enchanted("minecraft:diamond_axe", 1, "minecraft:diamond_axe", ench("minecraft:efficiency", 3)),
++                enchanted("minecraft:diamond_shovel", 1, "minecraft:diamond_shovel", ench("minecraft:efficiency", 3))));
++
++        list.add(ms(18, "Conhecimento de Encantamento",
++                "Permitir melhorias escolhidas pelo jogador.",
++                enchanted("minecraft:enchanted_book", 1, "minecraft:book", ench("minecraft:mending", 1)),
++                enchanted("minecraft:enchanted_book", 1, "minecraft:book", ench("minecraft:protection", 4))));
++
++        list.add(ms(19, "Último Recurso",
++                "Recompensar o jogador com itens de emergência raros.",
++                itemWithFallback("minecraft:enchanted_golden_apple", 1, "minecraft:golden_apple"),
++                itemWithFallback("minecraft:totem_of_undying", 1, "minecraft:golden_apple")));
++
++        list.add(ms(20, "Campeão da Primeira Campanha",
++                "Concluir a primeira etapa com um conjunto de alto nível.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet", ench("minecraft:protection", 4)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate", ench("minecraft:protection", 4)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings", ench("minecraft:protection", 4)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots", ench("minecraft:protection", 4)),
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword", ench("minecraft:sharpness", 5))));
++
++        list.add(ms(21, "Arsenal de Diamante",
++                "Financiar novas melhorias de equipamentos.",
++                item("minecraft:diamond", 32),
++                item("minecraft:gold_ingot", 16),
++                item("minecraft:emerald", 16)));
++
++        list.add(ms(22, "Espadachim Veterano",
++                "Melhorar o combate corpo a corpo e fornecer uma arma reserva.",
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword", ench("minecraft:sharpness", 4)),
++                item("minecraft:diamond_sword", 1)));
++
++        list.add(ms(23, "Mestre do Arco",
++                "Aumentar a eficiência contra inimigos perigosos à distância.",
++                enchanted("minecraft:bow", 1, "minecraft:bow",
++                        ench("minecraft:power", 4), ench("minecraft:flame", 1)),
++                item("minecraft:arrow", 64)));
++
++        list.add(ms(24, "Minerador de Elite",
++                "Melhorar a extração de recursos raros.",
++                enchanted("minecraft:diamond_pickaxe", 1, "minecraft:diamond_pickaxe",
++                        ench("minecraft:efficiency", 4), ench("minecraft:fortune", 3)),
++                item("minecraft:diamond", 16)));
++
++        list.add(ms(25, "Guardião de Diamante",
++                "Reforçar a defesa contra grupos de inimigos.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet", ench("minecraft:protection", 3)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate", ench("minecraft:protection", 3)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings", ench("minecraft:protection", 3)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots", ench("minecraft:protection", 3)),
++                item("minecraft:shield", 1)));
++
++        list.add(ms(26, "Reserva de Suprimentos",
++                "Preparar o jogador para expedições longas.",
++                item("minecraft:golden_apple", 32),
++                item("minecraft:cooked_beef", 64)));
++
++        list.add(ms(27, "Combatente do Tridente",
++                "Adicionar uma arma versátil.",
++                enchanted("minecraft:trident", 1, "minecraft:diamond_sword", ench("minecraft:loyalty", 2))));
++
++        list.add(ms(28, "Bolsa de Teleporte",
++                "Facilitar exploração e deslocamento.",
++                item("minecraft:ender_pearl", 32),
++                item("minecraft:compass", 1),
++                item("minecraft:clock", 1)));
++
++        list.add(ms(29, "Mestre da Besta",
++                "Entregar uma arma de longo alcance avançada.",
++                enchanted("minecraft:crossbow", 1, "minecraft:bow",
++                        ench("minecraft:piercing", 4), ench("minecraft:quick_charge", 3)),
++                item("minecraft:arrow", 64)));
++
++        list.add(ms(30, "Guardião Veterano",
++                "Fornecer proteção consistente para a etapa avançada.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3))));
++
++        list.add(ms(31, "Cofre do Caçador",
++                "Fornecer recursos para fabricação e comércio.",
++                item("minecraft:diamond", 32),
++                item("minecraft:emerald", 32)));
++
++        list.add(ms(32, "Lâmina de Guerra",
++                "Aumentar dano e recompensas de criaturas, conforme a mecânica normal do jogo.",
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword",
++                        ench("minecraft:sharpness", 4), ench("minecraft:looting", 3))));
++
++        list.add(ms(33, "Arqueiro de Guerra",
++                "Ampliar dano e controle de distância.",
++                enchanted("minecraft:bow", 1, "minecraft:bow",
++                        ench("minecraft:power", 4), ench("minecraft:flame", 1), ench("minecraft:punch", 2)),
++                item("minecraft:arrow", 64)));
++
++        list.add(ms(34, "Ferramenta de Fortuna",
++                "Ferramenta de mineração de alto desempenho.",
++                enchanted("minecraft:diamond_pickaxe", 1, "minecraft:diamond_pickaxe",
++                        ench("minecraft:efficiency", 5), ench("minecraft:fortune", 3))));
++
++        list.add(ms(35, "Arsenal Completo",
++                "Celebrar metade do caminho até 1.000 abates com um arsenal completo.",
++                enchanted("minecraft:diamond_sword", 1, "minecraft:diamond_sword", ench("minecraft:sharpness", 5)),
++                enchanted("minecraft:bow", 1, "minecraft:bow", ench("minecraft:power", 4)),
++                enchanted("minecraft:diamond_pickaxe", 1, "minecraft:diamond_pickaxe",
++                        ench("minecraft:efficiency", 3), ench("minecraft:unbreaking", 2)),
++                enchanted("minecraft:diamond_axe", 1, "minecraft:diamond_axe",
++                        ench("minecraft:efficiency", 3), ench("minecraft:unbreaking", 2)),
++                enchanted("minecraft:diamond_shovel", 1, "minecraft:diamond_shovel",
++                        ench("minecraft:efficiency", 3), ench("minecraft:unbreaking", 2)),
++                enchanted("minecraft:diamond_hoe", 1, "minecraft:diamond_hoe",
++                        ench("minecraft:efficiency", 3), ench("minecraft:unbreaking", 2))));
++
++        list.add(ms(36, "Reserva de Ouro",
++                "Oferecer cura, comida e recursos valiosos.",
++                item("minecraft:golden_apple", 32),
++                item("minecraft:gold_ingot", 32),
++                item("minecraft:cooked_beef", 32)));
++
++        list.add(ms(37, "Armadura de Diamante Suprema",
++                "Fornecer uma defesa confiável antes da etapa de netherita.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3))));
++
++        list.add(ms(38, "Explorador dos Céus",
++                "Recompensar exploração e mobilidade.",
++                itemWithFallback("minecraft:elytra", 1, "minecraft:ender_pearl"),
++                item("minecraft:firework_rocket", 64)));
++
++        list.add(ms(39, "Mestre dos Encantamentos",
++                "Permitir aprimorar várias peças de equipamento.",
++                enchanted("minecraft:enchanted_book", 2, "minecraft:book", ench("minecraft:mending", 1)),
++                enchanted("minecraft:enchanted_book", 2, "minecraft:book", ench("minecraft:protection", 4))));
++
++        list.add(ms(40, "Primeira Lâmina de Netherita",
++                "Introduzir a netherita como marco de alto prestígio.",
++                item("minecraft:netherite_sword", 1),
++                item("minecraft:gold_ingot", 16)));
++
++        list.add(ms(41, "Fragmentos de Guerra",
++                "Contribuir para melhorias de netherita sem entregar um conjunto inteiro de uma vez.",
++                item("minecraft:netherite_ingot", 1),
++                item("minecraft:diamond", 16)));
++
++        list.add(ms(42, "Arco do Executor",
++                "Oferecer um arco de nível máximo.",
++                enchanted("minecraft:bow", 1, "minecraft:bow",
++                        ench("minecraft:power", 5), ench("minecraft:flame", 1), ench("minecraft:punch", 2)),
++                item("minecraft:arrow", 64)));
++
++        list.add(ms(43, "Armadura Reforçada",
++                "Oferecer uma alternativa defensiva forte.",
++                enchanted("minecraft:diamond_helmet", 1, "minecraft:diamond_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3), ench("minecraft:thorns", 2)),
++                enchanted("minecraft:diamond_chestplate", 1, "minecraft:diamond_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3), ench("minecraft:thorns", 2)),
++                enchanted("minecraft:diamond_leggings", 1, "minecraft:diamond_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3), ench("minecraft:thorns", 2)),
++                enchanted("minecraft:diamond_boots", 1, "minecraft:diamond_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3), ench("minecraft:thorns", 2))));
++
++        list.add(ms(44, "Núcleo de Energia",
++                "Conceder um item de construção avançado.",
++                itemWithFallback("minecraft:beacon", 1, "minecraft:diamond_block")));
++
++        list.add(ms(45, "Armadura do Comandante",
++                "Marcar a entrada na fase de equipamento máximo.",
++                item("minecraft:netherite_helmet", 1),
++                item("minecraft:netherite_chestplate", 1),
++                item("minecraft:netherite_leggings", 1),
++                item("minecraft:netherite_boots", 1)));
++
++        list.add(ms(46, "Espada do Executor",
++                "Oferecer uma arma de alto nível.",
++                enchanted("minecraft:netherite_sword", 1, "minecraft:netherite_sword", ench("minecraft:sharpness", 5)),
++                enchanted("minecraft:enchanted_book", 1, "minecraft:book", ench("minecraft:looting", 3))));
++
++        list.add(ms(47, "Picareta do Comandante",
++                "Fornecer uma ferramenta de mineração avançada.",
++                enchanted("minecraft:netherite_pickaxe", 1, "minecraft:netherite_pickaxe",
++                        ench("minecraft:efficiency", 5), ench("minecraft:fortune", 3))));
++
++        list.add(ms(48, "Última Chance",
++                "Reforçar a sobrevivência em combates extremos.",
++                itemWithFallback("minecraft:totem_of_undying", 1, "minecraft:golden_apple"),
++                item("minecraft:golden_apple", 16)));
++
++        list.add(ms(49, "Tesouro Proibido",
++                "Conceder itens muito raros antes da etapa final.",
++                itemWithFallback("minecraft:enchanted_golden_apple", 2, "minecraft:golden_apple"),
++                item("minecraft:diamond", 16)));
++
++        list.add(ms(50, "Conjunto do Executor",
++                "Fornecer um conjunto de combate de elite.",
++                enchanted("minecraft:netherite_helmet", 1, "minecraft:netherite_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_chestplate", 1, "minecraft:netherite_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_leggings", 1, "minecraft:netherite_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_boots", 1, "minecraft:netherite_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_sword", 1, "minecraft:netherite_sword", ench("minecraft:sharpness", 5))));
++
++        list.add(ms(51, "Guardião Imortal",
++                "Aumentar as chances de sobrevivência em situações extremas.",
++                itemWithFallback("minecraft:totem_of_undying", 2, "minecraft:golden_apple"),
++                item("minecraft:golden_apple", 32)));
++
++        list.add(ms(52, "Lâmina Incandescente",
++                "Arma corpo a corpo de grande poder.",
++                enchanted("minecraft:netherite_sword", 1, "minecraft:netherite_sword",
++                        ench("minecraft:sharpness", 5), ench("minecraft:fire_aspect", 2))));
++
++        list.add(ms(53, "Arco da Última Linha",
++                "Arma de longo alcance de alto nível.",
++                enchanted("minecraft:bow", 1, "minecraft:bow",
++                        ench("minecraft:power", 5), ench("minecraft:flame", 1),
++                        ench("minecraft:punch", 2), ench("minecraft:infinity", 1))));
++
++        list.add(ms(54, "Muralha de Netherita",
++                "Reforçar defesa para o trecho final.",
++                enchanted("minecraft:netherite_helmet", 1, "minecraft:netherite_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_chestplate", 1, "minecraft:netherite_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_leggings", 1, "minecraft:netherite_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_boots", 1, "minecraft:netherite_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                item("minecraft:shield", 1)));
++
++        list.add(ms(55, "Estrela do Comandante",
++                "Entregar um item raro e valioso como reconhecimento.",
++                itemWithFallback("minecraft:nether_star", 1, "minecraft:diamond"),
++                item("minecraft:diamond", 32)));
++
++        list.add(ms(56, "Ferramenta Perfeita",
++                "Entregar uma ferramenta de mineração de nível máximo.",
++                enchanted("minecraft:netherite_pickaxe", 1, "minecraft:netherite_pickaxe",
++                        ench("minecraft:efficiency", 5), ench("minecraft:fortune", 3), ench("minecraft:mending", 1))));
++
++        list.add(ms(57, "Reserva Lendária",
++                "Fornecer consumíveis raros para a fase final.",
++                itemWithFallback("minecraft:enchanted_golden_apple", 4, "minecraft:golden_apple"),
++                itemWithFallback("minecraft:totem_of_undying", 2, "minecraft:golden_apple")));
++
++        list.add(ms(58, "Tridente da Tempestade",
++                "Oferecer uma arma especial de alto nível.",
++                enchanted("minecraft:trident", 1, "minecraft:netherite_sword",
++                        ench("minecraft:loyalty", 3), ench("minecraft:channeling", 1))));
++
++        list.add(ms(59, "Arsenal Lendário",
++                "Preparar o jogador para o prêmio final.",
++                enchanted("minecraft:netherite_helmet", 1, "minecraft:netherite_helmet",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_chestplate", 1, "minecraft:netherite_chestplate",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_leggings", 1, "minecraft:netherite_leggings",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_boots", 1, "minecraft:netherite_boots",
++                        ench("minecraft:protection", 4), ench("minecraft:unbreaking", 3)),
++                enchanted("minecraft:netherite_sword", 1, "minecraft:netherite_sword", ench("minecraft:sharpness", 5)),
++                enchanted("minecraft:bow", 1, "minecraft:bow", ench("minecraft:power", 5))));
++
++        list.add(msWithTitle(60, "Baú Lendário da Última Linha",
++                "Marcar a conclusão da campanha de recompensas do comandante.",
++                "Lenda da Última Linha",
++                enchanted("minecraft:netherite_sword", 1, "minecraft:netherite_sword",
++                        ench("minecraft:sharpness", 5), ench("minecraft:looting", 3), ench("minecraft:fire_aspect", 2)),
++                itemWithFallback("minecraft:totem_of_undying", 1, "minecraft:golden_apple"),
++                itemWithFallback("minecraft:enchanted_golden_apple", 4, "minecraft:golden_apple"),
++                item("minecraft:diamond", 32)));
++
++        return List.copyOf(list);
++    }
++
++    private static MilestoneSpec ms(int number, String name, String objective, RewardItemSpec... items) {
++        return msWithTitle(number, name, objective, "", items);
++    }
++
++    private static MilestoneSpec msWithTitle(int number, String name, String objective,
++                                             String exclusiveTitle, RewardItemSpec... items) {
++        List<RewardItemSpec> itemList = List.of(items);
++        String icon = itemList.isEmpty() ? "minecraft:iron_sword" : itemList.getFirst().itemId();
++        return new MilestoneSpec(
++                number,
++                requiredKillsForMilestone(number),
++                name,
++                objective,
++                coinsForMilestone(number),
++                icon,
++                itemList,
++                exclusiveTitle
++        );
++    }
++
++    private static RewardItemSpec item(String itemId, int count) {
++        return new RewardItemSpec(itemId, count, List.of(), "minecraft:diamond");
++    }
++
++    private static RewardItemSpec itemWithFallback(String itemId, int count, String fallbackItemId) {
++        return new RewardItemSpec(itemId, count, List.of(), fallbackItemId);
++    }
++
++    private static RewardItemSpec enchanted(String itemId, int count, String fallbackItemId, EnchantSpec... enchants) {
++        return new RewardItemSpec(itemId, count, List.of(enchants), fallbackItemId);
++    }
++
++    private static EnchantSpec ench(String enchantmentId, int level) {
++        return new EnchantSpec(enchantmentId, level);
++    }
++}
+--- /dev/null
++++ b/src/main/java/com/felpz/refugio/quest/RefugioCommanderData.java
+@@ -0,0 +1,532 @@
++package com.felpz.refugio.quest;
++
++import com.felpz.refugio.Refugio;
++import com.felpz.refugio.data.RefugioPlayerData;
++import com.felpz.refugio.npc.RefugioNPCs;
++import com.felpz.refugio.npc.RefugioTrainingDummy;
++import com.google.gson.Gson;
++import com.google.gson.GsonBuilder;
++import com.mojang.serialization.Codec;
++import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
++import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
++import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
++import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
++import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
++import net.fabricmc.loader.api.FabricLoader;
++import net.minecraft.ChatFormatting;
++import net.minecraft.core.Holder;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.network.chat.Component;
++import net.minecraft.resources.Identifier;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.damagesource.DamageSource;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.component.CustomData;
++import net.minecraft.world.item.component.Fireworks;
++import net.minecraft.world.item.enchantment.Enchantment;
++import net.minecraft.world.item.enchantment.ItemEnchantments;
++
++import java.io.IOException;
++import java.io.Reader;
++import java.io.Writer;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.LinkedHashSet;
++import java.util.List;
++import java.util.Set;
++import java.util.UUID;
++import java.util.concurrent.ConcurrentHashMap;
++
++/**
++ * Server-authoritative persistence, kill attribution, config validation, and atomic reward
++ * claiming for Commander Elias Varga ("Última Linha").
++ */
++public final class RefugioCommanderData {
++    public static final int STATE_CLAIMED = 0;
++    public static final int STATE_READY = 1;
++    public static final int STATE_LOCKED = 2;
++
++    private static final String KILL_COUNTED_TAG = "refugio:commander_kill_counted";
++    private static final String CONFIG_FILE_NAME = "refugio_commander_elias.json";
++    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
++
++    private static final AttachmentType<Integer> ZOMBIE_KILLS = AttachmentRegistry.create(
++            Refugio.id("commander_zombie_kills"),
++            builder -> builder.persistent(Codec.INT).initializer(() -> 0).copyOnDeath());
++
++    private static final AttachmentType<List<Integer>> UNLOCKED_MILESTONES = AttachmentRegistry.create(
++            Refugio.id("commander_unlocked_milestones"),
++            builder -> builder.persistent(Codec.INT.listOf()).initializer(ArrayList::new).copyOnDeath());
++
++    private static final AttachmentType<List<Integer>> CLAIMED_MILESTONES = AttachmentRegistry.create(
++            Refugio.id("commander_claimed_milestones"),
++            builder -> builder.persistent(Codec.INT.listOf()).initializer(ArrayList::new).copyOnDeath());
++
++    private static final AttachmentType<List<Integer>> UNLOCKED_TITLES = AttachmentRegistry.create(
++            Refugio.id("commander_unlocked_titles"),
++            builder -> builder.persistent(Codec.INT.listOf()).initializer(ArrayList::new).copyOnDeath());
++
++    private static final Set<UUID> CLAIMING_PLAYERS = ConcurrentHashMap.newKeySet();
++    private static final Set<UUID> COUNTED_DEATH_UUIDS = Collections.newSetFromMap(new ConcurrentHashMap<>());
++
++    public enum ClaimResult {
++        CLAIMED,
++        INVENTORY_FULL,
++        ALREADY_CLAIMED,
++        LOCKED,
++        INVALID
++    }
++
++    private RefugioCommanderData() { }
++
++    public static void initialize() {
++        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
++            COUNTED_DEATH_UUIDS.clear();
++            loadAndValidateConfiguration(server);
++        });
++        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
++            CLAIMING_PLAYERS.clear();
++            COUNTED_DEATH_UUIDS.clear();
++        });
++        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
++                reconcileUnlocks(handler.player, false));
++        ServerLivingEntityEvents.AFTER_DEATH.register(RefugioCommanderData::onEntityDeath);
++    }
++
++    private static void onEntityDeath(LivingEntity entity, DamageSource source) {
++        if (entity == null || source == null) return;
++        if (!isCountedZombie(entity)) return;
++        ServerPlayer killer = resolveKillerPlayer(source);
++        if (killer == null) return;
++        if (entity.entityTags().contains(KILL_COUNTED_TAG)) return;
++        if (!COUNTED_DEATH_UUIDS.add(entity.getUUID())) return;
++        entity.addTag(KILL_COUNTED_TAG);
++        if (COUNTED_DEATH_UUIDS.size() > 8192) {
++            COUNTED_DEATH_UUIDS.clear();
++            COUNTED_DEATH_UUIDS.add(entity.getUUID());
++        }
++        incrementZombieKills(killer, 1);
++    }
++
++    public static boolean isCountedZombie(Entity entity) {
++        if (entity == null || entity instanceof Player) return false;
++        if (RefugioTrainingDummy.isTrainingDummy(entity)) return false;
++        if (RefugioNPCs.isRefugeNpc(entity)) return false;
++        if (entity.isInvulnerable()) return false;
++        for (String tag : entity.entityTags()) {
++            if (tag.startsWith("refugio:")) return false;
++        }
++        Identifier typeId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
++        return typeId != null && RefugioCommanderRewards.countedEntityIds().contains(typeId.toString());
++    }
++
++    private static ServerPlayer resolveKillerPlayer(DamageSource source) {
++        if (source.getEntity() instanceof ServerPlayer attacker) {
++            return attacker;
++        }
++        if (source.getDirectEntity() instanceof ServerPlayer directAttacker) {
++            return directAttacker;
++        }
++        return null;
++    }
++
++    public static int getZombieKills(ServerPlayer player) {
++        return Math.max(0, player.getAttachedOrCreate(ZOMBIE_KILLS));
++    }
++
++    public static void setZombieKills(ServerPlayer player, int kills) {
++        int clamped = Math.max(0, kills);
++        player.setAttached(ZOMBIE_KILLS, clamped);
++        reconcileUnlocks(player, true);
++    }
++
++    public static void incrementZombieKills(ServerPlayer player, int delta) {
++        if (delta <= 0) return;
++        int current = getZombieKills(player);
++        int updated = (int) Math.min(Integer.MAX_VALUE, (long) current + delta);
++        player.setAttached(ZOMBIE_KILLS, updated);
++        reconcileUnlocks(player, true);
++    }
++
++    public static Set<Integer> getUnlockedMilestones(ServerPlayer player) {
++        return new LinkedHashSet<>(player.getAttachedOrCreate(UNLOCKED_MILESTONES));
++    }
++
++    public static Set<Integer> getClaimedMilestones(ServerPlayer player) {
++        return new LinkedHashSet<>(player.getAttachedOrCreate(CLAIMED_MILESTONES));
++    }
++
++    public static Set<Integer> getUnlockedTitleIndices(ServerPlayer player) {
++        return new LinkedHashSet<>(player.getAttachedOrCreate(UNLOCKED_TITLES));
++    }
++
++    public static boolean isMilestoneUnlocked(ServerPlayer player, int milestoneNumber) {
++        RefugioCommanderRewards.MilestoneSpec spec = RefugioCommanderRewards.milestone(milestoneNumber);
++        if (spec == null) return false;
++        return getZombieKills(player) >= spec.requiredKills()
++                || player.getAttachedOrCreate(UNLOCKED_MILESTONES).contains(milestoneNumber);
++    }
++
++    public static boolean isMilestoneClaimed(ServerPlayer player, int milestoneNumber) {
++        return player.getAttachedOrCreate(CLAIMED_MILESTONES).contains(milestoneNumber);
++    }
++
++    public static int getMilestoneState(ServerPlayer player, int milestoneNumber) {
++        if (isMilestoneClaimed(player, milestoneNumber)) {
++            return STATE_CLAIMED;
++        }
++        if (isMilestoneUnlocked(player, milestoneNumber)) {
++            return STATE_READY;
++        }
++        return STATE_LOCKED;
++    }
++
++    public static int getReadyMilestoneCount(ServerPlayer player) {
++        int ready = 0;
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            if (getMilestoneState(player, m.number()) == STATE_READY) {
++                ready++;
++            }
++        }
++        return ready;
++    }
++
++    public static int getClaimedMilestoneCount(ServerPlayer player) {
++        int claimed = 0;
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            if (isMilestoneClaimed(player, m.number())) {
++                claimed++;
++            }
++        }
++        return claimed;
++    }
++
++    /**
++     * Ensures all milestones and titles up to the player's current kill total are unlocked
++     * without skipping intermediate thresholds. Sends event messages only once on new unlocks.
++     */
++    public static void reconcileUnlocks(ServerPlayer player, boolean notify) {
++        if (player == null) return;
++        int kills = getZombieKills(player);
++
++        Set<Integer> unlockedMs = new LinkedHashSet<>(player.getAttachedOrCreate(UNLOCKED_MILESTONES));
++        int newlyUnlockedMilestones = 0;
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            if (kills >= m.requiredKills() && unlockedMs.add(m.number())) {
++                newlyUnlockedMilestones++;
++            }
++        }
++        if (newlyUnlockedMilestones > 0) {
++            player.setAttached(UNLOCKED_MILESTONES, new ArrayList<>(unlockedMs));
++        }
++
++        Set<Integer> unlockedTitles = new LinkedHashSet<>(player.getAttachedOrCreate(UNLOCKED_TITLES));
++        List<RefugioCommanderRewards.TitleSpec> newlyUnlockedTitles = new ArrayList<>();
++        boolean reachedThousandNow = false;
++        for (RefugioCommanderRewards.TitleSpec t : RefugioCommanderRewards.activeTitles()) {
++            if (kills >= t.requiredKills() && unlockedTitles.add(t.index())) {
++                newlyUnlockedTitles.add(t);
++                if (t.requiredKills() >= 1000) {
++                    reachedThousandNow = true;
++                }
++            }
++        }
++        if (!newlyUnlockedTitles.isEmpty()) {
++            player.setAttached(UNLOCKED_TITLES, new ArrayList<>(unlockedTitles));
++        }
++
++        if (!notify) return;
++
++        if (newlyUnlockedMilestones > 0 && RefugioCommanderRewards.isMilestoneUnlockMessageEnabled()) {
++            player.sendSystemMessage(Component.translatable("message.refugio.commander.milestone_unlocked")
++                    .withStyle(ChatFormatting.GOLD));
++        }
++        for (RefugioCommanderRewards.TitleSpec title : newlyUnlockedTitles) {
++            player.sendSystemMessage(Component.translatable(
++                    "message.refugio.commander.title_unlocked", title.title()).withStyle(ChatFormatting.AQUA));
++        }
++        if (reachedThousandNow) {
++            player.sendSystemMessage(Component.translatable("message.refugio.commander.legend_reached")
++                    .withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD));
++            if (RefugioCommanderRewards.isGlobalLegendAnnouncementEnabled()) {
++                MinecraftServer server = player.level().getServer();
++                if (server != null) {
++                    Component broadcast = Component.translatable(
++                            "message.refugio.commander.legend_global", player.getGameProfile().name())
++                            .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
++                    for (ServerPlayer online : server.getPlayerList().getPlayers()) {
++                        online.sendSystemMessage(broadcast);
++                    }
++                }
++            }
++        }
++    }
++
++    /**
++     * Atomically validates and claims a milestone on the server.
++     * Verifies full inventory space before delivering items or crediting coins.
++     */
++    public static ClaimResult claimMilestone(ServerPlayer player, int milestoneNumber) {
++        if (player == null || !player.isAlive()) return ClaimResult.INVALID;
++        RefugioCommanderRewards.MilestoneSpec milestone = RefugioCommanderRewards.milestone(milestoneNumber);
++        if (milestone == null) return ClaimResult.INVALID;
++
++        if (!CLAIMING_PLAYERS.add(player.getUUID())) {
++            return ClaimResult.INVALID;
++        }
++        try {
++            reconcileUnlocks(player, false);
++            if (isMilestoneClaimed(player, milestoneNumber)) {
++                return ClaimResult.ALREADY_CLAIMED;
++            }
++            if (!isMilestoneUnlocked(player, milestoneNumber)) {
++                return ClaimResult.LOCKED;
++            }
++
++            List<ItemStack> stacksToDeliver = buildRewardStacks(player, milestone);
++            List<ItemStack> inventoryList = player.getInventory().getNonEquipmentItems();
++            List<ItemStack> simulated = new ArrayList<>(inventoryList.size());
++            for (ItemStack slot : inventoryList) {
++                simulated.add(slot.isEmpty() ? ItemStack.EMPTY : slot.copy());
++            }
++
++            if (!tryInsertAllIntoSlots(simulated, stacksToDeliver)) {
++                player.sendSystemMessage(Component.translatable("message.refugio.commander.inventory_full")
++                        .withStyle(ChatFormatting.RED));
++                return ClaimResult.INVENTORY_FULL;
++            }
++
++            // Mark milestone claimed first to guarantee idempotency
++            Set<Integer> claimed = new LinkedHashSet<>(player.getAttachedOrCreate(CLAIMED_MILESTONES));
++            if (!claimed.add(milestoneNumber)) {
++                return ClaimResult.ALREADY_CLAIMED;
++            }
++            player.setAttached(CLAIMED_MILESTONES, new ArrayList<>(claimed));
++
++            // Commit the verified inventory slots atomically
++            for (int i = 0; i < inventoryList.size(); i++) {
++                inventoryList.set(i, simulated.get(i));
++            }
++            player.getInventory().setChanged();
++
++            // Credit coins to the existing Refugio wallet
++            RefugioPlayerData.addCoins(player, milestone.coins());
++
++            player.sendSystemMessage(Component.translatable(
++                    "message.refugio.commander.claimed", milestone.name(), milestone.coins())
++                    .withStyle(ChatFormatting.GREEN));
++            return ClaimResult.CLAIMED;
++        } finally {
++            CLAIMING_PLAYERS.remove(player.getUUID());
++        }
++    }
++
++    /**
++     * Pure slot-packing check for a 36-slot inventory copy. Returns true only if every stack
++     * in stacksToDeliver fits completely without dropping a single item.
++     */
++    public static boolean tryInsertAllIntoSlots(List<ItemStack> targetSlots, List<ItemStack> stacksToDeliver) {
++        for (ItemStack original : stacksToDeliver) {
++            if (original == null || original.isEmpty()) continue;
++            int remaining = original.getCount();
++            int maxStack = Math.max(1, original.getMaxStackSize());
++
++            if (maxStack > 1) {
++                for (int i = 0; i < targetSlots.size() && remaining > 0; i++) {
++                    ItemStack existing = targetSlots.get(i);
++                    if (!existing.isEmpty() && existing.getCount() < maxStack
++                            && ItemStack.isSameItemSameComponents(existing, original)) {
++                        int move = Math.min(remaining, maxStack - existing.getCount());
++                        existing.grow(move);
++                        remaining -= move;
++                    }
++                }
++            }
++
++            for (int i = 0; i < targetSlots.size() && remaining > 0; i++) {
++                if (targetSlots.get(i).isEmpty()) {
++                    int move = Math.min(remaining, maxStack);
++                    ItemStack placed = original.copy();
++                    placed.setCount(move);
++                    targetSlots.set(i, placed);
++                    remaining -= move;
++                }
++            }
++
++            if (remaining > 0) {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    private static List<ItemStack> buildRewardStacks(ServerPlayer player,
++                                                     RefugioCommanderRewards.MilestoneSpec milestone) {
++        List<ItemStack> result = new ArrayList<>();
++        for (RefugioCommanderRewards.RewardItemSpec spec : milestone.items()) {
++            Item item = resolveValidatedItem(spec.itemId(), spec.fallbackItemId(), milestone.number());
++            if (item == Items.AIR) continue;
++            int remaining = Math.max(1, spec.count());
++            int maxStack = Math.max(1, item.getDefaultMaxStackSize());
++            while (remaining > 0) {
++                int amount = Math.min(remaining, maxStack);
++                ItemStack stack = new ItemStack(item, amount);
++                if (item == Items.FIREWORK_ROCKET) {
++                    stack.set(DataComponents.FIREWORKS, new Fireworks(3, List.of()));
++                }
++                if (!spec.enchantments().isEmpty()) {
++                    applyEnchantments(player, stack, spec.enchantments(), milestone.number());
++                }
++                CompoundTag marker = new CompoundTag();
++                marker.putBoolean("refugio_quest_reward", true);
++                CustomData.set(DataComponents.CUSTOM_DATA, stack, marker);
++                result.add(stack);
++                remaining -= amount;
++            }
++        }
++        return result;
++    }
++
++    private static Item resolveValidatedItem(String itemId, String fallbackItemId, int milestoneNumber) {
++        try {
++            Item primary = BuiltInRegistries.ITEM.getValue(Identifier.parse(itemId));
++            if (primary != null && primary != Items.AIR) {
++                return primary;
++            }
++        } catch (RuntimeException ignored) {
++        }
++        Refugio.LOGGER.warn("Marco {} do Comandante Elias: item '{}' ausente; usando alternativa '{}'.",
++                milestoneNumber, itemId, fallbackItemId);
++        try {
++            Item fallback = BuiltInRegistries.ITEM.getValue(Identifier.parse(fallbackItemId));
++            if (fallback != null && fallback != Items.AIR) {
++                return fallback;
++            }
++        } catch (RuntimeException ignored) {
++        }
++        return Items.DIAMOND;
++    }
++
++    private static void applyEnchantments(ServerPlayer player, ItemStack stack,
++                                          List<RefugioCommanderRewards.EnchantSpec> enchantments,
++                                          int milestoneNumber) {
++        var registry = player.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
++        if (stack.is(Items.ENCHANTED_BOOK)) {
++            ItemEnchantments.Mutable stored = new ItemEnchantments.Mutable(
++                    stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY));
++            for (RefugioCommanderRewards.EnchantSpec ench : enchantments) {
++                if (ench.level() <= 0) continue;
++                try {
++                    var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(ench.enchantmentId()));
++                    var holderOpt = registry.get(key);
++                    if (holderOpt.isPresent()) {
++                        stored.set(holderOpt.get(), ench.level());
++                    } else {
++                        Refugio.LOGGER.warn("Marco {} do Comandante Elias: encantamento '{}' inexistente; ignorado.",
++                                milestoneNumber, ench.enchantmentId());
++                    }
++                } catch (RuntimeException e) {
++                    Refugio.LOGGER.warn("Marco {} do Comandante Elias: encantamento '{}' inválido.",
++                            milestoneNumber, ench.enchantmentId());
++                }
++            }
++            stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable());
++        } else {
++            for (RefugioCommanderRewards.EnchantSpec ench : enchantments) {
++                if (ench.level() <= 0) continue;
++                try {
++                    var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(ench.enchantmentId()));
++                    var holderOpt = registry.get(key);
++                    if (holderOpt.isPresent()) {
++                        Holder<Enchantment> holder = holderOpt.get();
++                        stack.enchant(holder, ench.level());
++                    } else {
++                        Refugio.LOGGER.warn("Marco {} do Comandante Elias: encantamento '{}' inexistente; ignorado.",
++                                milestoneNumber, ench.enchantmentId());
++                    }
++                } catch (RuntimeException e) {
++                    Refugio.LOGGER.warn("Marco {} do Comandante Elias: encantamento '{}' inválido.",
++                            milestoneNumber, ench.enchantmentId());
++                }
++            }
++        }
++    }
++
++    private static void loadAndValidateConfiguration(MinecraftServer server) {
++        Path configPath = FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE_NAME);
++        CommanderConfigFile config = null;
++        if (Files.isRegularFile(configPath)) {
++            try (Reader reader = Files.newBufferedReader(configPath, StandardCharsets.UTF_8)) {
++                config = GSON.fromJson(reader, CommanderConfigFile.class);
++            } catch (IOException | RuntimeException e) {
++                Refugio.LOGGER.warn("Falha ao ler {}; usando tabela padrão do Comandante Elias.", CONFIG_FILE_NAME, e);
++            }
++        } else {
++            CommanderConfigFile defaults = CommanderConfigFile.fromDefaults();
++            try {
++                Files.createDirectories(configPath.getParent());
++                try (Writer writer = Files.newBufferedWriter(configPath, StandardCharsets.UTF_8)) {
++                    GSON.toJson(defaults, writer);
++                }
++            } catch (IOException e) {
++                Refugio.LOGGER.warn("Não foi possível gravar o arquivo padrão {}.", CONFIG_FILE_NAME, e);
++            }
++            config = defaults;
++        }
++
++        if (config != null) {
++            RefugioCommanderRewards.applyConfiguration(
++                    config.milestones,
++                    config.titles,
++                    config.countedEntityIds != null ? new LinkedHashSet<>(config.countedEntityIds) : null,
++                    config.announceLegendGlobally,
++                    config.notifyMilestoneUnlock
++            );
++        }
++
++        // Validate all configured items and enchantments against active registries
++        var enchantRegistry = server.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            for (RefugioCommanderRewards.RewardItemSpec itemSpec : m.items()) {
++                resolveValidatedItem(itemSpec.itemId(), itemSpec.fallbackItemId(), m.number());
++                for (RefugioCommanderRewards.EnchantSpec ench : itemSpec.enchantments()) {
++                    try {
++                        var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(ench.enchantmentId()));
++                        if (enchantRegistry.get(key).isEmpty()) {
++                            Refugio.LOGGER.warn("Configuração Comandante Elias (Marco {}): encantamento '{}' não encontrado.",
++                                    m.number(), ench.enchantmentId());
++                        }
++                    } catch (RuntimeException e) {
++                        Refugio.LOGGER.warn("Configuração Comandante Elias (Marco {}): ID de encantamento inválido '{}'.",
++                                m.number(), ench.enchantmentId());
++                    }
++                }
++            }
++        }
++    }
++
++    private static final class CommanderConfigFile {
++        List<String> countedEntityIds = List.of(RefugioCommanderRewards.DEFAULT_ZOMBIE_ENTITY_ID);
++        boolean announceLegendGlobally = true;
++        boolean notifyMilestoneUnlock = true;
++        List<RefugioCommanderRewards.TitleSpec> titles = RefugioCommanderRewards.defaultTitles();
++        List<RefugioCommanderRewards.MilestoneSpec> milestones = RefugioCommanderRewards.defaultMilestones();
++
++        static CommanderConfigFile fromDefaults() {
++            return new CommanderConfigFile();
++        }
++    }
++}
+--- a/src/main/java/com/felpz/refugio/npc/RefugioNPCs.java
++++ b/src/main/java/com/felpz/refugio/npc/RefugioNPCs.java
+@@ -32,6 +32,7 @@
+ import java.util.List;
+ 
+ public final class RefugioNPCs {
++    public static final String COMMANDER_TAG = "refugio:commander_elias";
+     private static final String SHOP_TAG = "refugio:merchant";
+     private static final String QUEST_TAG = "refugio:quest_giver";
+     private static final String GARDEN_TAG = "refugio:garden_quest_giver";
+@@ -64,6 +65,9 @@
+     private static final double KAEL_CASTLE_X = -323.750, KAEL_CASTLE_Y = 129.0, KAEL_CASTLE_Z = 211.976;
+     private static final float KAEL_CASTLE_YAW = -113.9f, KAEL_CASTLE_PITCH = 10.7f;
+ 
++    public static final double COMMANDER_X = -327.500, COMMANDER_Y = 129.0, COMMANDER_Z = 209.500;
++    public static final float COMMANDER_YAW = -55.0f, COMMANDER_PITCH = 0.0f;
++
+     private static final double LEGACY_KAEL_CASTLE_X = -252.561, LEGACY_KAEL_CASTLE_Y = 131.0, LEGACY_KAEL_CASTLE_Z = 232.750;
+     private static final int RECOVERY_DELAY_TICKS = 40;
+ 
+@@ -101,6 +105,12 @@
+                 RefugioUiService.openDialogue(serverPlayer, "entity.refugio.expedition_quest_giver",
+                         List.of("dialogue.refugio.dario.1", "dialogue.refugio.dario.2"),
+                         "OPEN_EXPEDITION_QUESTS", "gui.refugio.dialogue.action.expedition");
++                return InteractionResult.SUCCESS;
++            }
++            if (villager.entityTags().contains(COMMANDER_TAG)) {
++                RefugioUiService.openDialogue(serverPlayer, "entity.refugio.commander_elias",
++                        List.of("dialogue.refugio.elias.1", "dialogue.refugio.elias.2"),
++                        "OPEN_COMMANDER", "gui.refugio.dialogue.action.commander");
+                 return InteractionResult.SUCCESS;
+             }
+             if (villager.entityTags().contains(KAEL_ENTRANCE_TAG)) {
+@@ -156,6 +166,7 @@
+                 || tags.contains(QUEST_TAG)
+                 || tags.contains(GARDEN_TAG)
+                 || tags.contains(EXPEDITION_TAG)
++                || tags.contains(COMMANDER_TAG)
+                 || tags.contains(KAEL_ENTRANCE_TAG)
+                 || tags.contains(KAEL_CASTLE_TAG);
+     }
+@@ -174,6 +185,9 @@
+         } else if (tags.contains(EXPEDITION_TAG)) {
+             configureVillager(villager, EXPEDITION_X, EXPEDITION_Y, EXPEDITION_Z, EXPEDITION_TAG,
+                     "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, EXPEDITION_YAW, EXPEDITION_PITCH);
++        } else if (tags.contains(COMMANDER_TAG)) {
++            configureVillager(villager, COMMANDER_X, COMMANDER_Y, COMMANDER_Z, COMMANDER_TAG,
++                    "entity.refugio.commander_elias", VillagerProfession.WEAPONSMITH, COMMANDER_YAW, COMMANDER_PITCH);
+         } else if (tags.contains(KAEL_CASTLE_TAG) || tags.contains(KAEL_MOVED_TAG)) {
+             world.setAttached(KAEL_AT_CASTLE_STATE, true);
+             configureKael(villager, KAEL_CASTLE_X, KAEL_CASTLE_Y, KAEL_CASTLE_Z,
+@@ -213,7 +227,7 @@
+         }
+ 
+         ensureAllNpcs(world);
+-        Refugio.LOGGER.info("NPCs do Refúgio: Baldur, Eldrin, Marta, Dário e Kael (um único local por vez).");
++        Refugio.LOGGER.info("NPCs do Refúgio: Baldur, Eldrin, Marta, Dário, Comandante Elias Varga e Kael.");
+     }
+ 
+     private static void ensureAllNpcs(ServerLevel world) {
+@@ -221,6 +235,7 @@
+         BlockPos questChunk = new BlockPos((int) Math.floor(QUEST_X), (int) Math.floor(QUEST_Y), (int) Math.floor(QUEST_Z));
+         BlockPos gardenChunk = new BlockPos((int) Math.floor(GARDEN_X), (int) Math.floor(GARDEN_Y), (int) Math.floor(GARDEN_Z));
+         BlockPos expeditionChunk = new BlockPos((int) Math.floor(EXPEDITION_X), (int) Math.floor(EXPEDITION_Y), (int) Math.floor(EXPEDITION_Z));
++        BlockPos commanderChunk = new BlockPos((int) Math.floor(COMMANDER_X), (int) Math.floor(COMMANDER_Y), (int) Math.floor(COMMANDER_Z));
+         BlockPos kaelEntranceChunk = new BlockPos((int) Math.floor(KAEL_ENTRANCE_X), (int) Math.floor(KAEL_ENTRANCE_Y), (int) Math.floor(KAEL_ENTRANCE_Z));
+         BlockPos kaelCastleChunk = new BlockPos((int) Math.floor(KAEL_CASTLE_X), (int) Math.floor(KAEL_CASTLE_Y), (int) Math.floor(KAEL_CASTLE_Z));
+         BlockPos legacyKaelCastleChunk = new BlockPos((int) Math.floor(LEGACY_KAEL_CASTLE_X), (int) Math.floor(LEGACY_KAEL_CASTLE_Y), (int) Math.floor(LEGACY_KAEL_CASTLE_Z));
+@@ -228,6 +243,7 @@
+         world.getChunkAt(questChunk);
+         world.getChunkAt(gardenChunk);
+         world.getChunkAt(expeditionChunk);
++        world.getChunkAt(commanderChunk);
+         world.getChunkAt(kaelEntranceChunk);
+         world.getChunkAt(kaelCastleChunk);
+         world.getChunkAt(legacyKaelCastleChunk);
+@@ -240,6 +256,8 @@
+                 "entity.refugio.garden_quest_giver", VillagerProfession.FARMER, GARDEN_YAW, GARDEN_PITCH);
+         spawnOrUpdate(world, EXPEDITION_TAG, EXPEDITION_X, EXPEDITION_Y, EXPEDITION_Z,
+                 "entity.refugio.expedition_quest_giver", VillagerProfession.CLERIC, EXPEDITION_YAW, EXPEDITION_PITCH);
++        spawnOrUpdate(world, COMMANDER_TAG, COMMANDER_X, COMMANDER_Y, COMMANDER_Z,
++                "entity.refugio.commander_elias", VillagerProfession.WEAPONSMITH, COMMANDER_YAW, COMMANDER_PITCH);
+         spawnOrUpdateKael(world);
+     }
+ 
+--- a/src/main/java/com/felpz/refugio/ui/RefugioUiService.java
++++ b/src/main/java/com/felpz/refugio/ui/RefugioUiService.java
+@@ -4,6 +4,7 @@
+ import com.felpz.refugio.data.RefugioPlayerData;
+ import com.felpz.refugio.menu.RefugioMenu;
+ import com.felpz.refugio.npc.RefugioNPCs;
++import com.felpz.refugio.quest.RefugioCommanderData;
+ import com.felpz.refugio.quest.RefugioSideQuests;
+ import com.felpz.refugio.story.RefugioStory;
+ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+@@ -21,6 +22,7 @@
+ public final class RefugioUiService {
+     private static final long SESSION_MILLIS = 10 * 60 * 1000L;
+     private static final Map<UUID, Long> ABILITY_SESSIONS = new HashMap<>();
++    private static final Map<UUID, Long> COMMANDER_SESSIONS = new HashMap<>();
+     private static final Map<UUID, DialogueSession> DIALOGUE_SESSIONS = new HashMap<>();
+ 
+     private RefugioUiService() { }
+@@ -39,8 +41,18 @@
+         }
+         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
+         ABILITY_SESSIONS.put(player.getUUID(), expiresAt);
++        COMMANDER_SESSIONS.remove(player.getUUID());
+         DIALOGUE_SESSIONS.remove(player.getUUID());
+         sendAbilityState(player, "");
++    }
++
++    public static void openCommander(ServerPlayer player) {
++        RefugioCommanderData.reconcileUnlocks(player, false);
++        long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
++        COMMANDER_SESSIONS.put(player.getUUID(), expiresAt);
++        ABILITY_SESSIONS.remove(player.getUUID());
++        DIALOGUE_SESSIONS.remove(player.getUUID());
++        sendCommanderState(player, "");
+     }
+ 
+     public static void openDialogue(ServerPlayer player, String speakerKey, List<String> lineKeys,
+@@ -49,6 +61,7 @@
+         long expiresAt = System.currentTimeMillis() + SESSION_MILLIS;
+         DIALOGUE_SESSIONS.put(player.getUUID(), new DialogueSession(action, expiresAt));
+         ABILITY_SESSIONS.remove(player.getUUID());
++        COMMANDER_SESSIONS.remove(player.getUUID());
+         String encoded = "DIALOGUE\t" + speakerKey + "\t" + String.join("|", lineKeys)
+                 + "\t" + action + "\t" + actionLabelKey;
+         ServerPlayNetworking.send(player, new RefugioUiPayload(encoded));
+@@ -85,6 +98,16 @@
+                 sendAbilityState(player, feedback);
+             }
+             case "ABILITY_CLOSE" -> ABILITY_SESSIONS.remove(player.getUUID());
++            case "COMMANDER_CLAIM" -> {
++                if (parts.length < 2 || !hasLiveCommanderSession(player)) return;
++                try {
++                    int milestoneNumber = Integer.parseInt(parts[1]);
++                    RefugioCommanderData.ClaimResult result = RefugioCommanderData.claimMilestone(player, milestoneNumber);
++                    sendCommanderState(player, commanderFeedbackKey(result));
++                } catch (NumberFormatException ignored) {
++                }
++            }
++            case "COMMANDER_CLOSE" -> COMMANDER_SESSIONS.remove(player.getUUID());
+             case "DIALOGUE_ACTION" -> handleDialogueAction(player, parts);
+             case "DIALOGUE_CLOSE" -> DIALOGUE_SESSIONS.remove(player.getUUID());
+             case "SHOP_CLICK" -> handleShopClick(player, parts);
+@@ -168,6 +191,16 @@
+         return player.isAlive();
+     }
+ 
++    private static boolean hasLiveCommanderSession(ServerPlayer player) {
++        Long expiry = COMMANDER_SESSIONS.get(player.getUUID());
++        if (expiry == null) return false;
++        if (System.currentTimeMillis() > expiry) {
++            COMMANDER_SESSIONS.remove(player.getUUID());
++            return false;
++        }
++        return player.isAlive();
++    }
++
+     private static void handleDialogueAction(ServerPlayer player, String[] parts) {
+         if (parts.length < 2) return;
+         DialogueSession session = DIALOGUE_SESSIONS.remove(player.getUUID());
+@@ -186,6 +219,7 @@
+             case "OPEN_QUESTS" -> RefugioMenu.openQuests(player);
+             case "OPEN_GARDEN_QUESTS" -> RefugioMenu.openSideQuests(player, RefugioSideQuests.Track.GARDEN);
+             case "OPEN_EXPEDITION_QUESTS" -> RefugioMenu.openSideQuests(player, RefugioSideQuests.Track.EXPEDITION);
++            case "OPEN_COMMANDER" -> openCommander(player);
+             case "DISMISS" -> { }
+             default -> { }
+         }
+@@ -203,6 +237,20 @@
+                 + RefugioAbilityData.freeChoice(player) + "\t" + ranks + "\t" + activeMask + "\t" + feedbackKey;
+         ServerPlayNetworking.send(player, new RefugioUiPayload(payload));
+         RefugioAbilityData.syncMovementState(player);
++    }
++
++    public static void sendCommanderState(ServerPlayer player, String feedbackKey) {
++        int coins = RefugioPlayerData.getCoins(player);
++        int kills = RefugioCommanderData.getZombieKills(player);
++        String unlockedCsv = RefugioCommanderData.getUnlockedMilestones(player).stream()
++                .map(Object::toString).collect(Collectors.joining(","));
++        String claimedCsv = RefugioCommanderData.getClaimedMilestones(player).stream()
++                .map(Object::toString).collect(Collectors.joining(","));
++        String titlesCsv = RefugioCommanderData.getUnlockedTitleIndices(player).stream()
++                .map(Object::toString).collect(Collectors.joining(","));
++        String payload = "COMMANDER\t" + coins + "\t" + kills + "\t"
++                + unlockedCsv + "\t" + claimedCsv + "\t" + titlesCsv + "\t" + feedbackKey;
++        ServerPlayNetworking.send(player, new RefugioUiPayload(payload));
+     }
+ 
+     private static String feedbackKey(RefugioAbilityData.PurchaseResult result) {
+@@ -217,5 +265,15 @@
+         };
+     }
+ 
++    private static String commanderFeedbackKey(RefugioCommanderData.ClaimResult result) {
++        return switch (result) {
++            case CLAIMED -> "gui.refugio.commander.feedback.claimed";
++            case INVENTORY_FULL -> "message.refugio.commander.inventory_full";
++            case ALREADY_CLAIMED -> "gui.refugio.commander.feedback.already_claimed";
++            case LOCKED -> "gui.refugio.commander.feedback.locked";
++            case INVALID -> "gui.refugio.abilities.feedback.invalid";
++        };
++    }
++
+     private record DialogueSession(String action, long expiresAt) { }
+ }
+--- a/src/main/java/com/felpz/refugio/command/RefugioCommands.java
++++ b/src/main/java/com/felpz/refugio/command/RefugioCommands.java
+@@ -3,6 +3,7 @@
+ import com.felpz.refugio.data.RefugioPlayerData;
+ import com.felpz.refugio.menu.RefugioMenu;
+ import com.felpz.refugio.npc.RefugioTrainingDummy;
++import com.felpz.refugio.quest.RefugioCommanderData;
+ import com.mojang.brigadier.arguments.IntegerArgumentType;
+ import com.mojang.brigadier.arguments.StringArgumentType;
+ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+@@ -78,6 +79,17 @@
+                                                 "command.refugio.coins_set", target.getGameProfile().name(), amount), true);
+                                         return 1;
+                                     }))));
++            admin.then(Commands.literal("zumbis")
++                    .then(Commands.argument("jogador", EntityArgument.player())
++                            .then(Commands.argument("quantidade", IntegerArgumentType.integer(0, Integer.MAX_VALUE))
++                                    .executes(context -> {
++                                        ServerPlayer target = EntityArgument.getPlayer(context, "jogador");
++                                        int amount = IntegerArgumentType.getInteger(context, "quantidade");
++                                        RefugioCommanderData.setZombieKills(target, amount);
++                                        context.getSource().sendSuccess(() -> Component.translatable(
++                                                "command.refugio.zombie_kills_set", target.getGameProfile().name(), amount), true);
++                                        return 1;
++                                    }))));
+             admin.then(Commands.literal("desbloquear_tudo")
+                     .then(Commands.argument("jogador", EntityArgument.player())
+                             .executes(context -> {
+--- /dev/null
++++ b/src/client/java/com/felpz/refugio/client/RefugioCommanderScreen.java
+@@ -0,0 +1,1156 @@
++package com.felpz.refugio.client;
++
++import com.felpz.refugio.quest.RefugioCommanderRewards;
++import com.felpz.refugio.ui.RefugioUiPayload;
++import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
++import net.minecraft.client.gui.GuiGraphicsExtractor;
++import net.minecraft.client.gui.screens.Screen;
++import net.minecraft.client.input.MouseButtonEvent;
++import net.minecraft.core.Holder;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.FontDescription;
++import net.minecraft.network.chat.MutableComponent;
++import net.minecraft.network.chat.Style;
++import net.minecraft.resources.Identifier;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.util.FormattedCharSequence;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.enchantment.Enchantment;
++import net.minecraft.world.item.enchantment.ItemEnchantments;
++
++import java.util.ArrayList;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Set;
++
++/**
++ * Custom medieval parchment screen for Commander Elias Varga ("Última Linha").
++ * Displays the 60 zombie-kill milestones, statistics, and 12 titles/patentes without using a vanilla chest GUI.
++ */
++public final class RefugioCommanderScreen extends Screen {
++    private static final int STATE_CLAIMED = 0;
++    private static final int STATE_READY = 1;
++    private static final int STATE_LOCKED = 2;
++
++    private static final int TAB_REWARDS = 0;
++    private static final int TAB_STATS = 1;
++    private static final int TAB_RANKS = 2;
++
++    private static final Identifier PARCHMENT_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/parchment.png");
++    private static final Identifier WOOD_FRAME_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/wood_frame.png");
++    private static final Identifier TITLE_PLAQUE_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/title_plaque.png");
++    private static final Identifier PRIMARY_BUTTON_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/button_primary.png");
++    private static final Identifier SECONDARY_BUTTON_TEXTURE = Identifier.parse("refugio:textures/gui/dialogue/button_close.png");
++    private static final Identifier ELIAS_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/elias.png");
++
++    private static final FontDescription UI_FONT = new FontDescription.Resource(Identifier.parse("minecraft:uniform"));
++    private static final Style INK_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF4A3520);
++    private static final Style MUTED_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF80684B);
++    private static final Style GOLD_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF87551F);
++    private static final Style SUCCESS_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF2D5B22);
++    private static final Style DANGER_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFF9E3B2B);
++    private static final Style LIGHT_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFFFF0D0);
++    private static final Style DISABLED_BUTTON_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0xFFBBAA8D);
++    private static final int FACTION_ACCENT = 0xFF8B2E24;
++
++    private int coins;
++    private int zombieKills;
++    private final Set<Integer> unlockedMilestones = new HashSet<>();
++    private final Set<Integer> claimedMilestones = new HashSet<>();
++    private final Set<Integer> unlockedTitles = new HashSet<>();
++    private String feedbackKey = "";
++
++    private int activeTab = TAB_REWARDS;
++    private int rewardsPage;
++    private int ranksPage;
++    private int selectedMilestoneNumber = -1;
++    private int detailScrollOffset;
++    private boolean focusInitialPage = true;
++
++    public RefugioCommanderScreen(String encodedState) {
++        super(Component.translatable("gui.refugio.commander.title"));
++        updateState(encodedState);
++    }
++
++    public void updateState(String encodedState) {
++        String[] parts = encodedState.split("\\t", -1);
++        if (parts.length < 7 || !parts[0].equals("COMMANDER")) return;
++        try {
++            coins = Integer.parseInt(parts[1]);
++            zombieKills = Math.max(0, Integer.parseInt(parts[2]));
++            parseSet(parts[3], unlockedMilestones);
++            parseSet(parts[4], claimedMilestones);
++            parseSet(parts[5], unlockedTitles);
++            feedbackKey = parts[6];
++        } catch (NumberFormatException ignored) {
++        }
++    }
++
++    private static void parseSet(String csv, Set<Integer> target) {
++        target.clear();
++        if (csv == null || csv.isBlank()) return;
++        for (String token : csv.split(",")) {
++            if (token.isBlank()) continue;
++            try {
++                target.add(Integer.parseInt(token.trim()));
++            } catch (NumberFormatException ignored) {
++            }
++        }
++    }
++
++    @Override
++    public boolean isPauseScreen() {
++        return false;
++    }
++
++    @Override
++    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
++        graphics.fill(0, 0, width, height, 0x74090604);
++    }
++
++    @Override
++    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
++        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
++        CommanderLayout layout = computeLayout();
++        drawParchmentAndWoodFrame(graphics, layout.panel);
++        drawHeader(graphics, mouseX, mouseY, layout);
++        drawNpcBanner(graphics, layout);
++        drawTabBar(graphics, mouseX, mouseY, layout);
++
++        RefugioCommanderRewards.MilestoneSpec hoveredMilestone = null;
++        if (activeTab == TAB_REWARDS) {
++            if (selectedMilestoneNumber > 0) {
++                drawMilestoneDetailView(graphics, mouseX, mouseY, layout);
++            } else {
++                List<RefugioCommanderRewards.MilestoneSpec> all = RefugioCommanderRewards.activeMilestones();
++                for (int i = 0; i < layout.milestoneCards.size(); i++) {
++                    SlotRect slot = layout.milestoneCards.get(i);
++                    int idx = layout.pageStart + i;
++                    if (idx >= all.size()) break;
++                    RefugioCommanderRewards.MilestoneSpec spec = all.get(idx);
++                    boolean hovered = slot.rect.contains(mouseX, mouseY);
++                    drawMilestoneCard(graphics, slot.rect, spec, hovered, mouseX, mouseY);
++                    if (hovered) {
++                        hoveredMilestone = spec;
++                    }
++                }
++            }
++        } else if (activeTab == TAB_STATS) {
++            drawStatsView(graphics, layout);
++        } else if (activeTab == TAB_RANKS) {
++            drawRanksView(graphics, layout);
++        }
++
++        drawFooterBar(graphics, mouseX, mouseY, layout);
++
++        if (hoveredMilestone != null && selectedMilestoneNumber <= 0) {
++            drawMilestoneTooltip(graphics, hoveredMilestone, mouseX, mouseY);
++        }
++    }
++
++    @Override
++    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
++        if (event.button() != 0) return super.mouseClicked(event, doubleClick);
++        double mx = event.x();
++        double my = event.y();
++        CommanderLayout layout = computeLayout();
++
++        if (layout.closeButton.contains(mx, my)) {
++            closeCommanderScreen();
++            return true;
++        }
++        if (layout.tabRewardsButton.contains(mx, my)) {
++            activeTab = TAB_REWARDS;
++            selectedMilestoneNumber = -1;
++            detailScrollOffset = 0;
++            feedbackKey = "";
++            return true;
++        }
++        if (layout.tabStatsButton.contains(mx, my)) {
++            activeTab = TAB_STATS;
++            selectedMilestoneNumber = -1;
++            feedbackKey = "";
++            return true;
++        }
++        if (layout.tabRanksButton.contains(mx, my)) {
++            activeTab = TAB_RANKS;
++            selectedMilestoneNumber = -1;
++            feedbackKey = "";
++            return true;
++        }
++
++        if (activeTab == TAB_REWARDS && selectedMilestoneNumber > 0) {
++            if (layout.primaryNavButton.contains(mx, my)) {
++                selectedMilestoneNumber = -1;
++                detailScrollOffset = 0;
++                feedbackKey = "";
++                return true;
++            }
++            if (layout.claimDetailButton.w > 0 && layout.claimDetailButton.contains(mx, my)) {
++                if (milestoneState(selectedMilestoneNumber) == STATE_READY) {
++                    sendClaimRequest(selectedMilestoneNumber);
++                }
++                return true;
++            }
++            return super.mouseClicked(event, doubleClick);
++        }
++
++        if (layout.primaryNavButton.contains(mx, my)) {
++            closeCommanderScreen();
++            return true;
++        }
++
++        if (activeTab == TAB_REWARDS) {
++            if (layout.prevPageButton.contains(mx, my) && rewardsPage > 0) {
++                rewardsPage--;
++                return true;
++            }
++            if (layout.nextPageButton.contains(mx, my) && rewardsPage + 1 < layout.pageCount) {
++                rewardsPage++;
++                return true;
++            }
++            for (SlotRect card : layout.milestoneCards) {
++                if (card.rect.contains(mx, my)) {
++                    int number = card.slotId;
++                    Rect quickClaim = quickClaimRect(card.rect);
++                    if (milestoneState(number) == STATE_READY && quickClaim.contains(mx, my)) {
++                        sendClaimRequest(number);
++                    } else {
++                        selectedMilestoneNumber = number;
++                        detailScrollOffset = 0;
++                        feedbackKey = "";
++                    }
++                    return true;
++                }
++            }
++        } else if (activeTab == TAB_RANKS) {
++            if (layout.prevPageButton.contains(mx, my) && ranksPage > 0) {
++                ranksPage--;
++                return true;
++            }
++            if (layout.nextPageButton.contains(mx, my) && ranksPage + 1 < layout.pageCount) {
++                ranksPage++;
++                return true;
++            }
++        }
++
++        return super.mouseClicked(event, doubleClick);
++    }
++
++    @Override
++    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
++        if (verticalAmount == 0.0) return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
++        CommanderLayout layout = computeLayout();
++        int delta = -(int) Math.signum(verticalAmount);
++        if (activeTab == TAB_REWARDS && selectedMilestoneNumber > 0) {
++            if (layout.contentArea.contains(mouseX, mouseY)) {
++                detailScrollOffset = Math.max(0, detailScrollOffset + delta * (font.lineHeight + 2));
++                return true;
++            }
++        } else if (activeTab == TAB_REWARDS && layout.contentArea.contains(mouseX, mouseY) && layout.pageCount > 1) {
++            rewardsPage = Math.max(0, Math.min(layout.pageCount - 1, rewardsPage + delta));
++            return true;
++        } else if (activeTab == TAB_RANKS && layout.contentArea.contains(mouseX, mouseY) && layout.pageCount > 1) {
++            ranksPage = Math.max(0, Math.min(layout.pageCount - 1, ranksPage + delta));
++            return true;
++        }
++        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
++    }
++
++    @Override
++    public void onClose() {
++        closeCommanderScreen();
++    }
++
++    private void sendClaimRequest(int milestoneNumber) {
++        feedbackKey = "gui.refugio.abilities.feedback.processing";
++        ClientPlayNetworking.send(new RefugioUiPayload("COMMANDER_CLAIM\t" + milestoneNumber));
++    }
++
++    private void closeCommanderScreen() {
++        ClientPlayNetworking.send(new RefugioUiPayload("COMMANDER_CLOSE"));
++        RefugioClient.clearCommanderScreen(this);
++        if (minecraft != null) {
++            minecraft.setScreenAndShow(null);
++        }
++    }
++
++    private int milestoneState(int milestoneNumber) {
++        if (claimedMilestones.contains(milestoneNumber)) {
++            return STATE_CLAIMED;
++        }
++        RefugioCommanderRewards.MilestoneSpec spec = RefugioCommanderRewards.milestone(milestoneNumber);
++        if (unlockedMilestones.contains(milestoneNumber)
++                || (spec != null && zombieKills >= spec.requiredKills())) {
++            return STATE_READY;
++        }
++        return STATE_LOCKED;
++    }
++
++    private boolean isTitleUnlocked(RefugioCommanderRewards.TitleSpec title) {
++        return unlockedTitles.contains(title.index()) || zombieKills >= title.requiredKills();
++    }
++
++    private CommanderLayout computeLayout() {
++        int marginX = width < 400 ? 6 : (width < 640 ? 12 : 18);
++        int marginY = height < 240 ? 4 : (height < 360 ? 10 : 16);
++        int availW = Math.max(180, width - marginX * 2);
++        int availH = Math.max(136, height - marginY * 2);
++
++        double targetAspect = 1.72;
++        int maxW = Math.min(860, availW);
++        int maxH = Math.min(520, availH);
++        int pw = maxW;
++        int ph = maxH;
++        if (pw > (int) Math.round(ph * 1.84)) {
++            pw = Math.max(Math.min(maxW, 320), (int) Math.round(ph * targetAspect));
++        } else if (ph > (int) Math.round(pw / 1.36)) {
++            ph = Math.max(Math.min(maxH, 210), (int) Math.round(pw / 1.48));
++        }
++        pw = Math.min(maxW, pw);
++        ph = Math.min(maxH, ph);
++        int px = (width - pw) / 2;
++        int py = (height - ph) / 2;
++        Rect panel = new Rect(px, py, pw, ph);
++
++        int insetX = Math.max(14, (int) Math.ceil(pw * 0.068));
++        int insetY = Math.max(12, (int) Math.ceil(ph * 0.104));
++        int innerX = px + insetX;
++        int innerY = py + insetY;
++        int innerW = Math.max(120, pw - insetX * 2);
++        int innerH = Math.max(90, ph - insetY * 2);
++        Rect inner = new Rect(innerX, innerY, innerW, innerH);
++
++        int headerH = innerH < 140 ? 16 : (innerH < 175 ? 18 : (innerH < 220 ? 22 : (innerH < 280 ? 26 : 30)));
++        int headerY = innerY;
++        int closeSize = Math.max(14, Math.min(22, headerH - (headerH <= 18 ? 0 : 2)));
++        int closeX = inner.right() - closeSize;
++        int closeY = headerY + (headerH - closeSize) / 2;
++        Rect closeButton = new Rect(closeX, closeY, closeSize, closeSize);
++
++        int headerGap = innerW < 340 ? 4 : 8;
++        Component fullBalance = Component.translatable("gui.refugio.balance_value", coins).withStyle(LIGHT_STYLE);
++        Component shortBalance = Component.literal(Integer.toString(coins)).withStyle(LIGHT_STYLE);
++        boolean compactBalance = innerW < 450;
++        int badgeW = compactBalance
++                ? Math.max(48, Math.min(86, font.width(shortBalance) + 28))
++                : Math.min(164, Math.max(106, font.width(fullBalance) + 34));
++        int badgeH = closeSize;
++        int badgeX = closeX - headerGap - badgeW;
++        int badgeY = headerY + (headerH - badgeH) / 2;
++        Rect balanceBadge = new Rect(badgeX, badgeY, badgeW, badgeH);
++
++        Component titleComp = Component.translatable("gui.refugio.commander.title").withStyle(LIGHT_STYLE);
++        int maxBannerRight = badgeX - headerGap;
++        int availBannerArea = Math.max(64, maxBannerRight - innerX);
++        int idealBannerW = Math.min(360, Math.max(140, font.width(titleComp) + 44));
++        int centeredBannerX = px + (pw - idealBannerW) / 2;
++        boolean canCenterBanner = innerW >= 460
++                && centeredBannerX >= innerX
++                && centeredBannerX + idealBannerW <= maxBannerRight;
++        int bannerW = canCenterBanner ? idealBannerW : Math.min(idealBannerW, availBannerArea);
++        int bannerX = canCenterBanner ? centeredBannerX : innerX;
++        Rect titleBanner = new Rect(bannerX, headerY, bannerW, headerH);
++
++        int sectionGap = innerH < 145 ? 2 : (innerH < 185 ? 3 : (innerH < 230 ? 4 : 5));
++        int npcBoxY = headerY + headerH + sectionGap;
++        int npcBoxH = innerH < 145 ? 16 : (innerH < 190 ? 20 : (innerH < 245 ? 24 : 28));
++        Rect npcBannerBox = new Rect(innerX, npcBoxY, innerW, npcBoxH);
++
++        int tabBarY = npcBannerBox.bottom() + sectionGap;
++        int tabBarH = innerH < 155 ? 14 : (innerH < 210 ? 16 : 19);
++        int tabGap = 6;
++        int tabW = Math.max(44, (innerW - tabGap * 2) / 3);
++        Rect tabRewardsButton = new Rect(innerX, tabBarY, tabW, tabBarH);
++        Rect tabStatsButton = new Rect(tabRewardsButton.right() + tabGap, tabBarY, tabW, tabBarH);
++        Rect tabRanksButton = new Rect(tabStatsButton.right() + tabGap, tabBarY, inner.right() - (tabStatsButton.right() + tabGap), tabBarH);
++
++        int footerH = innerH < 145 ? 14 : (innerH < 185 ? 16 : (innerH < 230 ? 19 : 22));
++        int footerY = inner.bottom() - footerH;
++
++        int navBtnW = Math.max(58, Math.min(126, innerW * 25 / 100));
++        Rect primaryNavButton = new Rect(innerX, footerY, navBtnW, footerH);
++
++        int claimBtnW = (activeTab == TAB_REWARDS && selectedMilestoneNumber > 0)
++                ? Math.max(96, Math.min(190, innerW * 38 / 100)) : 0;
++        Rect claimDetailButton = claimBtnW > 0
++                ? new Rect(inner.right() - claimBtnW, footerY, claimBtnW, footerH)
++                : new Rect(inner.right(), footerY, 0, 0);
++
++        int pageBtnW = innerW < 320 ? 20 : 28;
++        Rect nextPageButton = new Rect(inner.right() - pageBtnW, footerY, pageBtnW, footerH);
++        Component samplePage = Component.translatable("gui.refugio.page", 15, 15).withStyle(GOLD_STYLE);
++        int pageLabelSpan = Math.max(56, Math.min(114, font.width(samplePage) + 14));
++        Rect prevPageButton = new Rect(nextPageButton.x - pageLabelSpan - pageBtnW, footerY, pageBtnW, footerH);
++
++        int contentTop = tabBarY + tabBarH + sectionGap;
++        int contentBottom = footerY - sectionGap;
++        int contentAvailH = Math.max(32, contentBottom - contentTop);
++        Rect contentArea = new Rect(innerX, contentTop, innerW, contentAvailH);
++
++        int cols = innerW >= 330 ? 2 : 1;
++        int rows = contentAvailH >= 96 ? 2 : 1;
++        int cardsPerPage = Math.max(1, cols * rows);
++
++        List<RefugioCommanderRewards.MilestoneSpec> allMilestones = RefugioCommanderRewards.activeMilestones();
++        List<RefugioCommanderRewards.TitleSpec> allTitles = RefugioCommanderRewards.activeTitles();
++
++        int totalItems = activeTab == TAB_RANKS ? allTitles.size() : allMilestones.size();
++        int rankRows = contentAvailH >= 110 ? 3 : 2;
++        int rankCardsPerPage = Math.max(1, cols * rankRows);
++        int perPage = activeTab == TAB_RANKS ? rankCardsPerPage : cardsPerPage;
++        int pageCount = Math.max(1, (Math.max(1, totalItems) + perPage - 1) / perPage);
++
++        if (focusInitialPage && !allMilestones.isEmpty()) {
++            int focusIdx = 0;
++            boolean foundReady = false;
++            for (int i = 0; i < allMilestones.size(); i++) {
++                int state = milestoneState(allMilestones.get(i).number());
++                if (state == STATE_READY) {
++                    focusIdx = i;
++                    foundReady = true;
++                    break;
++                }
++            }
++            if (!foundReady) {
++                for (int i = 0; i < allMilestones.size(); i++) {
++                    if (milestoneState(allMilestones.get(i).number()) == STATE_LOCKED) {
++                        focusIdx = i;
++                        break;
++                    }
++                }
++            }
++            rewardsPage = focusIdx / cardsPerPage;
++            focusInitialPage = false;
++        }
++
++        int activePage = activeTab == TAB_RANKS ? ranksPage : rewardsPage;
++        activePage = Math.max(0, Math.min(activePage, pageCount - 1));
++        if (activeTab == TAB_RANKS) {
++            ranksPage = activePage;
++        } else {
++            rewardsPage = activePage;
++        }
++        int pageStart = activePage * perPage;
++        int visibleCount = Math.max(0, Math.min(perPage, totalItems - pageStart));
++
++        int activeRows = activeTab == TAB_RANKS ? rankRows : rows;
++        int gapX = cols == 1 ? 0 : (innerW < 400 ? 6 : 10);
++        int gapY = activeRows == 1 ? 0 : (contentAvailH < 130 ? 4 : 7);
++        int cardW = Math.max(60, (innerW - gapX * (cols - 1)) / cols);
++        int cardH = Math.max(24, (contentAvailH - gapY * (activeRows - 1)) / activeRows);
++        int actualRows = Math.max(1, (Math.max(1, visibleCount) + cols - 1) / cols);
++        int usedH = actualRows * cardH + Math.max(0, actualRows - 1) * gapY;
++        int gridStartY = contentTop + Math.max(0, (contentAvailH - usedH) / 2);
++
++        List<SlotRect> milestoneCards = new ArrayList<>(visibleCount);
++        for (int i = 0; i < visibleCount; i++) {
++            int col = i % cols;
++            int row = i / cols;
++            int id = activeTab == TAB_RANKS
++                    ? allTitles.get(pageStart + i).index()
++                    : allMilestones.get(pageStart + i).number();
++            milestoneCards.add(new SlotRect(id, new Rect(
++                    innerX + col * (cardW + gapX),
++                    gridStartY + row * (cardH + gapY),
++                    cardW, cardH)));
++        }
++
++        return new CommanderLayout(
++                panel, inner, titleBanner, balanceBadge, closeButton,
++                compactBalance, npcBannerBox,
++                tabRewardsButton, tabStatsButton, tabRanksButton,
++                contentArea, pageStart, pageCount, milestoneCards,
++                primaryNavButton, claimDetailButton, prevPageButton, nextPageButton
++        );
++    }
++
++    private Rect quickClaimRect(Rect card) {
++        int btnW = Math.min(64, Math.max(42, card.w / 3));
++        int btnH = Math.min(14, Math.max(11, font.lineHeight + 3));
++        return new Rect(card.right() - btnW - 4, card.bottom() - btnH - 3, btnW, btnH);
++    }
++
++    private void drawParchmentAndWoodFrame(GuiGraphicsExtractor graphics, Rect panel) {
++        int insetX = Math.max(1, (int) Math.round(panel.w * 0.052));
++        int insetY = Math.max(1, (int) Math.round(panel.h * 0.082));
++        blitFull(graphics, PARCHMENT_TEXTURE, panel.x + insetX, panel.y + insetY,
++                Math.max(1, panel.w - insetX * 2), Math.max(1, panel.h - insetY * 2));
++        blitFull(graphics, WOOD_FRAME_TEXTURE, panel.x, panel.y, panel.w, panel.h);
++    }
++
++    private void drawHeader(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CommanderLayout layout) {
++        Component title = Component.translatable("gui.refugio.commander.title").withStyle(LIGHT_STYLE);
++        Rect banner = layout.titleBanner;
++        if (banner.w > 0 && banner.h > 0) {
++            graphics.blit(TITLE_PLAQUE_TEXTURE, banner.x, banner.y, banner.right(), banner.bottom(),
++                    0.02F, 0.98F, 0.32F, 0.66F);
++        }
++        List<FormattedCharSequence> titleLines = font.split(title, Math.max(16, banner.w - 24));
++        int maxLines = banner.h >= font.lineHeight * 2 + 4 ? 2 : 1;
++        int count = Math.min(maxLines, titleLines.size());
++        int titleY = banner.y + Math.max(0, (banner.h - count * font.lineHeight) / 2);
++        for (int i = 0; i < count; i++) {
++            FormattedCharSequence line = titleLines.get(i);
++            graphics.textRenderer().accept(banner.x + (banner.w - font.width(line)) / 2,
++                    titleY + i * font.lineHeight, line);
++        }
++        if (banner.x > layout.inner.x + 14) {
++            drawDiamond(graphics, banner.x - 8, banner.y + banner.h / 2, 3, 0xFFB89455);
++            drawDiamond(graphics, banner.right() + 8, banner.y + banner.h / 2, 3, 0xFFB89455);
++        }
++        drawBalanceBadge(graphics, layout.balanceBadge, layout.compactBalance);
++        drawClose(graphics, mouseX, mouseY, layout.closeButton);
++    }
++
++    private void drawBalanceBadge(GuiGraphicsExtractor graphics, Rect badge, boolean compact) {
++        graphics.fill(badge.x, badge.y, badge.right(), badge.bottom(), 0xFF56361F);
++        border(graphics, badge.x, badge.y, badge.w, badge.h, 0xFFC39A59);
++        if (badge.h >= 18) {
++            graphics.fill(badge.x + 2, badge.y + 2, badge.right() - 2, badge.y + 4, 0xFF79502A);
++        }
++        int coinY = badge.y + Math.max(1, (badge.h - 12) / 2);
++        drawCoinIcon(graphics, badge.x + 5, coinY);
++        MutableComponent balance = compact ? Component.literal(Integer.toString(coins))
++                : Component.translatable("gui.refugio.balance_value", coins);
++        List<FormattedCharSequence> lines = font.split(balance.withStyle(LIGHT_STYLE), Math.max(8, badge.w - 24));
++        if (!lines.isEmpty()) {
++            FormattedCharSequence line = lines.getFirst();
++            graphics.textRenderer().accept(badge.x + 20, badge.y + (badge.h - font.lineHeight) / 2, line);
++        }
++    }
++
++    private void drawNpcBanner(GuiGraphicsExtractor graphics, CommanderLayout layout) {
++        Rect box = layout.npcBannerBox;
++        graphics.fill(box.x, box.y, box.right(), box.bottom(), 0x55DEC89E);
++        border(graphics, box.x, box.y, box.w, box.h, 0xFF9C784C);
++        graphics.fill(box.x + 2, box.y + 2, box.x + 5, box.bottom() - 2, FACTION_ACCENT);
++
++        int textLeft = box.x + 10;
++        if (box.h >= 20 && box.w >= 240) {
++            int pSize = box.h - 4;
++            int px = box.x + 8;
++            int py = box.y + 2;
++            graphics.fill(px - 1, py - 1, px + pSize + 1, py + pSize + 1, 0xFF5A3A20);
++            blitFull(graphics, ELIAS_PORTRAIT, px, py, pSize, pSize);
++            border(graphics, px, py, pSize, pSize, 0xFFC39A59);
++            textLeft = px + pSize + 8;
++        }
++
++        int totalMilestones = RefugioCommanderRewards.TOTAL_MILESTONES;
++        int claimedCount = claimedMilestones.size();
++        Component killsComp = Component.translatable("gui.refugio.commander.kills_short",
++                zombieKills, claimedCount, totalMilestones).withStyle(GOLD_STYLE);
++        int progTextW = font.width(killsComp);
++        int rightStart = Math.max(textLeft + 40, box.right() - progTextW - 8);
++
++        int textY = box.y + Math.max(1, (box.h - font.lineHeight) / 2);
++        String currentTitle = RefugioCommanderRewards.highestUnlockedTitle(zombieKills);
++        Component rankDisplay = currentTitle.isEmpty()
++                ? Component.translatable("gui.refugio.commander.no_rank")
++                : Component.literal(currentTitle);
++        MutableComponent speaker = Component.translatable("entity.refugio.commander_elias")
++                .withStyle(INK_STYLE)
++                .append(Component.literal(" — ").withStyle(MUTED_STYLE))
++                .append(rankDisplay.copy().withStyle(GOLD_STYLE));
++
++        int availSpeakerW = Math.max(30, rightStart - textLeft - 6);
++        List<FormattedCharSequence> speakerLines = font.split(speaker, availSpeakerW);
++        if (!speakerLines.isEmpty()) {
++            graphics.textRenderer().accept(textLeft, textY, speakerLines.getFirst());
++        }
++        List<FormattedCharSequence> killLines = font.split(killsComp, Math.max(30, box.right() - rightStart - 4));
++        if (!killLines.isEmpty()) {
++            graphics.textRenderer().accept(rightStart, textY, killLines.getFirst());
++        }
++    }
++
++    private void drawTabBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CommanderLayout layout) {
++        int readyCount = 0;
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            if (milestoneState(m.number()) == STATE_READY) readyCount++;
++        }
++        Component rewardsTabLabel = readyCount > 0
++                ? Component.translatable("gui.refugio.commander.tab.rewards_ready", readyCount)
++                : Component.translatable("gui.refugio.commander.tab.rewards");
++        drawButton(graphics, layout.tabRewardsButton.x, layout.tabRewardsButton.y,
++                layout.tabRewardsButton.w, layout.tabRewardsButton.h,
++                rewardsTabLabel, mouseX, mouseY, true,
++                activeTab == TAB_REWARDS ? 0xFF24504F : 0xFF293A48);
++        drawButton(graphics, layout.tabStatsButton.x, layout.tabStatsButton.y,
++                layout.tabStatsButton.w, layout.tabStatsButton.h,
++                Component.translatable("gui.refugio.commander.tab.stats"), mouseX, mouseY, true,
++                activeTab == TAB_STATS ? 0xFF24504F : 0xFF293A48);
++        drawButton(graphics, layout.tabRanksButton.x, layout.tabRanksButton.y,
++                layout.tabRanksButton.w, layout.tabRanksButton.h,
++                Component.translatable("gui.refugio.commander.tab.ranks"), mouseX, mouseY, true,
++                activeTab == TAB_RANKS ? 0xFF24504F : 0xFF293A48);
++    }
++
++    private void drawMilestoneCard(GuiGraphicsExtractor graphics, Rect card,
++                                   RefugioCommanderRewards.MilestoneSpec spec,
++                                   boolean hovered, int mouseX, int mouseY) {
++        int x = card.x;
++        int y = card.y;
++        int w = card.w;
++        int h = card.h;
++        int state = milestoneState(spec.number());
++
++        int bgColor = switch (state) {
++            case STATE_CLAIMED -> hovered ? 0xFFEFE3C2 : 0xFFE5D7B3;
++            case STATE_READY -> hovered ? 0xFFFDF0CE : 0xFFF6E4B8;
++            default -> hovered ? 0xFFDED1B7 : 0xFFD4C7AD;
++        };
++        int borderColor = switch (state) {
++            case STATE_CLAIMED -> hovered ? 0xFFD3A34F : 0xFF5B7F46;
++            case STATE_READY -> hovered ? 0xFFFFD878 : 0xFFD49B35;
++            default -> hovered ? 0xFFA99577 : 0xFF8E806A;
++        };
++        int accentColor = switch (state) {
++            case STATE_CLAIMED -> 0xFF2D5B22;
++            case STATE_READY -> 0xFF24504F;
++            default -> FACTION_ACCENT;
++        };
++
++        graphics.fill(x, y, x + w, y + h, bgColor);
++        border(graphics, x, y, w, h, borderColor);
++        if (state == STATE_READY) {
++            border(graphics, x + 1, y + 1, w - 2, h - 2, 0x88FFD982);
++        }
++        graphics.fill(x + 2, y + 2, x + 5, y + h - 2, accentColor);
++
++        int iconBoxSize = h >= 48 ? 20 : 16;
++        int iconBoxX = x + 8;
++        int iconBoxY = y + (h >= 54 ? 6 : Math.max(2, (h - iconBoxSize) / 2));
++        if (h >= 48) {
++            graphics.fill(iconBoxX - 1, iconBoxY - 1, iconBoxX + iconBoxSize + 1, iconBoxY + iconBoxSize + 1, 0x34987348);
++            border(graphics, iconBoxX - 1, iconBoxY - 1, iconBoxSize + 2, iconBoxSize + 2, 0x80987348);
++        }
++        ItemStack iconStack = createStack(spec.iconItemId(), 1);
++        graphics.item(iconStack, iconBoxX + (iconBoxSize - 16) / 2, iconBoxY + (iconBoxSize - 16) / 2);
++
++        int textLeft = iconBoxX + iconBoxSize + 6;
++        int textRight = x + w - 5;
++        int availTextW = Math.max(24, textRight - textLeft);
++
++        Style titleStyle = state == STATE_LOCKED ? MUTED_STYLE : INK_STYLE;
++        String numStr = String.format("#%02d ", spec.number());
++        MutableComponent numberedTitle = Component.literal(numStr)
++                .withStyle(GOLD_STYLE)
++                .append(Component.literal(spec.name()).withStyle(titleStyle));
++
++        Component stateComp = stateBadgeComponent(state);
++
++        if (h < 42) {
++            List<FormattedCharSequence> titleLines = font.split(numberedTitle, availTextW);
++            if (!titleLines.isEmpty()) {
++                graphics.textRenderer().accept(textLeft, y + Math.max(1, (h - font.lineHeight) / 2), titleLines.getFirst());
++            }
++            return;
++        }
++
++        int topY = y + 4;
++        List<FormattedCharSequence> titleLines = font.split(numberedTitle, availTextW);
++        if (!titleLines.isEmpty()) {
++            graphics.textRenderer().accept(textLeft, topY, titleLines.getFirst());
++        }
++
++        int footerH = font.lineHeight + 4;
++        int footerY = y + h - footerH - 2;
++        int statusY = footerY - font.lineHeight - 1;
++
++        int midTop = topY + font.lineHeight + 2;
++        int curKills = Math.min(zombieKills, spec.requiredKills());
++        Style progStyle = zombieKills >= spec.requiredKills() ? SUCCESS_STYLE : GOLD_STYLE;
++        Component reqLine = Component.translatable("gui.refugio.commander.kill_requirement",
++                curKills, spec.requiredKills()).withStyle(progStyle);
++        if (midTop + font.lineHeight <= statusY) {
++            List<FormattedCharSequence> reqLines = font.split(reqLine, availTextW);
++            if (!reqLines.isEmpty()) {
++                graphics.textRenderer().accept(textLeft, midTop, reqLines.getFirst());
++            }
++        }
++
++        if (statusY >= topY + font.lineHeight) {
++            List<FormattedCharSequence> stateLines = font.split(stateComp, availTextW);
++            if (!stateLines.isEmpty()) {
++                graphics.textRenderer().accept(textLeft, statusY, stateLines.getFirst());
++            }
++        }
++
++        drawCardRewardRow(graphics, textLeft, footerY, availTextW, footerH, spec, state, card, mouseX, mouseY);
++    }
++
++    private void drawCardRewardRow(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
++                                   RefugioCommanderRewards.MilestoneSpec spec, int state,
++                                   Rect cardRect, int mouseX, int mouseY) {
++        graphics.fill(x, y - 1, x + w, y, 0x44987348);
++        int textY = y + Math.max(0, (h - font.lineHeight) / 2);
++
++        Rect claimBtn = state == STATE_READY ? quickClaimRect(cardRect) : new Rect(0, 0, 0, 0);
++        int maxRight = state == STATE_READY ? (claimBtn.x - 4) : (x + w);
++
++        int curX = x;
++        drawCoinIcon(graphics, curX, y + Math.max(0, (h - 12) / 2));
++        curX += 14;
++        Component coinsText = Component.literal("+" + spec.coins()).withStyle(GOLD_STYLE);
++        graphics.textRenderer().accept(curX, textY, coinsText);
++        curX += font.width(coinsText) + 5;
++
++        for (RefugioCommanderRewards.RewardItemSpec r : spec.items()) {
++            if (curX + 18 > maxRight) break;
++            ItemStack stack = createRewardItemStack(r);
++            int iconY = y + (h - 16) / 2;
++            drawItemWithCount(graphics, stack, curX, iconY, r.count());
++            curX += 18;
++        }
++
++        if (state == STATE_READY && claimBtn.w > 0) {
++            drawButton(graphics, claimBtn.x, claimBtn.y, claimBtn.w, claimBtn.h,
++                    Component.translatable("gui.refugio.commander.claim_short"),
++                    mouseX, mouseY, true, 0xFF24504F);
++        }
++    }
++
++    private void drawMilestoneDetailView(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CommanderLayout layout) {
++        Rect area = layout.contentArea;
++        graphics.fill(area.x, area.y, area.right(), area.bottom(), 0xD8EAD8B2);
++        border(graphics, area.x, area.y, area.w, area.h, 0xFF967043);
++
++        RefugioCommanderRewards.MilestoneSpec spec = RefugioCommanderRewards.milestone(selectedMilestoneNumber);
++        if (spec == null) return;
++        int state = milestoneState(spec.number());
++
++        List<Component> lines = new ArrayList<>();
++        String numStr = String.format("Marco #%02d (%d zumbis) — %s",
++                spec.number(), spec.requiredKills(), spec.name());
++        lines.add(Component.literal(numStr).withStyle(GOLD_STYLE));
++        lines.add(Component.literal(spec.objective()).withStyle(MUTED_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.kill_requirement",
++                Math.min(zombieKills, spec.requiredKills()), spec.requiredKills())
++                .withStyle(zombieKills >= spec.requiredKills() ? SUCCESS_STYLE : GOLD_STYLE));
++        lines.add(stateBadgeComponent(state));
++        lines.add(Component.translatable("gui.refugio.commander.coins_reward", spec.coins()).withStyle(GOLD_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.items_header").withStyle(INK_STYLE));
++
++        for (RefugioCommanderRewards.RewardItemSpec itemSpec : spec.items()) {
++            lines.add(Component.literal(" • ").withStyle(GOLD_STYLE).append(formatRewardItemLine(itemSpec)));
++        }
++        if (!spec.exclusiveTitle().isEmpty()) {
++            lines.add(Component.translatable("gui.refugio.commander.exclusive_title", spec.exclusiveTitle())
++                    .withStyle(SUCCESS_STYLE));
++        }
++        if (!feedbackKey.isEmpty()) {
++            lines.add(Component.translatable(feedbackKey).withStyle(GOLD_STYLE));
++        }
++
++        int padX = 10;
++        int padY = 6;
++        int maxTextW = Math.max(40, area.w - padX * 2);
++        List<FormattedCharSequence> wrapped = new ArrayList<>();
++        for (Component comp : lines) {
++            wrapped.addAll(font.split(comp, maxTextW));
++        }
++
++        int contentH = wrapped.size() * (font.lineHeight + 2);
++        int viewH = Math.max(16, area.h - padY * 2);
++        int maxScroll = Math.max(0, contentH - viewH);
++        detailScrollOffset = Math.max(0, Math.min(detailScrollOffset, maxScroll));
++
++        graphics.enableScissor(area.x + 2, area.y + 2, area.right() - 2, area.bottom() - 2);
++        int curY = area.y + padY - detailScrollOffset;
++        for (FormattedCharSequence line : wrapped) {
++            if (curY + font.lineHeight >= area.y && curY <= area.bottom()) {
++                graphics.textRenderer().accept(area.x + padX, curY, line);
++            }
++            curY += font.lineHeight + 2;
++        }
++        graphics.disableScissor();
++    }
++
++    private void drawStatsView(GuiGraphicsExtractor graphics, CommanderLayout layout) {
++        Rect area = layout.contentArea;
++        graphics.fill(area.x, area.y, area.right(), area.bottom(), 0xD8EAD8B2);
++        border(graphics, area.x, area.y, area.w, area.h, 0xFF967043);
++
++        int unlockedCount = 0;
++        int claimedCount = 0;
++        int readyCount = 0;
++        int earnedCoins = 0;
++        for (RefugioCommanderRewards.MilestoneSpec m : RefugioCommanderRewards.activeMilestones()) {
++            int st = milestoneState(m.number());
++            if (st == STATE_CLAIMED) {
++                claimedCount++;
++                unlockedCount++;
++                earnedCoins += m.coins();
++            } else if (st == STATE_READY) {
++                readyCount++;
++                unlockedCount++;
++            }
++        }
++
++        RefugioCommanderRewards.MilestoneSpec nextMs = RefugioCommanderRewards.nextUnreachedMilestone(zombieKills);
++        String currentTitle = RefugioCommanderRewards.highestUnlockedTitle(zombieKills);
++        RefugioCommanderRewards.TitleSpec nextTitle = RefugioCommanderRewards.nextTitle(zombieKills);
++
++        List<Component> lines = new ArrayList<>();
++        lines.add(Component.translatable("gui.refugio.commander.stats.header").withStyle(GOLD_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.stats.total_kills", zombieKills).withStyle(INK_STYLE));
++        if (nextMs != null) {
++            int remaining = Math.max(0, nextMs.requiredKills() - zombieKills);
++            lines.add(Component.translatable("gui.refugio.commander.stats.next_milestone",
++                    nextMs.number(), nextMs.name(), zombieKills, nextMs.requiredKills(), remaining).withStyle(GOLD_STYLE));
++        } else {
++            lines.add(Component.translatable("gui.refugio.commander.stats.all_milestones_reached").withStyle(SUCCESS_STYLE));
++        }
++        lines.add(Component.translatable("gui.refugio.commander.stats.milestones_unlocked",
++                unlockedCount, RefugioCommanderRewards.TOTAL_MILESTONES).withStyle(INK_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.stats.milestones_claimed",
++                claimedCount, RefugioCommanderRewards.TOTAL_MILESTONES, readyCount).withStyle(SUCCESS_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.stats.coins_progress",
++                earnedCoins, RefugioCommanderRewards.TOTAL_TRACK_COINS).withStyle(GOLD_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.stats.current_title",
++                currentTitle.isEmpty() ? Component.translatable("gui.refugio.commander.no_rank") : Component.literal(currentTitle))
++                .withStyle(INK_STYLE));
++        if (nextTitle != null) {
++            lines.add(Component.translatable("gui.refugio.commander.stats.next_title",
++                    nextTitle.title(), nextTitle.requiredKills()).withStyle(MUTED_STYLE));
++        } else {
++            lines.add(Component.translatable("gui.refugio.commander.stats.max_title").withStyle(SUCCESS_STYLE));
++        }
++
++        int padX = 12;
++        int curY = area.y + 8;
++        int maxW = Math.max(40, area.w - padX * 2);
++        for (Component line : lines) {
++            for (FormattedCharSequence seq : font.split(line, maxW)) {
++                if (curY + font.lineHeight > area.bottom() - 4) break;
++                graphics.textRenderer().accept(area.x + padX, curY, seq);
++                curY += font.lineHeight + 3;
++            }
++        }
++    }
++
++    private void drawRanksView(GuiGraphicsExtractor graphics, CommanderLayout layout) {
++        List<RefugioCommanderRewards.TitleSpec> titles = RefugioCommanderRewards.activeTitles();
++        for (int i = 0; i < layout.milestoneCards.size(); i++) {
++            SlotRect slot = layout.milestoneCards.get(i);
++            int idx = layout.pageStart + i;
++            if (idx >= titles.size()) break;
++            RefugioCommanderRewards.TitleSpec title = titles.get(idx);
++            Rect r = slot.rect;
++            boolean unlocked = isTitleUnlocked(title);
++
++            graphics.fill(r.x, r.y, r.right(), r.bottom(), unlocked ? 0xFFEFE3C2 : 0xFFD4C7AD);
++            border(graphics, r.x, r.y, r.w, r.h, unlocked ? 0xFF5B7F46 : 0xFF8E806A);
++            graphics.fill(r.x + 2, r.y + 2, r.x + 5, r.bottom() - 2, unlocked ? 0xFF2D5B22 : FACTION_ACCENT);
++
++            MutableComponent header = Component.literal(title.title())
++                    .withStyle(unlocked ? GOLD_STYLE : MUTED_STYLE);
++            Component req = Component.translatable("gui.refugio.commander.rank_req",
++                    Math.min(zombieKills, title.requiredKills()), title.requiredKills(),
++                    Component.translatable(unlocked ? "gui.refugio.commander.rank_unlocked" : "gui.refugio.commander.rank_locked"))
++                    .withStyle(unlocked ? SUCCESS_STYLE : INK_STYLE);
++
++            int textX = r.x + 10;
++            int maxW = Math.max(24, r.w - 14);
++            List<FormattedCharSequence> hLines = font.split(header, maxW);
++            List<FormattedCharSequence> rLines = font.split(req, maxW);
++            int startY = r.y + Math.max(2, (r.h - font.lineHeight * 2 - 2) / 2);
++            if (!hLines.isEmpty()) {
++                graphics.textRenderer().accept(textX, startY, hLines.getFirst());
++            }
++            if (!rLines.isEmpty() && startY + font.lineHeight + 2 + font.lineHeight <= r.bottom()) {
++                graphics.textRenderer().accept(textX, startY + font.lineHeight + 2, rLines.getFirst());
++            }
++        }
++    }
++
++    private void drawFooterBar(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CommanderLayout layout) {
++        if (activeTab == TAB_REWARDS && selectedMilestoneNumber > 0) {
++            drawButton(graphics, layout.primaryNavButton.x, layout.primaryNavButton.y,
++                    layout.primaryNavButton.w, layout.primaryNavButton.h,
++                    Component.translatable("gui.refugio.back"), mouseX, mouseY, true, 0xFF293A48);
++            int state = milestoneState(selectedMilestoneNumber);
++            Component claimLabel = switch (state) {
++                case STATE_CLAIMED -> Component.translatable("gui.refugio.quest_done");
++                case STATE_READY -> Component.translatable("gui.refugio.commander.claim_button");
++                default -> Component.translatable("gui.refugio.quest_locked");
++            };
++            drawButton(graphics, layout.claimDetailButton.x, layout.claimDetailButton.y,
++                    layout.claimDetailButton.w, layout.claimDetailButton.h,
++                    claimLabel, mouseX, mouseY, state == STATE_READY, 0xFF24504F);
++            return;
++        }
++
++        drawButton(graphics, layout.primaryNavButton.x, layout.primaryNavButton.y,
++                layout.primaryNavButton.w, layout.primaryNavButton.h,
++                Component.translatable("gui.refugio.close"), mouseX, mouseY, true, 0xFF293A48);
++
++        if (activeTab == TAB_REWARDS || activeTab == TAB_RANKS) {
++            int currentPage = activeTab == TAB_RANKS ? ranksPage : rewardsPage;
++            Rect prev = layout.prevPageButton;
++            Rect next = layout.nextPageButton;
++            drawButton(graphics, prev.x, prev.y, prev.w, prev.h, Component.literal("‹"),
++                    mouseX, mouseY, currentPage > 0, 0xFF293A48);
++            drawButton(graphics, next.x, next.y, next.w, next.h, Component.literal("›"),
++                    mouseX, mouseY, currentPage + 1 < layout.pageCount, 0xFF293A48);
++
++            Component pageComp = Component.translatable("gui.refugio.page", currentPage + 1, layout.pageCount)
++                    .withStyle(GOLD_STYLE);
++            int midX = (prev.right() + next.x) / 2;
++            graphics.textRenderer().accept(midX - font.width(pageComp) / 2,
++                    prev.y + (prev.h - font.lineHeight) / 2, pageComp);
++        }
++    }
++
++    private void drawMilestoneTooltip(GuiGraphicsExtractor graphics,
++                                      RefugioCommanderRewards.MilestoneSpec spec,
++                                      int mouseX, int mouseY) {
++        int state = milestoneState(spec.number());
++        List<Component> lines = new ArrayList<>();
++        lines.add(Component.literal(String.format("Marco #%02d — %s", spec.number(), spec.name()))
++                .withStyle(GOLD_STYLE));
++        lines.add(Component.literal(spec.objective()).withStyle(MUTED_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.kill_requirement",
++                Math.min(zombieKills, spec.requiredKills()), spec.requiredKills()).withStyle(LIGHT_STYLE));
++        lines.add(Component.translatable("gui.refugio.commander.coins_reward", spec.coins()).withStyle(GOLD_STYLE));
++
++        for (RefugioCommanderRewards.RewardItemSpec itemSpec : spec.items()) {
++            lines.add(Component.literal("• ").withStyle(GOLD_STYLE)
++                    .append(formatRewardItemLine(itemSpec).copy().withStyle(LIGHT_STYLE)));
++        }
++        if (!spec.exclusiveTitle().isEmpty()) {
++            lines.add(Component.translatable("gui.refugio.commander.exclusive_title", spec.exclusiveTitle())
++                    .withStyle(SUCCESS_STYLE));
++        }
++        lines.add(stateBadgeComponent(state));
++
++        int maxW = Math.min(260, Math.max(110, width * 3 / 5));
++        List<FormattedCharSequence> wrapped = new ArrayList<>();
++        for (Component line : lines) {
++            wrapped.addAll(font.split(line, maxW));
++        }
++        if (wrapped.isEmpty()) return;
++
++        int boxW = wrapped.stream().mapToInt(font::width).max().orElse(60) + 12;
++        int boxH = wrapped.size() * (font.lineHeight + 1) + 8;
++        int bx = mouseX + 10;
++        int by = mouseY - 6;
++        if (bx + boxW > width - 4) bx = Math.max(4, mouseX - boxW - 6);
++        if (by + boxH > height - 4) by = Math.max(4, height - boxH - 4);
++        if (by < 4) by = 4;
++
++        graphics.fill(bx, by, bx + boxW, by + boxH, 0xF22B1C11);
++        border(graphics, bx, by, boxW, boxH, 0xFFC39A59);
++        int ty = by + 4;
++        for (FormattedCharSequence seq : wrapped) {
++            graphics.textRenderer().accept(bx + 6, ty, seq);
++            ty += font.lineHeight + 1;
++        }
++    }
++
++    private Component stateBadgeComponent(int state) {
++        return switch (state) {
++            case STATE_CLAIMED -> Component.translatable("gui.refugio.quest_done").withStyle(SUCCESS_STYLE);
++            case STATE_READY -> Component.translatable("gui.refugio.quest_claim_ready").withStyle(GOLD_STYLE);
++            default -> Component.translatable("gui.refugio.quest_locked").withStyle(MUTED_STYLE);
++        };
++    }
++
++    private MutableComponent formatRewardItemLine(RefugioCommanderRewards.RewardItemSpec spec) {
++        ItemStack stack = createRewardItemStack(spec);
++        MutableComponent line = Component.literal(spec.count() + "× ").append(stack.getHoverName());
++        if (!spec.enchantments().isEmpty()) {
++            line.append(Component.literal(" ("));
++            for (int i = 0; i < spec.enchantments().size(); i++) {
++                if (i > 0) line.append(Component.literal(", "));
++                RefugioCommanderRewards.EnchantSpec ench = spec.enchantments().get(i);
++                line.append(formatEnchantmentName(ench.enchantmentId(), ench.level()));
++            }
++            line.append(Component.literal(")"));
++        }
++        return line.withStyle(INK_STYLE);
++    }
++
++    private Component formatEnchantmentName(String enchantmentId, int level) {
++        String path = enchantmentId.contains(":") ? enchantmentId.substring(enchantmentId.indexOf(':') + 1) : enchantmentId;
++        MutableComponent name = Component.translatable("enchantment.minecraft." + path);
++        if (level > 1 || (!"flame".equals(path) && !"infinity".equals(path)
++                && !"mending".equals(path) && !"channeling".equals(path))) {
++            name.append(Component.literal(" " + toRoman(level)));
++        }
++        return name;
++    }
++
++    private static String toRoman(int level) {
++        return switch (level) {
++            case 1 -> "I";
++            case 2 -> "II";
++            case 3 -> "III";
++            case 4 -> "IV";
++            case 5 -> "V";
++            default -> Integer.toString(level);
++        };
++    }
++
++    private ItemStack createRewardItemStack(RefugioCommanderRewards.RewardItemSpec spec) {
++        Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(spec.itemId()));
++        if (item == Items.AIR) {
++            item = BuiltInRegistries.ITEM.getValue(Identifier.parse(spec.fallbackItemId()));
++        }
++        if (item == Items.AIR) return ItemStack.EMPTY;
++        ItemStack stack = new ItemStack(item, Math.max(1, spec.count()));
++        if (!spec.enchantments().isEmpty()) {
++            stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
++            if (minecraft != null && minecraft.level != null) {
++                try {
++                    var reg = minecraft.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
++                    for (RefugioCommanderRewards.EnchantSpec ench : spec.enchantments()) {
++                        var key = ResourceKey.create(Registries.ENCHANTMENT, Identifier.parse(ench.enchantmentId()));
++                        var holderOpt = reg.get(key);
++                        if (holderOpt.isPresent()) {
++                            Holder<Enchantment> holder = holderOpt.get();
++                            if (stack.is(Items.ENCHANTED_BOOK)) {
++                                ItemEnchantments.Mutable stored = new ItemEnchantments.Mutable(
++                                        stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY));
++                                stored.set(holder, ench.level());
++                                stack.set(DataComponents.STORED_ENCHANTMENTS, stored.toImmutable());
++                            } else {
++                                stack.enchant(holder, ench.level());
++                            }
++                        }
++                    }
++                } catch (RuntimeException ignored) {
++                }
++            }
++        }
++        return stack;
++    }
++
++    private static ItemStack createStack(String itemId, int count) {
++        if (itemId == null || itemId.isBlank()) return ItemStack.EMPTY;
++        Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(itemId));
++        if (item == Items.AIR) return ItemStack.EMPTY;
++        return new ItemStack(item, Math.max(1, count));
++    }
++
++    private void drawItemWithCount(GuiGraphicsExtractor graphics, ItemStack stack, int x, int y, int count) {
++        if (stack.isEmpty()) return;
++        graphics.item(stack, x, y);
++        if (count > 1) {
++            String text = Integer.toString(count);
++            Component comp = Component.literal(text).withStyle(LIGHT_STYLE);
++            int tw = font.width(comp);
++            int tx = x + 17 - tw;
++            int ty = y + 17 - font.lineHeight;
++            graphics.fill(tx - 1, ty - 1, tx + tw + 1, ty + font.lineHeight, 0xB02A1B10);
++            graphics.textRenderer().accept(tx, ty, comp);
++        }
++    }
++
++    private static void drawCoinIcon(GuiGraphicsExtractor graphics, int x, int y) {
++        graphics.fill(x + 4, y, x + 10, y + 2, 0xFFFFE79A);
++        graphics.fill(x + 2, y + 2, x + 12, y + 10, 0xFFD99B36);
++        graphics.fill(x + 4, y + 10, x + 10, y + 12, 0xFF9C6424);
++        graphics.fill(x + 4, y + 3, x + 8, y + 8, 0xFFFFD76A);
++        graphics.fill(x + 8, y + 5, x + 10, y + 8, 0xFFF2B847);
++    }
++
++    private void drawClose(GuiGraphicsExtractor graphics, int mouseX, int mouseY, Rect rect) {
++        int x = rect.x;
++        int y = rect.y;
++        int s = rect.w;
++        boolean hovered = rect.contains(mouseX, mouseY);
++        graphics.fill(x, y, x + s, y + s, hovered ? 0xFF80532B : 0xFF5E3E23);
++        border(graphics, x, y, s, s, hovered ? 0xFFFFD787 : 0xFFB08A50);
++        int color = hovered ? 0xFFFFE9B0 : 0xFFE8D6B5;
++        int crossSize = Math.max(4, Math.min(6, s - 10));
++        int startX = x + (s - crossSize - 2) / 2;
++        int startY = y + (s - crossSize - 2) / 2;
++        for (int i = 0; i < crossSize; i++) {
++            graphics.fill(startX + i, startY + i, startX + i + 2, startY + i + 2, color);
++            graphics.fill(startX + i, startY + crossSize - i, startX + i + 2, startY + crossSize - i + 2, color);
++        }
++    }
++
++    private void drawButton(GuiGraphicsExtractor graphics, int x, int y, int w, int h, Component label,
++                            int mouseX, int mouseY, boolean enabled, int baseColor) {
++        boolean hovered = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
++        Identifier texture = baseColor == 0xFF24504F ? PRIMARY_BUTTON_TEXTURE : SECONDARY_BUTTON_TEXTURE;
++        if (w > 0 && h > 0) graphics.blit(texture, x, y, x + w, y + h, 0.0F, 1.0F, 0.28F, 0.72F);
++        if (!enabled) {
++            graphics.fill(x + 3, y + 2, x + w - 3, y + h - 2, 0x78332213);
++        } else if (hovered && w > 12 && h > 10) {
++            int insetX = w < 40 ? 3 : 6;
++            int insetY = h < 18 ? 2 : 4;
++            graphics.fill(x + insetX, y + insetY, x + w - insetX, y + h - insetY, 0x24E8B954);
++            border(graphics, x + 2, y + 2, w - 4, h - 4, 0xB8D8B677);
++            graphics.fill(x + insetX, y + insetY - 1, x + w - insetX, y + insetY, 0xA0FFF0BA);
++            if (w >= 48) {
++                drawDiamond(graphics, x + 7, y + h / 2, 2, 0xFFE9C77F);
++                drawDiamond(graphics, x + w - 8, y + h / 2, 2, 0xFFE9C77F);
++            }
++        }
++        Style labelStyle = !enabled ? DISABLED_BUTTON_STYLE
++                : hovered ? Style.EMPTY.withFont(UI_FONT).withColor(0xFFFFE5A0) : LIGHT_STYLE;
++        int textPad = w < 48 ? 6 : (w < 110 ? 10 : 16);
++        List<FormattedCharSequence> lines = font.split(
++                Component.literal(label.getString()).withStyle(labelStyle), Math.max(8, w - textPad));
++        int maxLines = h >= font.lineHeight * 2 + 2 ? 2 : 1;
++        int count = Math.min(maxLines, lines.size());
++        int textY = y + Math.max(0, (h - count * font.lineHeight) / 2);
++        for (int i = 0; i < count; i++) {
++            FormattedCharSequence line = lines.get(i);
++            graphics.textRenderer().accept(x + (w - font.width(line)) / 2,
++                    textY + i * font.lineHeight, line);
++        }
++    }
++
++    private static void blitFull(GuiGraphicsExtractor graphics, Identifier texture,
++                                 int x, int y, int width, int height) {
++        if (width > 0 && height > 0) {
++            graphics.blit(texture, x, y, x + width, y + height, 0.0F, 1.0F, 0.0F, 1.0F);
++        }
++    }
++
++    private static void drawDiamond(GuiGraphicsExtractor graphics, int centerX, int centerY,
++                                    int radius, int color) {
++        for (int dy = -radius; dy <= radius; dy++) {
++            int halfWidth = radius - Math.abs(dy);
++            graphics.fill(centerX - halfWidth, centerY + dy,
++                    centerX + halfWidth + 1, centerY + dy + 1, color);
++        }
++    }
++
++    private static void border(GuiGraphicsExtractor graphics, int x, int y, int w, int h, int color) {
++        if (w <= 0 || h <= 0) return;
++        graphics.fill(x, y, x + w, y + 1, color);
++        graphics.fill(x, y + h - 1, x + w, y + h, color);
++        graphics.fill(x, y, x + 1, y + h, color);
++        graphics.fill(x + w - 1, y, x + w, y + h, color);
++    }
++
++    private record Rect(int x, int y, int w, int h) {
++        int right() { return x + w; }
++        int bottom() { return y + h; }
++        boolean contains(double mx, double my) {
++            return mx >= x && mx < x + w && my >= y && my < y + h;
++        }
++    }
++
++    private record SlotRect(int slotId, Rect rect) { }
++
++    private record CommanderLayout(
++            Rect panel, Rect inner, Rect titleBanner, Rect balanceBadge, Rect closeButton,
++            boolean compactBalance, Rect npcBannerBox,
++            Rect tabRewardsButton, Rect tabStatsButton, Rect tabRanksButton,
++            Rect contentArea, int pageStart, int pageCount, List<SlotRect> milestoneCards,
++            Rect primaryNavButton, Rect claimDetailButton, Rect prevPageButton, Rect nextPageButton
++    ) { }
++}
+--- a/src/client/java/com/felpz/refugio/client/RefugioDialogueScreen.java
++++ b/src/client/java/com/felpz/refugio/client/RefugioDialogueScreen.java
+@@ -27,6 +27,7 @@
+     private static final Identifier MARTA_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/marta.png");
+     private static final Identifier DARIO_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/dario.png");
+     private static final Identifier KAEL_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/kael.png");
++    private static final Identifier ELIAS_PORTRAIT = Identifier.parse("refugio:textures/gui/dialogue/portraits/elias.png");
+ 
+     private static final FontDescription UI_FONT = new FontDescription.Resource(Identifier.parse("minecraft:uniform"));
+     private static final Style INK_STYLE = Style.EMPTY.withFont(UI_FONT).withColor(0x4A3520);
+@@ -287,6 +288,7 @@
+             case "entity.refugio.garden_quest_giver" -> MARTA_PORTRAIT;
+             case "entity.refugio.expedition_quest_giver" -> DARIO_PORTRAIT;
+             case "entity.refugio.kael" -> KAEL_PORTRAIT;
++            case "entity.refugio.commander_elias" -> ELIAS_PORTRAIT;
+             default -> null;
+         };
+     }
+--- a/src/client/java/com/felpz/refugio/client/RefugioClient.java
++++ b/src/client/java/com/felpz/refugio/client/RefugioClient.java
+@@ -23,6 +23,7 @@
+     private static RefugioAbilityScreen currentAbilityScreen;
+     private static RefugioShopScreen currentShopScreen;
+     private static RefugioQuestScreen currentQuestScreen;
++    private static RefugioCommanderScreen currentCommanderScreen;
+     private static long lastReserveFlashUntilMs;
+ 
+     private static final KeyMapping.Category REFUGIO_KEY_CATEGORY = resolveRefugioKeyCategory();
+@@ -63,20 +64,33 @@
+                         updateMovementStateFromAbilitySnapshot(data);
+                         currentShopScreen = null;
+                         currentQuestScreen = null;
++                        currentCommanderScreen = null;
+                         if (currentAbilityScreen != null) {
+                             currentAbilityScreen.updateState(data);
+                         } else {
+                             currentAbilityScreen = new RefugioAbilityScreen(data);
+                             context.client().setScreenAndShow(currentAbilityScreen);
+                         }
++                    } else if (data.startsWith("COMMANDER\t")) {
++                        currentAbilityScreen = null;
++                        currentShopScreen = null;
++                        currentQuestScreen = null;
++                        if (currentCommanderScreen != null) {
++                            currentCommanderScreen.updateState(data);
++                        } else {
++                            currentCommanderScreen = new RefugioCommanderScreen(data);
++                            context.client().setScreenAndShow(currentCommanderScreen);
++                        }
+                     } else if (data.startsWith("DIALOGUE\t")) {
+                         currentAbilityScreen = null;
+                         currentShopScreen = null;
+                         currentQuestScreen = null;
++                        currentCommanderScreen = null;
+                         context.client().setScreenAndShow(new RefugioDialogueScreen(data));
+                     } else if (data.startsWith("SHOP\t")) {
+                         currentAbilityScreen = null;
+                         currentQuestScreen = null;
++                        currentCommanderScreen = null;
+                         if (currentShopScreen != null) {
+                             currentShopScreen.updateState(data);
+                             if (!currentShopScreen.isDisplayed()) {
+@@ -91,6 +105,7 @@
+                     } else if (data.startsWith("QUEST\t")) {
+                         currentAbilityScreen = null;
+                         currentShopScreen = null;
++                        currentCommanderScreen = null;
+                         if (currentQuestScreen != null) {
+                             currentQuestScreen.updateState(data);
+                             if (!currentQuestScreen.isDisplayed()) {
+@@ -142,6 +157,7 @@
+                 currentAbilityScreen = null;
+                 currentShopScreen = null;
+                 currentQuestScreen = null;
++                currentCommanderScreen = null;
+                 resetClientMovementState();
+                 return;
+             }
+@@ -349,4 +365,8 @@
+     public static void clearQuestScreen(RefugioQuestScreen screen) {
+         if (currentQuestScreen == screen) currentQuestScreen = null;
+     }
++
++    public static void clearCommanderScreen(RefugioCommanderScreen screen) {
++        if (currentCommanderScreen == screen) currentCommanderScreen = null;
++    }
+ }
+--- a/src/test/java/com/felpz/refugio/shop/ShopEconomyInvariantTest.java
++++ b/src/test/java/com/felpz/refugio/shop/ShopEconomyInvariantTest.java
+@@ -1,6 +1,9 @@
+ package com.felpz.refugio.shop;
+ 
+ import com.felpz.refugio.ability.RefugioAbilityRules;
++import com.felpz.refugio.quest.RefugioCommanderRewards;
++
++import java.util.List;
+ 
+ public final class ShopEconomyInvariantTest {
+     private ShopEconomyInvariantTest() { }
+@@ -14,7 +17,120 @@
+         technicalItemsStayExcluded();
+         abilityRankCostChecks();
+         abilityEffectBounds();
+-        System.out.println("Shop economy invariants: PASS");
++        specialJumpFallDamageChecks();
++        commanderEliasRewardsChecks();
++        System.out.println("Shop economy, special jump fall damage, and Commander Elias invariants: PASS");
++    }
++
++    private static void specialJumpFallDamageChecks() {
++        // Case 1: Super Jump initiated at Y=100 and landing at Y=100 -> 0 fall damage
++        double superJumpOrigin = RefugioAbilityRules.resolveJumpOriginY(
++                true, false, 0.0, true, 100.0, 100.0);
++        near(superJumpOrigin, 100.0, "Super Jump launch origin at Y=100");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, superJumpOrigin, 100.0, 3.8, 1.0f),
++                0.0, "Case 1: Super Jump 100 -> 100 must deal 0 fall damage");
++
++        // Case 2: Super Jump initiated at Y=100 and landing at Y=95 -> same as vanilla 5-block fall, with & without Light Step
++        float vanillaFiveBlock = RefugioAbilityRules.vanillaBaseFallDamageForDistance(5.0);
++        near(vanillaFiveBlock, 2.0, "Vanilla 5-block fall base damage");
++        float superJump100To95 = RefugioAbilityRules.adjustTrackedJumpFallDamage(
++                true, superJumpOrigin, 95.0, 8.8, 6.0f);
++        near(superJump100To95, vanillaFiveBlock,
++                "Case 2a: Super Jump 100 -> 95 (peak 103.8) must deal exact 5-block vanilla fall damage (2.0)");
++        for (int rank = 1; rank <= 5; rank++) {
++            float expectedWithLightStep = vanillaFiveBlock * (1.0f - RefugioAbilityRules.lightStepReduction(rank));
++            float actualWithLightStep = RefugioAbilityRules.trackedJumpFallDamageWithLightStep(100.0, 95.0, rank);
++            near(actualWithLightStep, expectedWithLightStep,
++                    "Case 2b: Super Jump 100 -> 95 with Light Step rank " + rank);
++        }
++
++        // Case 3: Double Jump initiated at Y=100, second jump used in mid-air (Y=101.2), landing at Y=100 -> 0 fall damage
++        double doubleJumpOrigin = RefugioAbilityRules.resolveJumpOriginY(
++                false, false, 0.0, true, 100.0, 101.2);
++        near(doubleJumpOrigin, 100.0, "Double Jump must use first jump's ground surface (100.0), not mid-air Y (101.2)");
++        double preservedSecondImpulse = RefugioAbilityRules.resolveJumpOriginY(
++                false, true, doubleJumpOrigin, true, 100.0, 102.4);
++        near(preservedSecondImpulse, 100.0, "Double Jump must preserve origin if already tracking");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, doubleJumpOrigin, 100.0, 4.5, 2.0f),
++                0.0, "Case 3: Double Jump 100 -> 100 must deal 0 fall damage");
++
++        // Case 4: Double Jump initiated at Y=100, second jump used in mid-air, landing at Y=95 -> same as 5-block vanilla fall
++        float doubleJump100To95 = RefugioAbilityRules.adjustTrackedJumpFallDamage(
++                true, doubleJumpOrigin, 95.0, 9.5, 7.0f);
++        near(doubleJump100To95, vanillaFiveBlock,
++                "Case 4: Double Jump 100 -> 95 (peak 104.5) must deal exact 5-block fall damage (2.0), not peak damage");
++
++        // Case 5: Landing above origin (e.g. Y=100 -> Y=102) -> 0 fall damage
++        near(RefugioAbilityRules.effectiveTrackedFallDistance(100.0, 102.0), 0.0,
++                "Case 5a: Landing above origin effective distance must be 0");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 102.0, 3.6, 1.0f), 0.0,
++                "Case 5b: Landing above origin must deal 0 fall damage");
++
++        // Case 6: Normal fall without ability tracking -> vanilla behavior unchanged
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(false, 100.0, 100.0, 7.2, 5.0f), 5.0,
++                "Case 6: Untracked normal fall must preserve vanilla damage");
++
++        // Case 7: Rounding boundaries at 3, 4, and 5 blocks (including floating-point surface drift)
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 97.0, 6.4, 4.0f), 0.0,
++                "Case 7a: Exact 3-block drop (100 -> 97) must deal 0 damage");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 96.9996, 6.4, 4.0f), 0.0,
++                "Case 7b: 3-block drop with surface float drift must not off-by-one into 1 damage");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 96.0, 7.4, 5.0f), 1.0,
++                "Case 7c: Exact 4-block drop (100 -> 96) must deal 1 damage");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 95.9996, 7.4, 5.0f), 1.0,
++                "Case 7d: 4-block drop with surface float drift must deal 1 damage, not 2");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0, 95.0, 8.4, 6.0f), 2.0,
++                "Case 7e: Exact 5-block drop (100 -> 95) must deal 2 damage");
++        near(RefugioAbilityRules.adjustTrackedJumpFallDamage(true, 100.0004, 94.9996, 8.4, 6.0f), 2.0,
++                "Case 7f: 5-block drop with surface float drift must deal 2 damage, not 3");
++    }
++
++    private static void commanderEliasRewardsChecks() {
++        List<RefugioCommanderRewards.MilestoneSpec> milestones = RefugioCommanderRewards.defaultMilestones();
++        require(milestones.size() == 60, "Commander Elias must have exactly 60 milestones");
++        require(RefugioCommanderRewards.countedEntityIds().equals(java.util.Set.of("minecraft:zombie")),
++                "Default counted entity must be strictly minecraft:zombie");
++
++        int totalCoins = 0;
++        for (int n = 1; n <= 60; n++) {
++            RefugioCommanderRewards.MilestoneSpec m = milestones.get(n - 1);
++            require(m.number() == n, "Milestone number mismatch at index " + (n - 1));
++            int expectedKills = (n <= 20) ? (n * 10) : (200 + (n - 20) * 20);
++            require(m.requiredKills() == expectedKills,
++                    "Milestone " + n + " kills mismatch: expected " + expectedKills + " got " + m.requiredKills());
++            int expectedCoins = 50 + 15 * (n - 1);
++            require(m.coins() == expectedCoins,
++                    "Milestone " + n + " coins mismatch: expected " + expectedCoins + " got " + m.coins());
++            require(!m.name().isBlank(), "Milestone " + n + " must have a name");
++            require(!m.items().isEmpty(), "Milestone " + n + " must have reward items");
++            for (RefugioCommanderRewards.RewardItemSpec item : m.items()) {
++                require(item.itemId().startsWith("minecraft:"), "Invalid item ID in milestone " + n + ": " + item.itemId());
++                require(item.count() > 0, "Invalid item count in milestone " + n);
++            }
++            totalCoins += m.coins();
++        }
++
++        require(RefugioCommanderRewards.coinsForMilestone(1) == 50, "Milestone 01 must give 50 coins");
++        require(RefugioCommanderRewards.coinsForMilestone(20) == 335, "Milestone 20 must give 335 coins");
++        require(RefugioCommanderRewards.coinsForMilestone(21) == 350, "Milestone 21 must give 350 coins");
++        require(RefugioCommanderRewards.coinsForMilestone(60) == 935, "Milestone 60 must give 935 coins");
++        require(totalCoins == 29_550, "Total coins across all 60 milestones must be 29,550, got " + totalCoins);
++        require(RefugioCommanderRewards.totalTrackCoins() == 29_550, "totalTrackCoins() must be 29,550");
++        require("Lenda da Última Linha".equals(milestones.get(59).exclusiveTitle()),
++                "Milestone 60 must grant exclusive title 'Lenda da Última Linha'");
++
++        List<RefugioCommanderRewards.TitleSpec> titles = RefugioCommanderRewards.defaultTitles();
++        int[] expectedTitleKills = {10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
++        require(titles.size() == expectedTitleKills.length, "Commander Elias must have 12 titles/ranks");
++        for (int i = 0; i < expectedTitleKills.length; i++) {
++            require(titles.get(i).requiredKills() == expectedTitleKills[i],
++                    "Title kill threshold mismatch at index " + i);
++            require(!titles.get(i).title().isBlank(), "Blank title at index " + i);
++        }
++        require("Recruta".equals(RefugioCommanderRewards.highestUnlockedTitle(10)), "10 kills title must be Recruta");
++        require("Soldado".equals(RefugioCommanderRewards.highestUnlockedTitle(51)), "51 kills title must be Soldado");
++        require("Lenda da Última Linha".equals(RefugioCommanderRewards.highestUnlockedTitle(1000)),
++                "1000 kills title must be Lenda da Última Linha");
+     }
+ 
+     private static void abilityRankCostChecks() {
+--- a/src/main/resources/assets/refugio/lang/pt_br.json
++++ b/src/main/resources/assets/refugio/lang/pt_br.json
+@@ -437,5 +437,45 @@
+   "skill.refugio.exploration.name": "Exploração",
+   "skill.refugio.exploration.desc": "Reduz a exaustão em 6% por rank, até 30% no rank 5.",
+   "skill.refugio.logistics.name": "Logística",
+-  "skill.refugio.logistics.desc": "Cada rank dá 8% de chance de ignorar 1 ponto de dano de durabilidade, até 40% no rank 5."
++  "skill.refugio.logistics.desc": "Cada rank dá 8% de chance de ignorar 1 ponto de dano de durabilidade, até 40% no rank 5.",
++  "entity.refugio.commander_elias": "Comandante Elias Varga — Última Linha",
++  "dialogue.refugio.elias.1": "Eu sou o Comandante Elias Varga, da Última Linha. Lá fora as hordas de zumbis não têm piedade, e cada criatura que você derruba mantém este refúgio de pé.",
++  "dialogue.refugio.elias.2": "Traga-me provas do seu combate contra os zumbis. A cada marco alcançado, a Última Linha entregará armamentos, suprimentos, patentes de prestígio e moedas do Refúgio.",
++  "gui.refugio.dialogue.action.commander": "Ver Marcos da Última Linha",
++  "gui.refugio.commander.title": "Última Linha — Comandante Elias Varga",
++  "gui.refugio.commander.no_rank": "Sem Patente",
++  "gui.refugio.commander.kills_short": "Zumbis: %1$s | Marcos: %2$s/%3$s",
++  "gui.refugio.commander.tab.rewards": "Recompensas",
++  "gui.refugio.commander.tab.rewards_ready": "Recompensas (%1$s)",
++  "gui.refugio.commander.tab.stats": "Estatísticas",
++  "gui.refugio.commander.tab.ranks": "Patentes",
++  "gui.refugio.commander.kill_requirement": "Abates de zumbis: %1$s / %2$s",
++  "gui.refugio.commander.coins_reward": "Moedas do marco: +%1$s moedas do Refúgio",
++  "gui.refugio.commander.items_header": "Itens da recompensa:",
++  "gui.refugio.commander.exclusive_title": "Título exclusivo: %1$s",
++  "gui.refugio.commander.claim_short": "Resgatar",
++  "gui.refugio.commander.claim_button": "Resgatar Recompensa",
++  "gui.refugio.commander.feedback.claimed": "Recompensa recebida. Continue lutando pela Última Linha.",
++  "gui.refugio.commander.feedback.already_claimed": "Este marco já foi resgatado anteriormente.",
++  "gui.refugio.commander.feedback.locked": "Você ainda não atingiu os abates necessários para este marco.",
++  "gui.refugio.commander.stats.header": "Relatório de Combate — Facção Última Linha",
++  "gui.refugio.commander.stats.total_kills": "Total acumulado de zumbis mortos: %1$s",
++  "gui.refugio.commander.stats.next_milestone": "Próximo marco: #%1$s %2$s (%3$s / %4$s zumbis — faltam %5$s)",
++  "gui.refugio.commander.stats.all_milestones_reached": "Todos os 60 marcos de abate (1.000 zumbis) foram alcançados!",
++  "gui.refugio.commander.stats.milestones_unlocked": "Marcos desbloqueados: %1$s / %2$s",
++  "gui.refugio.commander.stats.milestones_claimed": "Marcos resgatados: %1$s / %2$s (Prontos para resgate: %3$s)",
++  "gui.refugio.commander.stats.coins_progress": "Moedas resgatadas na trilha: %1$s / %2$s moedas",
++  "gui.refugio.commander.stats.current_title": "Patente atual: %1$s",
++  "gui.refugio.commander.stats.next_title": "Próxima patente: %1$s (aos %2$s abates)",
++  "gui.refugio.commander.stats.max_title": "Patente máxima alcançada: Lenda da Última Linha!",
++  "gui.refugio.commander.rank_req": "%1$s / %2$s zumbis — %3$s",
++  "gui.refugio.commander.rank_unlocked": "Desbloqueada",
++  "gui.refugio.commander.rank_locked": "Bloqueada",
++  "message.refugio.commander.milestone_unlocked": "A Última Linha reconhece sua vitória. Nova recompensa disponível!",
++  "message.refugio.commander.title_unlocked": "Nova patente da Última Linha desbloqueada: %1$s!",
++  "message.refugio.commander.claimed": "Recompensa recebida (%1$s, +%2$s moedas). Continue lutando pela Última Linha.",
++  "message.refugio.commander.inventory_full": "Seu inventário está cheio. Libere espaço para receber esta recompensa.",
++  "message.refugio.commander.legend_reached": "Lenda da Última Linha: você derrotou 1.000 zumbis e entrou para a história.",
++  "message.refugio.commander.legend_global": "✦ [Última Linha] %1$s derrotou 1.000 zumbis e tornou-se uma Lenda da Última Linha!",
++  "command.refugio.zombie_kills_set": "Abates de zumbis de %1$s definidos para %2$s."
+ }
+--- a/src/main/resources/assets/refugio/lang/en_us.json
++++ b/src/main/resources/assets/refugio/lang/en_us.json
+@@ -437,5 +437,45 @@
+   "skill.refugio.exploration.name": "Exploration",
+   "skill.refugio.exploration.desc": "Reduces exhaustion by 6% per rank, up to 30% at rank 5.",
+   "skill.refugio.logistics.name": "Logistics",
+-  "skill.refugio.logistics.desc": "Each rank gives an 8% chance to ignore 1 point of durability damage, up to 40% at rank 5."
++  "skill.refugio.logistics.desc": "Each rank gives an 8% chance to ignore 1 point of durability damage, up to 40% at rank 5.",
++  "entity.refugio.commander_elias": "Commander Elias Varga — Last Line",
++  "dialogue.refugio.elias.1": "I am Commander Elias Varga of the Last Line. Out there the zombie hordes show no mercy, and every creature you fell keeps this refuge standing.",
++  "dialogue.refugio.elias.2": "Bring me proof of your combat against the zombies. At each milestone reached, the Last Line will grant weapons, supplies, prestige ranks, and Refuge coins.",
++  "gui.refugio.dialogue.action.commander": "View Last Line Milestones",
++  "gui.refugio.commander.title": "Last Line — Commander Elias Varga",
++  "gui.refugio.commander.no_rank": "Unranked",
++  "gui.refugio.commander.kills_short": "Zombies: %1$s | Milestones: %2$s/%3$s",
++  "gui.refugio.commander.tab.rewards": "Rewards",
++  "gui.refugio.commander.tab.rewards_ready": "Rewards (%1$s)",
++  "gui.refugio.commander.tab.stats": "Statistics",
++  "gui.refugio.commander.tab.ranks": "Ranks",
++  "gui.refugio.commander.kill_requirement": "Zombie kills: %1$s / %2$s",
++  "gui.refugio.commander.coins_reward": "Milestone coins: +%1$s Refuge coins",
++  "gui.refugio.commander.items_header": "Reward items:",
++  "gui.refugio.commander.exclusive_title": "Exclusive title: %1$s",
++  "gui.refugio.commander.claim_short": "Claim",
++  "gui.refugio.commander.claim_button": "Claim Reward",
++  "gui.refugio.commander.feedback.claimed": "Reward received. Keep fighting for the Last Line.",
++  "gui.refugio.commander.feedback.already_claimed": "This milestone has already been claimed.",
++  "gui.refugio.commander.feedback.locked": "You have not yet reached the kills required for this milestone.",
++  "gui.refugio.commander.stats.header": "Combat Report — Last Line Faction",
++  "gui.refugio.commander.stats.total_kills": "Total accumulated zombies killed: %1$s",
++  "gui.refugio.commander.stats.next_milestone": "Next milestone: #%1$s %2$s (%3$s / %4$s zombies — %5$s remaining)",
++  "gui.refugio.commander.stats.all_milestones_reached": "All 60 kill milestones (1,000 zombies) have been reached!",
++  "gui.refugio.commander.stats.milestones_unlocked": "Unlocked milestones: %1$s / %2$s",
++  "gui.refugio.commander.stats.milestones_claimed": "Claimed milestones: %1$s / %2$s (Ready to claim: %3$s)",
++  "gui.refugio.commander.stats.coins_progress": "Track coins claimed: %1$s / %2$s coins",
++  "gui.refugio.commander.stats.current_title": "Current rank: %1$s",
++  "gui.refugio.commander.stats.next_title": "Next rank: %1$s (at %2$s kills)",
++  "gui.refugio.commander.stats.max_title": "Maximum rank achieved: Legend of the Last Line!",
++  "gui.refugio.commander.rank_req": "%1$s / %2$s zombies — %3$s",
++  "gui.refugio.commander.rank_unlocked": "Unlocked",
++  "gui.refugio.commander.rank_locked": "Locked",
++  "message.refugio.commander.milestone_unlocked": "The Last Line recognizes your victory. New reward available!",
++  "message.refugio.commander.title_unlocked": "New Last Line rank unlocked: %1$s!",
++  "message.refugio.commander.claimed": "Reward received (%1$s, +%2$s coins). Keep fighting for the Last Line.",
++  "message.refugio.commander.inventory_full": "Your inventory is full. Free up space to receive this reward.",
++  "message.refugio.commander.legend_reached": "Legend of the Last Line: you defeated 1,000 zombies and made history.",
++  "message.refugio.commander.legend_global": "✦ [Last Line] %1$s defeated 1,000 zombies and became a Legend of the Last Line!",
++  "command.refugio.zombie_kills_set": "Set zombie kills of %1$s to %2$s."
+ }
+--- /dev/null
++++ b/src/main/resources/resourcepacks/npc_skins/assets/minecraft/optifine/cem/villager8.jem
+@@ -0,0 +1,260 @@
++{
++  "texture": "refugio:textures/entity/villager/refugio_elias",
++  "textureSize": [
++    64,
++    64
++  ],
++  "shadowSize": 0.25,
++  "models": [
++    {
++      "part": "head",
++      "id": "player_head",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            0,
++            0
++          ],
++          "coordinates": [
++            -4,
++            -8,
++            -4,
++            8,
++            8,
++            8
++          ]
++        }
++      ],
++      "animations": [
++        {
++          "player_head.rx": "sin(age / 23 + 6.5) * 0.055 + sin(age / 53 + 6.5) * 0.035",
++          "player_head.ry": "sin(age / 31 + 6.5) * 0.18 + cos(age / 59 + 6.5) * 0.09",
++          "player_head.rz": "sin(age / 43 + 6.5) * 0.04",
++          "player_headwear.rx": "player_head.rx",
++          "player_headwear.ry": "player_head.ry",
++          "player_headwear.rz": "player_head.rz",
++          "player_body.rx": "sin(age / 19 + 6.5) * 0.035 + 0.015",
++          "player_body.ry": "sin(age / 41 + 6.5) * 0.05",
++          "player_body.rz": "cos(age / 35 + 6.5) * 0.025",
++          "player_bodywear.rx": "player_body.rx",
++          "player_bodywear.ry": "player_body.ry",
++          "player_bodywear.rz": "player_body.rz",
++          "player_arms.rx": "sin(age / 14 + 6.5) * 0.11 - 0.04",
++          "player_arms.ry": "player_body.ry",
++          "player_arms.rz": "cos(age / 22 + 6.5) * 0.05"
++        }
++      ]
++    },
++    {
++      "part": "headwear",
++      "id": "player_headwear",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            32,
++            0
++          ],
++          "coordinates": [
++            -4.25,
++            -8.25,
++            -4.25,
++            8.5,
++            8.5,
++            8.5
++          ]
++        }
++      ]
++    },
++    {
++      "part": "headwear2",
++      "id": "hide_villager_hat_rim",
++      "attach": false,
++      "scale": 0.0,
++      "boxes": []
++    },
++    {
++      "part": "nose",
++      "id": "hide_villager_nose",
++      "attach": false,
++      "scale": 0.0,
++      "boxes": []
++    },
++    {
++      "part": "body",
++      "id": "player_body",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            16,
++            16
++          ],
++          "coordinates": [
++            -4,
++            0,
++            -2,
++            8,
++            12,
++            4
++          ]
++        }
++      ]
++    },
++    {
++      "part": "bodywear",
++      "id": "player_bodywear",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            16,
++            32
++          ],
++          "coordinates": [
++            -4.25,
++            -0.25,
++            -2.25,
++            8.5,
++            12.5,
++            4.5
++          ]
++        }
++      ]
++    },
++    {
++      "part": "arms",
++      "id": "player_arms",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            40,
++            16
++          ],
++          "coordinates": [
++            -8,
++            -2,
++            -2,
++            4,
++            12,
++            4
++          ]
++        },
++        {
++          "textureOffset": [
++            40,
++            32
++          ],
++          "coordinates": [
++            -8.25,
++            -2.25,
++            -2.25,
++            4.5,
++            12.5,
++            4.5
++          ]
++        },
++        {
++          "textureOffset": [
++            32,
++            48
++          ],
++          "coordinates": [
++            4,
++            -2,
++            -2,
++            4,
++            12,
++            4
++          ]
++        },
++        {
++          "textureOffset": [
++            48,
++            48
++          ],
++          "coordinates": [
++            3.75,
++            -2.25,
++            -2.25,
++            4.5,
++            12.5,
++            4.5
++          ]
++        }
++      ]
++    },
++    {
++      "part": "right_leg",
++      "id": "player_right_leg",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            0,
++            16
++          ],
++          "coordinates": [
++            -2,
++            0,
++            -2,
++            4,
++            12,
++            4
++          ]
++        },
++        {
++          "textureOffset": [
++            0,
++            32
++          ],
++          "coordinates": [
++            -2.25,
++            -0.25,
++            -2.25,
++            4.5,
++            12.5,
++            4.5
++          ]
++        }
++      ]
++    },
++    {
++      "part": "left_leg",
++      "id": "player_left_leg",
++      "attach": false,
++      "boxes": [
++        {
++          "textureOffset": [
++            16,
++            48
++          ],
++          "coordinates": [
++            -2,
++            0,
++            -2,
++            4,
++            12,
++            4
++          ]
++        },
++        {
++          "textureOffset": [
++            0,
++            48
++          ],
++          "coordinates": [
++            -2.25,
++            -0.25,
++            -2.25,
++            4.5,
++            12.5,
++            4.5
++          ]
++        }
++      ]
++    }
++  ]
++}
+--- a/src/main/resources/resourcepacks/npc_skins/assets/minecraft/optifine/cem/villager.properties
++++ b/src/main/resources/resourcepacks/npc_skins/assets/minecraft/optifine/cem/villager.properties
+@@ -2,7 +2,7 @@
+ models.1=2
+ nbt.1.sleeping_pos=exists:true
+ 
+-# NPCs do Refúgio: cada aparência usa uma variante própria de villager3 a villager7.
++# NPCs do Refúgio: cada aparência usa uma variante própria de villager3 a villager8.
+ models.2=3
+ name.2=pattern:*Baldur*
+ models.3=3
+@@ -23,3 +23,7 @@
+ name.10=pattern:*Kael*
+ models.11=7
+ name.11=pattern:*entity.refugio.kael*
++models.12=8
++name.12=pattern:*Elias*
++models.13=8
++name.13=pattern:*entity.refugio.commander_elias*

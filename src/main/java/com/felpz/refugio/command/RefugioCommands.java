@@ -3,6 +3,7 @@ package com.felpz.refugio.command;
 import com.felpz.refugio.data.RefugioPlayerData;
 import com.felpz.refugio.menu.RefugioMenu;
 import com.felpz.refugio.npc.RefugioTrainingDummy;
+import com.felpz.refugio.quest.RefugioCommanderData;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -76,6 +77,17 @@ public final class RefugioCommands {
                                         RefugioPlayerData.setCoins(target, amount);
                                         context.getSource().sendSuccess(() -> Component.translatable(
                                                 "command.refugio.coins_set", target.getGameProfile().name(), amount), true);
+                                        return 1;
+                                    }))));
+            admin.then(Commands.literal("zumbis")
+                    .then(Commands.argument("jogador", EntityArgument.player())
+                            .then(Commands.argument("quantidade", IntegerArgumentType.integer(0, Integer.MAX_VALUE))
+                                    .executes(context -> {
+                                        ServerPlayer target = EntityArgument.getPlayer(context, "jogador");
+                                        int amount = IntegerArgumentType.getInteger(context, "quantidade");
+                                        RefugioCommanderData.setZombieKills(target, amount);
+                                        context.getSource().sendSuccess(() -> Component.translatable(
+                                                "command.refugio.zombie_kills_set", target.getGameProfile().name(), amount), true);
                                         return 1;
                                     }))));
             admin.then(Commands.literal("desbloquear_tudo")

@@ -3,6 +3,10 @@ package com.felpz.refugio.ability;
 /** Pure skill-tree balance rules, intentionally independent from the Minecraft runtime. */
 public final class RefugioAbilityRules {
     private static final int[] RANK_COSTS = {500, 1000, 2000, 3000, 4000};
+    private static final double SURFACE_EPSILON = 1.0e-3;
+    private static final double DAMAGE_EPSILON = 1.0e-5;
+    public static final double DEFAULT_SAFE_FALL_DISTANCE = 3.0;
+    public static final double DEFAULT_FALL_DAMAGE_MULTIPLIER = 1.0;
 
     private RefugioAbilityRules() { }
 
@@ -111,6 +115,140 @@ public final class RefugioAbilityRules {
     }
     public static boolean canClaimFreeChoice(boolean freeChoiceAlreadyUsed, int currentRank, boolean firstInTrack) {
         return !freeChoiceAlreadyUsed && currentRank == 0 && firstInTrack;
+    }
+
+    /**
+     * Normalizes a foot/surface Y coordinate to the nearest 1/16th of a block when within
+     * floating-point surface tolerance, avoiding off-by-one ceil() errors on block surfaces.
+     */
+    public static double normalizeSurfaceCoordinate(double y) {
+        double snapped16 = Math.round(y * 16.0) / 16.0;
+        return Math.abs(y - snapped16) <= SURFACE_EPSILON ? snapped16 : y;
+    }
+
+    /**
+     * Resolves the launch surface Y for a special jump cycle:
+     * - On the ground (Super Pulo): uses the current foot/surface Y.
+     * - In mid-air (Pulo Duplo): preserves the existing tracked origin if already tracking in the same dimension,
+     *   otherwise uses the ground surface Y recorded at the start of the first normal jump.
+     */
+    public static double resolveJumpOriginY(boolean onGroundAtActivation,
+                                            boolean alreadyTrackingInDimension,
+                                            double currentTrackedOriginY,
+                                            boolean hasLastGroundedInDimension,
+                                            double lastGroundedY,
+                                            double currentFootY) {
+        if (onGroundAtActivation) {
+            return normalizeSurfaceCoordinate(currentFootY);
+        }
+        if (alreadyTrackingInDimension) {
+            return normalizeSurfaceCoordinate(currentTrackedOriginY);
+        }
+        if (hasLastGroundedInDimension) {
+            return normalizeSurfaceCoordinate(lastGroundedY);
+        }
+        return normalizeSurfaceCoordinate(currentFootY);
+    }
+
+    /**
+     * Computes the effective downward vertical distance between the launch surface (originY)
+     * and the landing surface (landingY). Landing at or above originY yields 0.0.
+     */
+    public static double effectiveTrackedFallDistance(double originY, double landingY) {
+        double normOrigin = normalizeSurfaceCoordinate(originY);
+        double normLanding = normalizeSurfaceCoordinate(landingY);
+        double drop = normOrigin - normLanding;
+        if (drop <= SURFACE_EPSILON) {
+            return 0.0;
+        }
+        double snapped16 = Math.round(drop * 16.0) / 16.0;
+        if (Math.abs(drop - snapped16) <= SURFACE_EPSILON) {
+            drop = snapped16;
+        }
+        return Math.max(0.0, drop);
+    }
+
+    /**
+     * Reproduces vanilla Minecraft's integer fall damage calculation from rest for a given vertical drop
+     * between originY and landingY: ceil((effectiveDistance - safeFallDistance) * fallDamageMultiplier).
+     */
+    public static float trackedJumpVanillaFallDamage(double originY, double landingY,
+                                                     double safeFallDistance, double fallDamageMultiplier) {
+        double effectiveDistance = effectiveTrackedFallDistance(originY, landingY);
+        double excess = effectiveDistance - safeFallDistance;
+        if (excess <= DAMAGE_EPSILON || fallDamageMultiplier <= 0.0) {
+            return 0.0f;
+        }
+        double rawDamage = excess * fallDamageMultiplier;
+        long nearestInt = Math.round(rawDamage);
+        if (Math.abs(rawDamage - nearestInt) <= DAMAGE_EPSILON) {
+            return (float) Math.max(0L, nearestInt);
+        }
+        return (float) Math.ceil(rawDamage);
+    }
+
+    public static float trackedJumpVanillaFallDamage(double originY, double landingY) {
+        return trackedJumpVanillaFallDamage(originY, landingY,
+                DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
+    }
+
+    public static float vanillaBaseFallDamageForDistance(double fallDistance) {
+        return trackedJumpVanillaFallDamage(fallDistance, 0.0,
+                DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
+    }
+
+    /**
+     * Adjusts fall damage when a tracked Super Pulo / Pulo Duplo cycle lands.
+     * Untracked falls return vanillaDamage untouched. Tracked falls compute the exact vanilla
+     * damage for the vertical drop below originY (ignoring the upward jump peak).
+     */
+    public static float adjustTrackedJumpFallDamage(boolean trackingActive,
+                                                    double originY,
+                                                    double landingY,
+                                                    double peakFallDistance,
+                                                    float vanillaDamage) {
+        if (!trackingActive) {
+            return vanillaDamage;
+        }
+        if (vanillaDamage <= 0.0f) {
+            return 0.0f;
+        }
+        double effectiveDrop = effectiveTrackedFallDistance(originY, landingY);
+        if (effectiveDrop <= DEFAULT_SAFE_FALL_DISTANCE + DAMAGE_EPSILON) {
+            return 0.0f;
+        }
+
+        float standardPeakDamage = vanillaBaseFallDamageForDistance(peakFallDistance);
+        if (peakFallDistance <= DEFAULT_SAFE_FALL_DISTANCE
+                || Math.abs(vanillaDamage - standardPeakDamage) < 0.01f) {
+            return trackedJumpVanillaFallDamage(originY, landingY,
+                    DEFAULT_SAFE_FALL_DISTANCE, DEFAULT_FALL_DAMAGE_MULTIPLIER);
+        }
+
+        for (int safeDist = 4; safeDist <= 16; safeDist++) {
+            float candidatePeak = trackedJumpVanillaFallDamage(peakFallDistance, 0.0,
+                    safeDist, DEFAULT_FALL_DAMAGE_MULTIPLIER);
+            if (peakFallDistance > safeDist && Math.abs(vanillaDamage - candidatePeak) < 0.01f) {
+                return trackedJumpVanillaFallDamage(originY, landingY,
+                        safeDist, DEFAULT_FALL_DAMAGE_MULTIPLIER);
+            }
+        }
+
+        double peakExcess = Math.max(1.0, peakFallDistance - DEFAULT_SAFE_FALL_DISTANCE);
+        double inferredMultiplier = vanillaDamage / peakExcess;
+        return trackedJumpVanillaFallDamage(originY, landingY,
+                DEFAULT_SAFE_FALL_DISTANCE, inferredMultiplier);
+    }
+
+    /**
+     * Returns the fall damage after applying Passo Leve (light_step) once to a tracked jump fall.
+     */
+    public static float trackedJumpFallDamageWithLightStep(double originY, double landingY, int lightStepRank) {
+        float base = trackedJumpVanillaFallDamage(originY, landingY);
+        if (base <= 0.0f || lightStepRank <= 0) {
+            return base;
+        }
+        return base * (1.0f - lightStepReduction(lightStepRank));
     }
 
     private static int boundedRank(int rank) { return Math.max(0, Math.min(maxRank(), rank)); }

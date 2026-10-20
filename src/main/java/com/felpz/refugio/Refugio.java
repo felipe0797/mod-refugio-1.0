@@ -6,6 +6,7 @@ import com.felpz.refugio.command.RefugioCommands;
 import com.felpz.refugio.item.RefugioItems;
 import com.felpz.refugio.npc.RefugioNPCs;
 import com.felpz.refugio.npc.RefugioTrainingDummy;
+import com.felpz.refugio.quest.RefugioCommanderData;
 import com.felpz.refugio.world.StonehillMap;
 import com.felpz.refugio.world.RefugioSustainability;
 import com.felpz.refugio.world.VillageStructure;
@@ -54,6 +55,7 @@ public class Refugio implements ModInitializer {
         RefugioUiService.initialize();
         RefugioStory.initialize();
         RefugioSideQuests.initialize();
+        RefugioCommanderData.initialize();
         RefugioCommands.initialize();
         RefugioNPCs.initialize();
         RefugioTrainingDummy.initialize();
